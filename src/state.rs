@@ -1,10 +1,41 @@
-use cosmwasm_std::{Addr, HexBinary};
-use cw_storage_plus::Item;
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::Addr;
+use cw_storage_plus::{Item, Map};
+pub type ChannelId = String;
+pub type PlaylistId = String;
+pub type ChannelsCollectionId = String;
 
-pub const PARTICIPANT_COUNT: Item<u32> = Item::new("participant_count");
-pub const NOIS_PROXY: Item<Addr> = Item::new("nois_proxy");
-pub const ADMIN: Item<Addr> = Item::new("admin");
-pub const WINNERS: Item<Vec<u32>> = Item::new("winners");
-pub const TEST_WINNERS: Item<Vec<u32>> = Item::new("test_winners");
-pub const TEST_RANDOMNESS: Item<HexBinary> = Item::new("test_randomness");
-pub const FINAL_RANDOMNESS: Item<HexBinary> = Item::new("final_randomness");
+pub const CHANNELS_COLLECTION_ID: Item<ChannelsCollectionId> = Item::new("channels_collection");
+pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_details");
+pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
+pub const AUTH_DETAILS: Item<AuthDetails> = Item::new("auth_details");
+pub const CHANNEL_ID_PAIRS: Map<ChannelId, ChannelDetails> = Map::new("channel_id_pairs");
+
+#[cw_serde]
+pub struct Playlist {
+    pub playlist_name: String,
+    pub assets: Vec<Asset>,
+}
+impl Playlist {
+    pub fn new(playlist_name: String) -> Self {
+        Self {
+            playlist_name,
+            assets: vec![],
+        }
+    }
+}
+
+#[cw_serde]
+pub struct Asset {
+    pub publish_id: String,
+}
+#[cw_serde]
+pub struct ChannelDetails {
+    pub channel_id: String,
+}
+
+#[cw_serde]
+pub struct AuthDetails {
+    pub admin: Addr,
+    pub fee_collector: Addr,
+}
