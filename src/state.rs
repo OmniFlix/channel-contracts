@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Coin};
 use cw_storage_plus::{Item, Map};
 pub type ChannelId = String;
 pub type PlaylistId = String;
@@ -10,6 +10,7 @@ pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_det
 pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
 pub const AUTH_DETAILS: Item<AuthDetails> = Item::new("auth_details");
 pub const CHANNEL_ID_PAIRS: Map<ChannelId, ChannelDetails> = Map::new("channel_id_pairs");
+pub const PARAMS: Item<ChannelParams> = Item::new("channel_registry_params");
 
 #[cw_serde]
 pub struct Playlist {
@@ -38,4 +39,14 @@ pub struct ChannelDetails {
 pub struct AuthDetails {
     pub admin: Addr,
     pub fee_collector: Addr,
+}
+
+#[cw_serde]
+pub struct ChannelParams {
+    pub channels_collection_name: String,
+    pub channels_collection_symbol: String,
+    pub channels_collection_id: String,
+    pub admin: Addr,
+    pub fee_collector: Addr,
+    pub channel_creation_fee: Coin,
 }
