@@ -1,25 +1,42 @@
 use cosmwasm_schema::cw_serde;
-use nois::NoisCallback;
+use cosmwasm_std::{Addr, Binary};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub participant_count: u32,
-    pub nois_proxy_address: String,
+    pub admin: Addr,
+    pub fee_collector: Addr,
+    pub channels_collection_id: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    RequestRandomness { job_id: String, delay_in_mins: u64 },
-    NoisReceive { callback: NoisCallback },
-    PickTestWinners {},
-    PickWinners {},
+    Pause {},
+    Unpause {},
+    SetPausers {
+        pausers: Vec<String>,
+    },
+    CreateChannel {
+        channel_id: String,
+    },
+    Publish {
+        onft_collection_id: String,
+        onft_id: String,
+        salt: Binary,
+        channel_id: String,
+        playlist_id: Option<String>,
+    },
+    CreatePlaylist {
+        playlist_id: String,
+        channel_id: String,
+    },
+    RegisterChannel {
+        channel_id: String,
+        salt: Option<Binary>,
+    },
 }
 
 #[cw_serde]
 pub enum QueryMsg {
-    ParticipantCount {},
-    Winners {},
-    Admin {},
-    NoisProxy {},
-    TestWinners {},
+    IsPaused {},
+    Pausers {},
 }
