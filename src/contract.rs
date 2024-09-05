@@ -80,12 +80,32 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    match msg {}
+    match msg {
+        ExecuteMsg::Pause {} => todo!(),
+        ExecuteMsg::Unpause {} => todo!(),
+        ExecuteMsg::SetPausers { pausers } => todo!(),
+        ExecuteMsg::CreateChannel { channel_id } => todo!(),
+        ExecuteMsg::Publish {
+            onft_collection_id,
+            onft_id,
+            salt,
+            channel_id,
+            playlist_id,
+        } => todo!(),
+        ExecuteMsg::CreatePlaylist {
+            playlist_id,
+            channel_id,
+        } => todo!(),
+        ExecuteMsg::RegisterChannel { channel_id, salt } => todo!(),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {}
+    match msg {
+        QueryMsg::IsPaused {} => todo!(),
+        QueryMsg::Pausers {} => todo!(),
+    }
 }
 
 #[cfg(test)]
