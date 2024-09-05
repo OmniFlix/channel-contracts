@@ -730,11 +730,13 @@ dependencies = [
  "cw4-group",
  "cw721 0.18.0",
  "cw721-base 0.18.0",
+ "hex",
  "omniflix-std",
  "schemars",
  "semver",
  "serde",
  "serde_json",
+ "sha2 0.10.8",
  "thiserror",
 ]
 
