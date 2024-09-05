@@ -2,11 +2,12 @@ use crate::error::ContractError;
 use crate::helpers::get_collection_creation_fee;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
+use crate::state::{ChannelParams, PARAMS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    WasmMsg,
+    ensure_eq, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, WasmMsg,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -28,20 +29,30 @@ pub fn instantiate(
         .api
         .addr_validate(&msg.fee_collector.clone().into_string())
         .unwrap_or(admin.clone());
-    // Create and save the ChannelRegistryParams.
-    let registry_params: ChannelRegistryParams = ChannelRegistryParams {
-        channels_collection_name: msg.channels_collection_name.clone(),
-        channels_collection_symbol: msg.channels_collection_symbol.clone(),
-        channels_collection_id: msg.channels_collection_id.clone(),
+
+    // Save channel params
+    let channel_params = ChannelParams {
         admin: admin.clone(),
         fee_collector: fee_collector.clone(),
+        channels_collection_id: msg.channels_collection_id.clone(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+        channel_creation_fee: msg.channel_creation_fee.clone(),
     };
-    PARAMS.save(deps.storage, &registry_params)?;
+    // Save the channel params to the contract state
+    PARAMS.save(deps.storage, &channel_params)?;
 
     let collection_creation_fee = get_collection_creation_fee(deps.as_ref());
 
     // Check if the payment provided in the message matches the required creation fee
-    //check_payment(&info.funds, &[collection_creation_fee.clone()])?;
+    ensure_eq!(
+        info.funds.clone(),
+        vec![collection_creation_fee.clone()],
+        ContractError::PaymentError {
+            expected: vec![collection_creation_fee.clone()],
+            received: info.funds.clone()
+        }
+    );
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =

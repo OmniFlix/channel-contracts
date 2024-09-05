@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
 use crate::{helpers::OnftQuerierError, pauser::PauseError};
@@ -37,6 +37,12 @@ pub enum ContractError {
 
     #[error("Channel already exists")]
     ChannelAlreadyExists {},
+
+    #[error("Payment error")]
+    PaymentError {
+        expected: Vec<Coin>,
+        received: Vec<Coin>,
+    },
 }
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {

@@ -1,11 +1,14 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary};
+use cosmwasm_std::{Addr, Binary, Coin};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub admin: Addr,
     pub fee_collector: Addr,
     pub channels_collection_id: String,
+    pub channels_collection_name: String,
+    pub channels_collection_symbol: String,
+    pub channel_creation_fee: Coin,
 }
 
 #[cw_serde]
