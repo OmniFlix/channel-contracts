@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
     },
     RegisterChannel {
         channel_id: String,
-        salt: Option<Binary>,
+        salt: Binary,
     },
 }
 

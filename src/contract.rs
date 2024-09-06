@@ -2,14 +2,14 @@ use crate::error::ContractError;
 use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::state::{ChannelParams, PARAMS};
+use crate::state::ChannelConractConfig;
+use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure_eq, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult, WasmMsg,
 };
-use omniflix_std::types::cosmos::tx;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -31,8 +31,8 @@ pub fn instantiate(
         .addr_validate(&msg.fee_collector.clone().into_string())
         .unwrap_or(admin.clone());
 
-    // Save channel params
-    let channel_params = ChannelParams {
+    // Save channel CONFIG
+    let channel_contract_config = ChannelConractConfig {
         admin: admin.clone(),
         fee_collector: fee_collector.clone(),
         channels_collection_id: msg.channels_collection_id.clone(),
@@ -40,8 +40,8 @@ pub fn instantiate(
         channels_collection_symbol: "CH".to_string(),
         channel_creation_fee: msg.channel_creation_fee.clone(),
     };
-    // Save the channel params to the contract state
-    PARAMS.save(deps.storage, &channel_params)?;
+    // Save the channel CONFIG to the contract state
+    CONFIG.save(deps.storage, &channel_contract_config)?;
 
     let collection_creation_fee = get_collection_creation_fee(deps.as_ref());
 
@@ -105,13 +105,13 @@ fn register_channel(
     env: Env,
     info: MessageInfo,
     channel_id: String,
-    salt: Option<Binary>,
+    salt: Binary,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
-    // Load the channels collection ID from the contract params
-    let channels_collection_id = PARAMS.load(deps.storage)?.channels_collection_id;
+    // Load the channels collection ID from the contract CONFIG
+    let channels_collection_id = CONFIG.load(deps.storage)?.channels_collection_id;
 
     let c_nft = get_onft(
         deps.as_ref(),
@@ -121,16 +121,15 @@ fn register_channel(
     if c_nft.is_some() {
         return Err(ContractError::ChannelAlreadyExists {});
     }
-    let salt = salt.unwrap_or(Binary::from_base64(info.sender.as_str())?);
 
     // Generate a random channel onft ID
-    let onft_id = generate_random_id_with_prefix(&salt, &env, "channel");
+    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
 
     // Generate a random channel ID
-    let channel_id = generate_random_id_with_prefix(&salt, &env, "onft");
+    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
 
     let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
-        id: channel_id.clone().to_string(),
+        id: onft_id.clone(),
         denom_id: channels_collection_id.clone(),
         sender: env.contract.address.clone().to_string(),
         recipient: info.sender.clone().to_string(),

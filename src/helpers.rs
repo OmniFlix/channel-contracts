@@ -1,6 +1,5 @@
 use cosmwasm_std::{Binary, Env};
 use cosmwasm_std::{Coin, Deps, Uint128};
-use omniflix_std::types::cosmos::tx;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
 use rand_core::{RngCore, SeedableRng};
