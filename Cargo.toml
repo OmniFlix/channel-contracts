@@ -54,6 +54,8 @@ serde                = { version = "1.0.145", default-features = false, features
 serde_json = "1.0"
 sha2 = "0.10.8"
 hex = "0.4.3"
+rand_core       = { version = "0.6.4", default-features = false }
+rand_xoshiro    = { version = "0.6.0", default-features = false }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

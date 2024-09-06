@@ -18,9 +18,6 @@ pub enum ExecuteMsg {
     SetPausers {
         pausers: Vec<String>,
     },
-    CreateChannel {
-        channel_id: String,
-    },
     Publish {
         onft_collection_id: String,
         onft_id: String,

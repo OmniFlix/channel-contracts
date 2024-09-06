@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::helpers::get_collection_creation_fee;
+use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
 use crate::state::{ChannelParams, PARAMS};
@@ -9,6 +9,7 @@ use cosmwasm_std::{
     ensure_eq, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult, WasmMsg,
 };
+use omniflix_std::types::cosmos::tx;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -84,7 +85,6 @@ pub fn execute(
         ExecuteMsg::Pause {} => todo!(),
         ExecuteMsg::Unpause {} => todo!(),
         ExecuteMsg::SetPausers { pausers } => todo!(),
-        ExecuteMsg::CreateChannel { channel_id } => todo!(),
         ExecuteMsg::Publish {
             onft_collection_id,
             onft_id,
@@ -98,6 +98,49 @@ pub fn execute(
         } => todo!(),
         ExecuteMsg::RegisterChannel { channel_id, salt } => todo!(),
     }
+}
+
+fn register_channel(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    channel_id: String,
+    salt: Option<Binary>,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    // Load the channels collection ID from the contract params
+    let channels_collection_id = PARAMS.load(deps.storage)?.channels_collection_id;
+
+    let c_nft = get_onft(
+        deps.as_ref(),
+        channels_collection_id.clone(),
+        channel_id.clone(),
+    )?;
+    if c_nft.is_some() {
+        return Err(ContractError::ChannelAlreadyExists {});
+    }
+    let salt = salt.unwrap_or(Binary::from_base64(info.sender.as_str())?);
+
+    // Generate a random channel onft ID
+    let onft_id = generate_random_id_with_prefix(&salt, &env, "channel");
+
+    // Generate a random channel ID
+    let channel_id = generate_random_id_with_prefix(&salt, &env, "onft");
+
+    let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
+        id: channel_id.clone().to_string(),
+        denom_id: channels_collection_id.clone(),
+        sender: env.contract.address.clone().to_string(),
+        recipient: info.sender.clone().to_string(),
+        ..Default::default()
+    }
+    .into();
+    let response = Response::new()
+        .add_message(mint_onft_msg)
+        .add_attribute("action", "register_channel");
+    Ok(response)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
