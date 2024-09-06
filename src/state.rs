@@ -2,9 +2,12 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, StdError, StdResult, Storage};
 use cw_storage_plus::{Item, Map};
 
+use crate::{channels::ChannelDetails, playlist::Playlist};
+
 pub type ChannelId = String;
 pub type PlaylistId = String;
 pub type UserName = String;
+pub type OnftId = String;
 pub type ChannelsCollectionId = String;
 
 // Define storage items
@@ -17,38 +20,7 @@ pub const AUTH_DETAILS: Item<AuthDetails> = Item::new("auth_details");
 pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
 pub const CHANNEL_ID_TO_USERNAME: Map<ChannelId, UserName> = Map::new("channel_id_to_username");
 
-#[cw_serde]
-pub struct Playlist {
-    pub playlist_name: String,
-    pub assets: Vec<Asset>,
-}
-
-impl Playlist {
-    pub fn new(playlist_name: String) -> Self {
-        Self {
-            playlist_name,
-            assets: vec![],
-        }
-    }
-
-    // Add an asset to the playlist
-    pub fn add_asset(&mut self, asset: Asset) {
-        self.assets.push(asset);
-    }
-}
-
-#[cw_serde]
-pub struct Asset {
-    pub publish_id: String,
-}
-
-#[cw_serde]
-pub struct ChannelDetails {
-    pub channel_id: String,
-    pub user_name: String,
-    pub onft_id: String,
-    pub description: String,
-}
+pub const CHANNEL_ID_TO_ONFT_ID: Map<ChannelId, OnftId> = Map::new("channel_id_to_onft_id");
 
 #[cw_serde]
 pub struct AuthDetails {

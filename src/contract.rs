@@ -7,8 +7,7 @@ use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult, WasmMsg,
+    ensure_eq, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -110,7 +109,7 @@ fn register_channel(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
-    // Load the channels collection ID from the contract CONFIG
+    // Load the channels collection ID from the contract config
     let channels_collection_id = CONFIG.load(deps.storage)?.channels_collection_id;
 
     let c_nft = get_onft(
