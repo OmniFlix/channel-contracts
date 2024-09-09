@@ -1,14 +1,16 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdError, StdResult, Storage};
+use cw_storage_plus::Map;
 
-use crate::state::{
-    CHANNELDETAILS, CHANNEL_ID_TO_ONFT_ID, CHANNEL_ID_TO_USERNAME, USERNAME_TO_CHANNEL_ID,
-};
+pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
+
+pub const CHANNEL_ID_TO_USERNAME: Map<ChannelId, UserName> = Map::new("channel_id_to_username");
+pub const CHANNEL_ID_TO_ONFT_ID: Map<ChannelId, OnftId> = Map::new("channel_id_to_onft_id");
+pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_details");
 
 pub type ChannelId = String;
-
 pub type UserName = String;
-pub type ChannelsCollectionId = String;
+pub type OnftId = String;
 
 #[cw_serde]
 pub struct ChannelDetails {
@@ -18,12 +20,11 @@ pub struct ChannelDetails {
     pub description: String,
 }
 
-// Main contract implementation to manage channels
-pub struct ChannelContract<'a> {
+pub struct Channels<'a> {
     pub storage: &'a mut dyn Storage,
 }
 
-impl<'a> ChannelContract<'a> {
+impl<'a> Channels<'a> {
     pub fn new(storage: &'a mut dyn Storage) -> Self {
         Self { storage }
     }
@@ -46,10 +47,6 @@ impl<'a> ChannelContract<'a> {
             return Err(StdError::generic_err("Username already taken"));
         }
 
-        if CHANNEL_ID_TO_ONFT_ID.has(self.storage, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID already exists"));
-        }
-
         // Create and save channel details
         let channel_details = ChannelDetails {
             channel_id: channel_id.clone(),
@@ -65,4 +62,10 @@ impl<'a> ChannelContract<'a> {
 
         Ok(())
     }
+}
+
+#[cw_serde]
+pub struct ChannelOnftData {
+    pub channel_id: String,
+    pub user_name: String,
 }

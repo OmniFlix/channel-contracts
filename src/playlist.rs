@@ -1,12 +1,12 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, StdError, StdResult, Storage};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Map;
 
 pub type ChannelId = String;
 pub type PlaylistId = String;
 pub type UserName = String;
 pub type ChannelsCollectionId = String;
 
+pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
 #[cw_serde]
 pub struct Playlist {
     pub playlist_name: String,

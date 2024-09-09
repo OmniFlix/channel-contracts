@@ -1,9 +1,10 @@
+use crate::channels::{ChannelDetails, ChannelOnftData, Channels};
 use crate::error::ContractError;
 use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
+use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -103,23 +104,12 @@ fn register_channel(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    channel_id: String,
     salt: Binary,
+    description: String,
+    user_name: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
-
-    // Load the channels collection ID from the contract config
-    let channels_collection_id = CONFIG.load(deps.storage)?.channels_collection_id;
-
-    let c_nft = get_onft(
-        deps.as_ref(),
-        channels_collection_id.clone(),
-        channel_id.clone(),
-    )?;
-    if c_nft.is_some() {
-        return Err(ContractError::ChannelAlreadyExists {});
-    }
 
     // Generate a random channel onft ID
     let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
@@ -127,14 +117,35 @@ fn register_channel(
     // Generate a random channel ID
     let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
 
+    let mut channels = Channels::new(deps.storage);
+
+    // Add the new channel to the collection
+    // Checks for uniqueness of the channel ID and username
+    channels.add_channel(
+        channel_id.clone(),
+        info.sender.clone().to_string(),
+        onft_id.clone(),
+        description.clone(),
+    )?;
+
+    let onft_data = ChannelOnftData {
+        channel_id: channel_id.clone(),
+        user_name: user_name.clone(),
+    };
+
+    let string_onft_data =
+        serde_json::to_string(&onft_data).map_err(|_| ContractError::InvalidOnftData {})?;
+
     let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
         id: onft_id.clone(),
-        denom_id: channels_collection_id.clone(),
+        denom_id: CHANNELS_COLLECTION_ID.load(deps.storage)?,
         sender: env.contract.address.clone().to_string(),
         recipient: info.sender.clone().to_string(),
+        data: string_onft_data,
         ..Default::default()
     }
     .into();
+
     let response = Response::new()
         .add_message(mint_onft_msg)
         .add_attribute("action", "register_channel");

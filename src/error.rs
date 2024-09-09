@@ -3,6 +3,8 @@ use thiserror::Error;
 
 use crate::{helpers::OnftQuerierError, pauser::PauseError};
 
+use serde_json::Error as SerdeError;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -43,6 +45,9 @@ pub enum ContractError {
         expected: Vec<Coin>,
         received: Vec<Coin>,
     },
+
+    #[error("Invalid ONFT data")]
+    InvalidOnftData {},
 }
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {

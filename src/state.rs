@@ -12,15 +12,16 @@ pub type ChannelsCollectionId = String;
 
 // Define storage items
 pub const CHANNELS_COLLECTION_ID: Item<ChannelsCollectionId> = Item::new("channels_collection");
-pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_details");
-pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
+
 pub const CONFIG: Item<ChannelConractConfig> = Item::new("channel_registry_params");
 pub const AUTH_DETAILS: Item<AuthDetails> = Item::new("auth_details");
 
 pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
-pub const CHANNEL_ID_TO_USERNAME: Map<ChannelId, UserName> = Map::new("channel_id_to_username");
 
+pub const CHANNEL_ID_TO_USERNAME: Map<ChannelId, UserName> = Map::new("channel_id_to_username");
 pub const CHANNEL_ID_TO_ONFT_ID: Map<ChannelId, OnftId> = Map::new("channel_id_to_onft_id");
+pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_details");
+pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
 
 #[cw_serde]
 pub struct AuthDetails {
