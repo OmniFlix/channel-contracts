@@ -1,4 +1,4 @@
-use cosmwasm_std::{Binary, Env};
+use cosmwasm_std::{Binary, Env, StdError};
 use cosmwasm_std::{Coin, Deps, Uint128};
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
@@ -24,21 +24,26 @@ pub fn get_collection_creation_fee(deps: Deps) -> Coin {
     collection_creation_fee
 }
 
-#[derive(Error, Debug, PartialEq)]
-pub enum OnftQuerierError {
-    #[error("Asset not found")]
-    AssetNotFound {},
-}
-pub fn get_onft(
+pub fn get_onft_with_owner(
     deps: Deps,
     collection_id: String,
     onft_id: String,
-) -> Result<Option<Onft>, OnftQuerierError> {
+    owner: String,
+) -> Result<Onft, StdError> {
     let onft_querier = OnftQuerier::new(&deps.querier);
-    let onft = onft_querier
+    let onft_response = onft_querier
         .onft(collection_id, onft_id)
-        .map_err(|_| OnftQuerierError::AssetNotFound {})?;
-    Ok(onft.onft)
+        .map_err(|_| StdError::generic_err("Query ONFT failed"))?;
+
+    let onft = onft_response
+        .onft
+        .ok_or_else(|| StdError::generic_err("ONFT not found"))?;
+
+    if onft.owner != owner {
+        return Err(StdError::generic_err("ONFT not owned by the user"));
+    }
+
+    Ok(onft)
 }
 
 fn byte_to_alphanumeric(byte: u8) -> char {
@@ -74,7 +79,6 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
 mod tests {
     use super::*;
     use cosmwasm_std::testing::mock_env;
-    use omniflix_std::types::omniflix::onft;
 
     #[test]
     fn test_generate_publish_id() {

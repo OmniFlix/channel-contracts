@@ -41,18 +41,17 @@ impl<'a> Playlists<'a> {
     ) -> StdResult<()> {
         let mut playlist = PLAYLISTS
             .load(self.storage, (channel_id.clone(), playlist_name.clone()))
-            .unwrap();
+            .map_err(|_| StdError::generic_err("Playlist does not exist"))?;
+
         // Check if asset already exists in the playlist
         if playlist.assets.contains(&asset) {
             return Err(StdError::generic_err(
                 "Asset already exists in the playlist",
             ));
         }
-
         playlist.assets.push(asset);
-        PLAYLISTS
-            .save(self.storage, (channel_id, playlist_name), &playlist)
-            .unwrap();
+
+        PLAYLISTS.save(self.storage, (channel_id, playlist_name), &playlist)?;
         Ok(())
     }
 

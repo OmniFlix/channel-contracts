@@ -1,6 +1,8 @@
 use crate::channels::{ChannelOnftData, Channels};
 use crate::error::ContractError;
-use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
+use crate::helpers::{
+    generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
+};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
 use crate::playlist::{Asset, Playlists};
@@ -192,30 +194,20 @@ fn publish(
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
-    let channel_onft = get_onft(
+    let channel_onft = get_onft_with_owner(
         deps.as_ref(),
         channels_collection_id.clone(),
         channel_onft_id,
+        info.sender.clone().to_string(),
     )?;
-    if channel_onft.is_none() {
-        return Err(ContractError::ChannelOnftNotFound {});
-    };
-    if channel_onft.unwrap().owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // Find and validate the asset being published
-    let asset_onft = get_onft(
+    let asset_onft = get_onft_with_owner(
         deps.as_ref(),
         asset_onft_collection_id.clone(),
         asset_onft_id.clone(),
+        info.sender.clone().to_string(),
     )?;
-    if asset_onft.is_none() {
-        return Err(ContractError::InvalidOnftData {});
-    };
-    if asset_onft.unwrap().owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
@@ -262,18 +254,12 @@ fn create_playlist(
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
-    let channel_onft = get_onft(
+    let channel_onft = get_onft_with_owner(
         deps.as_ref(),
         channels_collection_id.clone(),
         channel_onft_id,
+        info.sender.clone().to_string(),
     )?;
-
-    if channel_onft.is_none() {
-        return Err(ContractError::ChannelOnftNotFound {});
-    };
-    if channel_onft.unwrap().owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
 
     let mut playlists = Playlists::new(deps.storage);
     playlists.add_new_playlist(channel_id.clone(), playlist_id.clone())?;
@@ -345,19 +331,12 @@ fn set_channel_details(
     let channel_onft_id = channel_details.onft_id;
     channels.set_channel_details(channel_id.clone(), description.clone())?;
 
-    let channel_onft = get_onft(
+    let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
         channels_collection_id.clone(),
         channel_onft_id,
+        info.sender.clone().to_string(),
     )?;
-
-    if channel_onft.is_none() {
-        return Err(ContractError::ChannelOnftNotFound {});
-    };
-
-    if channel_onft.unwrap().owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
 
     let response = Response::new()
         .add_attribute("action", "set_channel_details")

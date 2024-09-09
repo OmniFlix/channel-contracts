@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, StdError, StdResult, Storage};
 use cw_storage_plus::Map;
 
 pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
@@ -67,12 +67,6 @@ impl<'a> Channels<'a> {
         let channel_details = CHANNELDETAILS.load(self.storage, channel_id)?;
         Ok(channel_details)
     }
-
-    // Check if the channel ID exists
-    pub fn channel_exists(&self, channel_id: ChannelId) -> bool {
-        CHANNELDETAILS.has(self.storage, channel_id)
-    }
-
     pub fn set_channel_details(
         &mut self,
         channel_id: ChannelId,

@@ -1,10 +1,7 @@
 use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
-use crate::{helpers::OnftQuerierError, pauser::PauseError};
-
-use serde_json::Error as SerdeError;
-
+use crate::pauser::PauseError;
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -12,9 +9,6 @@ pub enum ContractError {
 
     #[error(transparent)]
     Pause(#[from] PauseError),
-
-    #[error("{0}")]
-    OnftQuerierError(#[from] OnftQuerierError),
 
     #[error("Unauthorized")]
     Unauthorized {},
@@ -39,6 +33,9 @@ pub enum ContractError {
 
     #[error("Channel already exists")]
     ChannelAlreadyExists {},
+
+    #[error("Channel not found")]
+    ChannelNotFound {},
 
     #[error("Payment error")]
     PaymentError {
