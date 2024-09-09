@@ -44,4 +44,21 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     IsPaused {},
     Pausers {},
+    ChannelDetails {
+        channel_id: String,
+    },
+    ChannelId {
+        user_name: String,
+    },
+    ChannelOwner {
+        channel_id: String,
+    },
+    Playlist {
+        channel_id: String,
+        playlist_id: String,
+    },
+    Channels {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }

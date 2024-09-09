@@ -369,6 +369,14 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::IsPaused {} => todo!(),
         QueryMsg::Pausers {} => todo!(),
+        QueryMsg::ChannelDetails { channel_id } => todo!(),
+        QueryMsg::Playlist {
+            channel_id,
+            playlist_id,
+        } => todo!(),
+        QueryMsg::Channels { start_after, limit } => todo!(),
+        QueryMsg::ChannelId { user_name } => todo!(),
+        QueryMsg::ChannelOwner { channel_id } => todo!(),
     }
 }
 
