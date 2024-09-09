@@ -48,6 +48,9 @@ pub enum ContractError {
 
     #[error("Invalid ONFT data")]
     InvalidOnftData {},
+
+    #[error("Asset to be published not found")]
+    AssetNotFound {},
 }
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {

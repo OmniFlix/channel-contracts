@@ -81,21 +81,9 @@ impl<'a> Playlists<'a> {
     }
 }
 
-// impl Playlist {
-//     pub fn new(playlist_name: String) -> Self {
-//         Self {
-//             playlist_name,
-//             assets: vec![],
-//         }
-//     }
-
-//     // Add an asset to the playlist
-//     pub fn add_asset(&mut self, asset: Asset) {
-//         self.assets.push(asset);
-//     }
-// }
-
 #[cw_serde]
 pub struct Asset {
     pub publish_id: String,
+    pub collection_id: String,
+    pub onft_id: String,
 }

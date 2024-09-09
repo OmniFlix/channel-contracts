@@ -3,7 +3,7 @@ use crate::error::ContractError;
 use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::playlist::Playlists;
+use crate::playlist::{Asset, Playlists};
 use crate::state::CONFIG;
 use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
@@ -154,6 +154,60 @@ fn register_channel(
     let response = Response::new()
         .add_message(mint_onft_msg)
         .add_attribute("action", "register_channel");
+    Ok(response)
+}
+fn publish(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    asset_onft_collection_id: String,
+    asset_onft_id: String,
+    salt: Binary,
+    channel_id: String,
+    playlist_id: Option<String>,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    // Find and validate the asset being published
+    let asset_onft = get_onft(
+        deps.as_ref(),
+        asset_onft_collection_id.clone(),
+        asset_onft_id.clone(),
+    )?;
+    if asset_onft.is_none() {
+        return Err(ContractError::InvalidOnftData {});
+    };
+    if asset_onft.unwrap().owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
+
+    let asset = Asset {
+        publish_id: publish_id.clone(),
+        collection_id: asset_onft_collection_id.clone(),
+        onft_id: asset_onft_id.clone(),
+    };
+
+    let mut playlists = Playlists::new(deps.storage);
+    playlists.add_asset_to_playlist(channel_id.clone(), "My Videos".to_string(), asset.clone())?;
+
+    if let Some(playlist_id) = playlist_id.clone() {
+        playlists.add_asset_to_playlist(channel_id.clone(), playlist_id.clone(), asset.clone())?;
+    }
+
+    let response = Response::new()
+        .add_attribute("action", "publish")
+        .add_attribute("publish_id", publish_id)
+        .add_attribute("channel_id", channel_id)
+        .add_attribute(
+            "playlist_id",
+            playlist_id.unwrap_or("My Videos".to_string()),
+        )
+        .add_attribute("asset_onft_collection_id", asset_onft_collection_id)
+        .add_attribute("asset_onft_id", asset_onft_id);
+
     Ok(response)
 }
 
