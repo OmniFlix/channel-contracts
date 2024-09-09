@@ -1,4 +1,4 @@
-use crate::channels::{ChannelDetails, ChannelOnftData, Channels};
+use crate::channels::{ChannelOnftData, Channels};
 use crate::error::ContractError;
 use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -9,7 +9,7 @@ use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    ensure_eq, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -98,6 +98,10 @@ pub fn execute(
             channel_id,
         } => todo!(),
         ExecuteMsg::RegisterChannel { channel_id, salt } => todo!(),
+        ExecuteMsg::SetChannelDetails {
+            channel_id,
+            description,
+        } => todo!(),
     }
 }
 
@@ -169,6 +173,24 @@ fn publish(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
+    // Find and validate the channel being published to is owned by the sender
+    let channels = Channels::new(deps.storage);
+    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
+
+    let channel_onft = get_onft(
+        deps.as_ref(),
+        channels_collection_id.clone(),
+        channel_onft_id,
+    )?;
+    if channel_onft.is_none() {
+        return Err(ContractError::ChannelOnftNotFound {});
+    };
+    if channel_onft.unwrap().owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
     // Find and validate the asset being published
     let asset_onft = get_onft(
         deps.as_ref(),
@@ -207,6 +229,127 @@ fn publish(
         )
         .add_attribute("asset_onft_collection_id", asset_onft_collection_id)
         .add_attribute("asset_onft_id", asset_onft_id);
+
+    Ok(response)
+}
+
+fn create_playlist(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    channel_id: String,
+    playlist_id: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    // Find and validate the channel being published to is owned by the sender
+    let channels = Channels::new(deps.storage);
+    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
+
+    let channel_onft = get_onft(
+        deps.as_ref(),
+        channels_collection_id.clone(),
+        channel_onft_id,
+    )?;
+
+    if channel_onft.is_none() {
+        return Err(ContractError::ChannelOnftNotFound {});
+    };
+    if channel_onft.unwrap().owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut playlists = Playlists::new(deps.storage);
+    playlists.add_new_playlist(channel_id.clone(), playlist_id.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "create_playlist")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("playlist_id", playlist_id);
+
+    Ok(response)
+}
+
+fn pause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.pause(deps.storage, &info.sender)?;
+
+    let response = Response::new()
+        .add_attribute("action", "pause")
+        .add_attribute("pauser", info.sender.clone().to_string());
+    Ok(response)
+}
+
+fn unpause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.unpause(deps.storage, &info.sender)?;
+
+    let response = Response::new()
+        .add_attribute("action", "unpause")
+        .add_attribute("pauser", info.sender.clone().to_string());
+    Ok(response)
+}
+
+fn set_pausers(
+    deps: DepsMut,
+    info: MessageInfo,
+    pausers: Vec<String>,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    // Validate pauser addresses
+    let validated_pausers: Vec<Addr> = pausers
+        .iter()
+        .map(|pauser| deps.api.addr_validate(pauser))
+        .collect::<Result<Vec<Addr>, _>>()?;
+
+    for pauser in pausers.clone() {
+        deps.api.addr_validate(&pauser)?;
+    }
+    pause_state.set_pausers(deps.storage, info.sender.clone(), validated_pausers)?;
+
+    let response = Response::new()
+        .add_attribute("action", "set_pausers")
+        .add_attribute("pauser", info.sender.clone().to_string());
+    Ok(response)
+}
+
+fn set_channel_details(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    description: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    // Find and validate the channel is owned by the sender
+    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
+    let mut channels = Channels::new(deps.storage);
+    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    channels.set_channel_details(channel_id.clone(), description.clone())?;
+
+    let channel_onft = get_onft(
+        deps.as_ref(),
+        channels_collection_id.clone(),
+        channel_onft_id,
+    )?;
+
+    if channel_onft.is_none() {
+        return Err(ContractError::ChannelOnftNotFound {});
+    };
+
+    if channel_onft.unwrap().owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let response = Response::new()
+        .add_attribute("action", "set_channel_details")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("description", description);
 
     Ok(response)
 }

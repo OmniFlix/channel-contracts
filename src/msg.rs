@@ -33,6 +33,10 @@ pub enum ExecuteMsg {
         channel_id: String,
         salt: Binary,
     },
+    SetChannelDetails {
+        channel_id: String,
+        description: String,
+    },
 }
 
 #[cw_serde]

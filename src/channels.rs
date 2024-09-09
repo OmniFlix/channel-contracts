@@ -62,6 +62,34 @@ impl<'a> Channels<'a> {
 
         Ok(())
     }
+
+    pub fn get_channel_details(&self, channel_id: ChannelId) -> Result<ChannelDetails, StdError> {
+        let channel_details = CHANNELDETAILS.load(self.storage, channel_id)?;
+        Ok(channel_details)
+    }
+
+    // Check if the channel ID exists
+    pub fn channel_exists(&self, channel_id: ChannelId) -> bool {
+        CHANNELDETAILS.has(self.storage, channel_id)
+    }
+
+    pub fn set_channel_details(
+        &mut self,
+        channel_id: ChannelId,
+        description: String,
+    ) -> StdResult<()> {
+        // Check if the channel ID exists
+        if !CHANNELDETAILS.has(self.storage, channel_id.clone()) {
+            return Err(StdError::generic_err("Channel ID does not exist"));
+        }
+
+        // Update the channel details
+        let mut channel_details = CHANNELDETAILS.load(self.storage, channel_id.clone())?;
+        channel_details.description = description;
+        CHANNELDETAILS.save(self.storage, channel_id, &channel_details)?;
+
+        Ok(())
+    }
 }
 
 #[cw_serde]

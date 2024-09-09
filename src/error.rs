@@ -51,6 +51,9 @@ pub enum ContractError {
 
     #[error("Asset to be published not found")]
     AssetNotFound {},
+
+    #[error("Channel Onft not found")]
+    ChannelOnftNotFound {},
 }
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {
