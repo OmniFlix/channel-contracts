@@ -83,25 +83,38 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Pause {} => todo!(),
-        ExecuteMsg::Unpause {} => todo!(),
-        ExecuteMsg::SetPausers { pausers } => todo!(),
+        ExecuteMsg::Pause {} => pause(deps, info),
+        ExecuteMsg::Unpause {} => unpause(deps, info),
+        ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
         ExecuteMsg::Publish {
-            onft_collection_id,
-            onft_id,
+            asset_onft_collection_id,
+            asset_onft_id,
             salt,
             channel_id,
             playlist_id,
-        } => todo!(),
+        } => publish(
+            deps,
+            env,
+            info,
+            asset_onft_collection_id,
+            asset_onft_id,
+            salt,
+            channel_id,
+            playlist_id,
+        ),
         ExecuteMsg::CreatePlaylist {
             playlist_id,
             channel_id,
-        } => todo!(),
-        ExecuteMsg::RegisterChannel { channel_id, salt } => todo!(),
+        } => create_playlist(deps, env, info, channel_id, playlist_id),
+        ExecuteMsg::RegisterChannel {
+            user_name,
+            salt,
+            description,
+        } => register_channel(deps, env, info, salt, description, user_name),
         ExecuteMsg::SetChannelDetails {
             channel_id,
             description,
-        } => todo!(),
+        } => set_channel_details(deps, info, channel_id, description),
     }
 }
 

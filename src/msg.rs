@@ -19,8 +19,8 @@ pub enum ExecuteMsg {
         pausers: Vec<String>,
     },
     Publish {
-        onft_collection_id: String,
-        onft_id: String,
+        asset_onft_collection_id: String,
+        asset_onft_id: String,
         salt: Binary,
         channel_id: String,
         playlist_id: Option<String>,
@@ -30,8 +30,9 @@ pub enum ExecuteMsg {
         channel_id: String,
     },
     RegisterChannel {
-        channel_id: String,
         salt: Binary,
+        user_name: String,
+        description: String,
     },
     SetChannelDetails {
         channel_id: String,
