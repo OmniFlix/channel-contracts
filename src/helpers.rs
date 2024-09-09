@@ -6,7 +6,8 @@ use rand_core::{RngCore, SeedableRng};
 use rand_xoshiro::Xoshiro128PlusPlus;
 use sha2::{Digest, Sha256};
 use std::str::FromStr;
-use thiserror::Error;
+
+use crate::channels::ChannelDetails;
 
 pub fn get_collection_creation_fee(deps: Deps) -> Coin {
     let onft_querier = OnftQuerier::new(&deps.querier);
@@ -73,6 +74,24 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     }
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
+}
+
+pub fn validate_channel_details(channel_details: ChannelDetails) -> Result<(), StdError> {
+    let user_name = channel_details.user_name;
+    let description = channel_details.description;
+
+    if user_name.len() < 3 || user_name.len() > 32 {
+        return Err(StdError::generic_err(
+            "Username must be between 3 and 32 characters",
+        ));
+    }
+
+    if description.len() < 3 || description.len() > 256 {
+        return Err(StdError::generic_err(
+            "Description must be between 3 and 256 characters",
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

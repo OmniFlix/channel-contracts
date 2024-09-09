@@ -20,6 +20,40 @@ pub struct ChannelDetails {
     pub description: String,
 }
 
+impl ChannelDetails {
+    pub fn new(
+        channel_id: String,
+        user_name: String,
+        onft_id: String,
+        description: String,
+    ) -> Self {
+        Self {
+            channel_id,
+            user_name,
+            onft_id,
+            description,
+        }
+    }
+
+    pub fn validate_channel_details(&self) -> Result<(), StdError> {
+        let user_name = &self.user_name;
+        let description = &self.description;
+
+        if user_name.len() < 3 || user_name.len() > 32 {
+            return Err(StdError::generic_err(
+                "Username must be between 3 and 32 characters",
+            ));
+        }
+
+        if description.len() < 3 || description.len() > 256 {
+            return Err(StdError::generic_err(
+                "Description must be between 3 and 256 characters",
+            ));
+        }
+        Ok(())
+    }
+}
+
 pub struct Channels<'a> {
     pub storage: &'a mut dyn Storage,
 }
@@ -35,7 +69,7 @@ impl<'a> Channels<'a> {
         channel_id: ChannelId,
         user_name: UserName,
         onft_id: String,
-        description: String,
+        channel_details: ChannelDetails,
     ) -> StdResult<()> {
         // Check if the channel ID already exists
         if CHANNELDETAILS.has(self.storage, channel_id.clone()) {
@@ -48,12 +82,6 @@ impl<'a> Channels<'a> {
         }
 
         // Create and save channel details
-        let channel_details = ChannelDetails {
-            channel_id: channel_id.clone(),
-            user_name: user_name.clone(),
-            onft_id,
-            description,
-        };
         CHANNELDETAILS.save(self.storage, channel_id.clone(), &channel_details)?;
 
         // Map username to channel ID and channel ID to username
@@ -70,16 +98,12 @@ impl<'a> Channels<'a> {
     pub fn set_channel_details(
         &mut self,
         channel_id: ChannelId,
-        description: String,
+        channel_details: ChannelDetails,
     ) -> StdResult<()> {
         // Check if the channel ID exists
         if !CHANNELDETAILS.has(self.storage, channel_id.clone()) {
             return Err(StdError::generic_err("Channel ID does not exist"));
         }
-
-        // Update the channel details
-        let mut channel_details = CHANNELDETAILS.load(self.storage, channel_id.clone())?;
-        channel_details.description = description;
         CHANNELDETAILS.save(self.storage, channel_id, &channel_details)?;
 
         Ok(())

@@ -1,4 +1,4 @@
-use crate::channels::{ChannelOnftData, Channels};
+use crate::channels::{ChannelDetails, ChannelOnftData, Channels};
 use crate::error::ContractError;
 use crate::helpers::{
     generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
@@ -139,13 +139,21 @@ fn register_channel(
 
     let mut channels = Channels::new(deps.storage);
 
+    let channel_details = ChannelDetails::new(
+        channel_id.clone(),
+        user_name.clone(),
+        onft_id.clone(),
+        description.clone(),
+    );
+    channel_details.clone().validate_channel_details()?;
+
     // Add the new channel to the collection
     // Checks for uniqueness of the channel ID and username
     channels.add_channel(
         channel_id.clone(),
         info.sender.clone().to_string(),
         onft_id.clone(),
-        description.clone(),
+        channel_details.clone(),
     )?;
 
     // Initilize new playlist
@@ -254,7 +262,7 @@ fn create_playlist(
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
-    let channel_onft = get_onft_with_owner(
+    let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
         channels_collection_id.clone(),
         channel_onft_id,
@@ -321,22 +329,32 @@ fn set_channel_details(
     channel_id: String,
     description: String,
 ) -> Result<Response, ContractError> {
+    // First, handle pause state and immutable querying
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
-    // Find and validate the channel is owned by the sender
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
-    let mut channels = Channels::new(deps.storage);
+
+    let channels = Channels::new(deps.storage);
     let channel_details = channels.get_channel_details(channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    channels.set_channel_details(channel_id.clone(), description.clone())?;
+    let channel_onft_id = channel_details.onft_id.clone();
 
     let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
         channels_collection_id.clone(),
         channel_onft_id,
-        info.sender.clone().to_string(),
+        info.sender.to_string(),
     )?;
+
+    let mut channels = Channels::new(deps.storage); // Re-borrow mutably
+    let mut channel_details = channels.get_channel_details(channel_id.clone())?;
+
+    // Update and validate the details
+    channel_details.description = description.clone();
+    channel_details.validate_channel_details()?;
+
+    // Save updated channel details
+    channels.set_channel_details(channel_id.clone(), channel_details)?;
 
     let response = Response::new()
         .add_attribute("action", "set_channel_details")
