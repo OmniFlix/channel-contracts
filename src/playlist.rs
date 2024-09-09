@@ -1,31 +1,99 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{StdError, StdResult};
 use cw_storage_plus::Map;
 
 pub type ChannelId = String;
-pub type PlaylistId = String;
+pub type PlaylistName = String;
 pub type UserName = String;
 pub type ChannelsCollectionId = String;
 
-pub const PLAYLISTS: Map<(ChannelId, PlaylistId), Playlist> = Map::new("playlists");
+pub const PLAYLISTS: Map<(ChannelId, PlaylistName), Playlist> = Map::new("playlists");
 #[cw_serde]
 pub struct Playlist {
-    pub playlist_name: String,
     pub assets: Vec<Asset>,
 }
 
-impl Playlist {
-    pub fn new(playlist_name: String) -> Self {
-        Self {
-            playlist_name,
-            assets: vec![],
-        }
+pub struct Playlists<'a> {
+    pub storage: &'a mut dyn cosmwasm_std::Storage,
+}
+
+impl<'a> Playlists<'a> {
+    pub fn new(storage: &'a mut dyn cosmwasm_std::Storage) -> Self {
+        Self { storage }
     }
 
-    // Add an asset to the playlist
-    pub fn add_asset(&mut self, asset: Asset) {
-        self.assets.push(asset);
+    pub fn initilize_playlist_for_new_channel(&mut self, channel_id: ChannelId) {
+        let playlist = Playlist { assets: vec![] };
+        PLAYLISTS
+            .save(
+                self.storage,
+                (channel_id, "My Videos".to_string()),
+                &playlist,
+            )
+            .unwrap();
+    }
+
+    pub fn add_asset_to_playlist(
+        &mut self,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+        asset: Asset,
+    ) -> StdResult<()> {
+        let mut playlist = PLAYLISTS
+            .load(self.storage, (channel_id.clone(), playlist_name.clone()))
+            .unwrap();
+        // Check if asset already exists in the playlist
+        if playlist.assets.contains(&asset) {
+            return Err(StdError::generic_err(
+                "Asset already exists in the playlist",
+            ));
+        }
+
+        playlist.assets.push(asset);
+        PLAYLISTS
+            .save(self.storage, (channel_id, playlist_name), &playlist)
+            .unwrap();
+        Ok(())
+    }
+
+    pub fn get_playlist(&self, channel_id: ChannelId, playlist_name: PlaylistName) -> Playlist {
+        PLAYLISTS
+            .load(self.storage, (channel_id, playlist_name))
+            .unwrap()
+    }
+
+    pub fn add_new_playlist(
+        &mut self,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+    ) -> StdResult<()> {
+        let playlist = Playlist { assets: vec![] };
+        // Check if playlist already exists
+        if PLAYLISTS.has(self.storage, (channel_id.clone(), playlist_name.clone())) {
+            return Err(StdError::generic_err("Playlist already exists"));
+        }
+
+        PLAYLISTS
+            .save(self.storage, (channel_id, playlist_name), &playlist)
+            .unwrap();
+
+        Ok(())
     }
 }
+
+// impl Playlist {
+//     pub fn new(playlist_name: String) -> Self {
+//         Self {
+//             playlist_name,
+//             assets: vec![],
+//         }
+//     }
+
+//     // Add an asset to the playlist
+//     pub fn add_asset(&mut self, asset: Asset) {
+//         self.assets.push(asset);
+//     }
+// }
 
 #[cw_serde]
 pub struct Asset {

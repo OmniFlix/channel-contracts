@@ -3,6 +3,7 @@ use crate::error::ContractError;
 use crate::helpers::{generate_random_id_with_prefix, get_collection_creation_fee, get_onft};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
+use crate::playlist::Playlists;
 use crate::state::CONFIG;
 use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
@@ -127,6 +128,10 @@ fn register_channel(
         onft_id.clone(),
         description.clone(),
     )?;
+
+    // Initilize new playlist
+    let mut playlists = Playlists::new(deps.storage);
+    playlists.initilize_playlist_for_new_channel(channel_id.clone());
 
     let onft_data = ChannelOnftData {
         channel_id: channel_id.clone(),
