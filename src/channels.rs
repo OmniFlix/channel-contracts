@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, StdError, StdResult, Storage};
-use cw_storage_plus::Map;
+use cw_storage_plus::{Bound, Map};
 
 pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
 
@@ -92,7 +92,9 @@ impl<'a> Channels<'a> {
     }
 
     pub fn get_channel_details(&self, channel_id: ChannelId) -> Result<ChannelDetails, StdError> {
-        let channel_details = CHANNELDETAILS.load(self.storage, channel_id)?;
+        let channel_details = CHANNELDETAILS
+            .load(self.storage, channel_id)
+            .or_else(|_| Err(StdError::generic_err("Channel ID does not exist")))?;
         Ok(channel_details)
     }
     pub fn set_channel_details(
@@ -107,6 +109,29 @@ impl<'a> Channels<'a> {
         CHANNELDETAILS.save(self.storage, channel_id, &channel_details)?;
 
         Ok(())
+    }
+
+    pub fn get_channels_list(
+        &self,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<Vec<ChannelDetails>, StdError> {
+        // Define the default limit, if no limit is provided
+        let limit = limit.unwrap_or(25) as usize;
+
+        // Set the start point for pagination (exclusive start)
+        let start = start_after.map(Bound::exclusive);
+
+        CHANNELDETAILS
+            .range(self.storage, start, None, cosmwasm_std::Order::Ascending)
+            .take(limit) // Apply the limit
+            .map(|item| {
+                // Handle each result, map errors to StdError
+                item.map(|(_, details)| details).map_err(|err| {
+                    StdError::generic_err(format!("Error loading channel details: {}", err))
+                })
+            })
+            .collect() // Collect the results into a Vec<ChannelDetails> or return the first error encountered
     }
 }
 

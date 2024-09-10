@@ -365,7 +365,7 @@ fn set_channel_details(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(_deps: DepsMut, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::IsPaused {} => todo!(),
         QueryMsg::Pausers {} => todo!(),
@@ -378,6 +378,25 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ChannelId { user_name } => todo!(),
         QueryMsg::ChannelOwner { channel_id } => todo!(),
     }
+}
+
+fn query_channel_details(
+    deps: DepsMut,
+    channel_id: String,
+) -> Result<ChannelDetails, ContractError> {
+    let channels = Channels::new(deps.storage);
+    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    Ok(channel_details)
+}
+
+fn query_channels(
+    deps: DepsMut,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<ChannelDetails>, ContractError> {
+    let channels = Channels::new(deps.storage);
+    let channels_list = channels.get_channels_list(start_after, limit)?;
+    Ok(channels_list)
 }
 
 #[cfg(test)]
