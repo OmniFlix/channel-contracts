@@ -8,6 +8,7 @@ pub type UserName = String;
 pub type ChannelsCollectionId = String;
 
 pub const PLAYLISTS: Map<(ChannelId, PlaylistName), Playlist> = Map::new("playlists");
+const DEFAULT_PLAYLIST_NAME: &str = "My Videos";
 #[cw_serde]
 pub struct Playlist {
     pub assets: Vec<Asset>,
@@ -27,7 +28,7 @@ impl<'a> Playlists<'a> {
         PLAYLISTS
             .save(
                 self.storage,
-                (channel_id, "My Videos".to_string()),
+                (channel_id, DEFAULT_PLAYLIST_NAME.to_string()),
                 &playlist,
             )
             .unwrap();
@@ -89,6 +90,9 @@ impl<'a> Playlists<'a> {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
     ) -> StdResult<()> {
+        if playlist_name == DEFAULT_PLAYLIST_NAME {
+            return Err(StdError::generic_err("Cannot delete default playlist"));
+        }
         PLAYLISTS.remove(self.storage, (channel_id, playlist_name));
         Ok(())
     }

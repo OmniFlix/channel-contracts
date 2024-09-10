@@ -119,6 +119,10 @@ pub fn execute(
             channel_id,
             description,
         } => set_channel_details(deps, info, channel_id, description),
+        ExecuteMsg::RemovePlaylist {
+            playlist_id,
+            channel_id,
+        } => remove_playlist(deps, info, channel_id, playlist_id),
     }
 }
 
@@ -362,6 +366,38 @@ fn set_channel_details(
         .add_attribute("action", "set_channel_details")
         .add_attribute("channel_id", channel_id)
         .add_attribute("description", description);
+
+    Ok(response)
+}
+
+fn remove_playlist(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    playlist_id: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let channels = Channels::new(deps.storage);
+    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
+
+    let _channel_onft = get_onft_with_owner(
+        deps.as_ref(),
+        channels_collection_id.clone(),
+        channel_onft_id,
+        info.sender.clone().to_string(),
+    )?;
+
+    let mut playlists = Playlists::new(deps.storage);
+    playlists.remove_playlist(channel_id.clone(), playlist_id.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "remove_playlist")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("playlist_id", playlist_id);
 
     Ok(response)
 }

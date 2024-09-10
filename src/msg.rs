@@ -29,6 +29,10 @@ pub enum ExecuteMsg {
         playlist_id: String,
         channel_id: String,
     },
+    RemovePlaylist {
+        playlist_id: String,
+        channel_id: String,
+    },
     RegisterChannel {
         salt: Binary,
         user_name: String,

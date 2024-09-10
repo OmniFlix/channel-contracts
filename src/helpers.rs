@@ -31,6 +31,8 @@ pub fn get_onft_with_owner(
     onft_id: String,
     owner: String,
 ) -> Result<Onft, StdError> {
+    // Return the ONFT if it exists and is owned by the user
+    // Else, return an error
     let onft_querier = OnftQuerier::new(&deps.querier);
     let onft_response = onft_querier
         .onft(collection_id, onft_id)
