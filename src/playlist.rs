@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdError, StdResult};
-use cw_storage_plus::Map;
+use cw_storage_plus::{Bound, Map};
 
 pub type ChannelId = String;
 pub type PlaylistName = String;
@@ -82,6 +82,65 @@ impl<'a> Playlists<'a> {
             .unwrap();
 
         Ok(())
+    }
+
+    pub fn remove_playlist(
+        &mut self,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+    ) -> StdResult<()> {
+        PLAYLISTS.remove(self.storage, (channel_id, playlist_name));
+        Ok(())
+    }
+
+    pub fn remove_asset_from_playlist(
+        &mut self,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+        asset: Asset,
+    ) -> StdResult<()> {
+        let mut playlist = PLAYLISTS
+            .load(self.storage, (channel_id.clone(), playlist_name.clone()))
+            .map_err(|_| StdError::generic_err("Playlist does not exist"))?;
+
+        // Check if asset exists in the playlist
+        if !playlist.assets.contains(&asset) {
+            return Err(StdError::generic_err(
+                "Asset does not exist in the playlist",
+            ));
+        }
+
+        playlist.assets.retain(|a| a != &asset);
+
+        PLAYLISTS.save(self.storage, (channel_id, playlist_name), &playlist)?;
+        Ok(())
+    }
+    pub fn get_all_playlists(
+        &self,
+        channel_id: ChannelId,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Vec<Playlist> {
+        let limit = limit.unwrap_or(25);
+        let start_after = start_after.map(Bound::exclusive);
+        let playlists = PLAYLISTS
+            .prefix(channel_id)
+            .range(
+                self.storage,
+                start_after,
+                None,
+                cosmwasm_std::Order::Ascending,
+            )
+            .take(limit as usize)
+            .map(|item| {
+                item.map_err(|e| {
+                    StdError::generic_err(format!("Error reading from storage: {}", e))
+                })
+            })
+            .map(|item| item.unwrap().1)
+            .collect::<Vec<Playlist>>();
+
+        playlists
     }
 }
 

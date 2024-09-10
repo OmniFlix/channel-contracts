@@ -94,6 +94,11 @@ impl<'a> PauseState<'a> {
         let is_paused = self.paused.load(storage).unwrap_or(false);
         Ok(is_paused)
     }
+
+    pub fn get_pausers(&self, storage: &dyn Storage) -> Result<Vec<Addr>, PauseError> {
+        let pausers = self.pausers.load(storage).unwrap_or_default();
+        Ok(pausers)
+    }
 }
 
 #[cfg(test)]

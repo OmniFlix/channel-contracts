@@ -50,14 +50,16 @@ pub enum QueryMsg {
     ChannelId {
         user_name: String,
     },
-    ChannelOwner {
-        channel_id: String,
-    },
     Playlist {
         channel_id: String,
         playlist_id: String,
     },
     Channels {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    Playlists {
+        channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },

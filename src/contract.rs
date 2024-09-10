@@ -11,8 +11,10 @@ use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    ensure_eq, to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult,
 };
+use omniflix_std::types::cosmos::base::query;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -365,18 +367,26 @@ fn set_channel_details(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: DepsMut, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: DepsMut, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::IsPaused {} => todo!(),
-        QueryMsg::Pausers {} => todo!(),
-        QueryMsg::ChannelDetails { channel_id } => todo!(),
+        QueryMsg::IsPaused {} => to_json_binary(&query_is_paused(deps)?),
+        QueryMsg::Pausers {} => to_json_binary(&query_pausers(deps)?),
+        QueryMsg::ChannelDetails { channel_id } => {
+            to_json_binary(&query_channel_details(deps, channel_id)?)
+        }
         QueryMsg::Playlist {
             channel_id,
             playlist_id,
-        } => todo!(),
-        QueryMsg::Channels { start_after, limit } => todo!(),
-        QueryMsg::ChannelId { user_name } => todo!(),
-        QueryMsg::ChannelOwner { channel_id } => todo!(),
+        } => to_json_binary(&query_playlist(deps, channel_id, playlist_id)?),
+        QueryMsg::Channels { start_after, limit } => {
+            to_json_binary(&query_channels(deps, start_after, limit)?)
+        }
+        QueryMsg::ChannelId { user_name } => to_json_binary(&query_channel_id(deps, user_name)?),
+        QueryMsg::Playlists {
+            channel_id,
+            start_after,
+            limit,
+        } => to_json_binary(&query_playlists(deps, channel_id, start_after, limit)?),
     }
 }
 
@@ -407,6 +417,35 @@ fn query_playlist(
     let playlists = Playlists::new(deps.storage);
     let playlist = playlists.get_playlist(channel_id.clone(), playlist_id.clone())?;
     Ok(playlist)
+}
+
+fn query_playlists(
+    deps: DepsMut,
+    channel_id: String,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<Playlist>, ContractError> {
+    let playlists = Playlists::new(deps.storage);
+    let playlists_list = playlists.get_all_playlists(channel_id.clone(), start_after, limit);
+    Ok(playlists_list)
+}
+
+fn query_channel_id(deps: DepsMut, user_name: String) -> Result<String, ContractError> {
+    let channels = Channels::new(deps.storage);
+    let channel_id = channels.get_channel_id(user_name.clone())?;
+    Ok(channel_id)
+}
+
+fn query_is_paused(deps: DepsMut) -> Result<bool, ContractError> {
+    let pause_state = PauseState::new()?;
+    let is_paused = pause_state.is_paused(deps.storage)?;
+    Ok(is_paused)
+}
+
+fn query_pausers(deps: DepsMut) -> Result<Vec<Addr>, ContractError> {
+    let pause_state = PauseState::new()?;
+    let pausers = pause_state.get_pausers(deps.storage)?;
+    Ok(pausers)
 }
 
 #[cfg(test)]

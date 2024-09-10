@@ -133,6 +133,13 @@ impl<'a> Channels<'a> {
             })
             .collect() // Collect the results into a Vec<ChannelDetails> or return the first error encountered
     }
+
+    pub fn get_channel_id(&self, user_name: UserName) -> Result<ChannelId, StdError> {
+        let channel_id = USERNAME_TO_CHANNEL_ID
+            .load(self.storage, user_name)
+            .or_else(|_| Err(StdError::generic_err("Username does not exist")))?;
+        Ok(channel_id)
+    }
 }
 
 #[cw_serde]
