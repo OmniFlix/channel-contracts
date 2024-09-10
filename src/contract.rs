@@ -5,7 +5,7 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::playlist::{Asset, Playlists};
+use crate::playlist::{self, Asset, Playlist, Playlists};
 use crate::state::CONFIG;
 use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
@@ -397,6 +397,16 @@ fn query_channels(
     let channels = Channels::new(deps.storage);
     let channels_list = channels.get_channels_list(start_after, limit)?;
     Ok(channels_list)
+}
+
+fn query_playlist(
+    deps: DepsMut,
+    channel_id: String,
+    playlist_id: String,
+) -> Result<Playlist, ContractError> {
+    let playlists = Playlists::new(deps.storage);
+    let playlist = playlists.get_playlist(channel_id.clone(), playlist_id.clone())?;
+    Ok(playlist)
 }
 
 #[cfg(test)]

@@ -55,10 +55,15 @@ impl<'a> Playlists<'a> {
         Ok(())
     }
 
-    pub fn get_playlist(&self, channel_id: ChannelId, playlist_name: PlaylistName) -> Playlist {
-        PLAYLISTS
+    pub fn get_playlist(
+        &self,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+    ) -> Result<Playlist, StdError> {
+        let playlist = PLAYLISTS
             .load(self.storage, (channel_id, playlist_name))
-            .unwrap()
+            .or_else(|_| Err(StdError::generic_err("Playlist does not exist")))?;
+        Ok(playlist)
     }
 
     pub fn add_new_playlist(
