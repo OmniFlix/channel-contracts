@@ -46,7 +46,7 @@ pub fn setup() -> SetupResponse {
         crate::contract::query,
     ));
 
-    let minter_code_id = app.store_code(minter_contract);
+    let channel_contract_code_id = app.store_code(channel_contract);
 
     SetupResponse {
         app,
@@ -55,26 +55,14 @@ pub fn setup() -> SetupResponse {
             creator,
             collector,
         },
-        minter_factory_code_id,
-        minter_code_id,
-        round_whitelist_factory_code_id,
-        round_whitelist_code_id,
-        open_edition_minter_factory_code_id,
-        open_edition_minter_code_id,
-        multi_mint_open_edition_minter_code_id,
+        channel_contract_code_id,
     }
 }
 
 pub struct SetupResponse {
     pub app: OmniflixApp,
     pub test_accounts: TestAccounts,
-    pub minter_factory_code_id: u64,
-    pub minter_code_id: u64,
-    pub round_whitelist_factory_code_id: u64,
-    pub round_whitelist_code_id: u64,
-    pub open_edition_minter_factory_code_id: u64,
-    pub open_edition_minter_code_id: u64,
-    pub multi_mint_open_edition_minter_code_id: u64,
+    pub channel_contract_code_id: u64,
 }
 pub struct TestAccounts {
     pub admin: Addr,
