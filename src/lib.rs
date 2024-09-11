@@ -6,7 +6,6 @@ pub mod msg;
 pub mod pauser;
 pub mod playlist;
 pub mod state;
-#[cfg(test)]
 pub mod testing;
 
 pub use crate::error::ContractError;
