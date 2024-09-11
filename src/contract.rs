@@ -1,11 +1,11 @@
-use crate::channels::{ChannelDetails, ChannelOnftData, Channels};
+use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
     generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::playlist::{self, Asset, Playlist, Playlists};
+use crate::playlist::{self, Asset, Playlist, PlaylistsManager};
 use crate::state::CONFIG;
 use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
@@ -143,7 +143,7 @@ fn register_channel(
     // Generate a random channel ID
     let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
 
-    let mut channels = Channels::new(deps.storage);
+    let channels_manager = ChannelsManager::new();
 
     let channel_details = ChannelDetails::new(
         channel_id.clone(),
@@ -151,24 +151,25 @@ fn register_channel(
         onft_id.clone(),
         description.clone(),
     );
-    channel_details.clone().validate_channel_details()?;
+    channel_details.clone().validate()?;
 
     // Add the new channel to the collection
     // Checks for uniqueness of the channel ID and username
-    channels.add_channel(
+    channels_manager.add_channel(
+        deps.storage,
         channel_id.clone(),
-        info.sender.clone().to_string(),
-        onft_id.clone(),
+        user_name.clone(),
         channel_details.clone(),
     )?;
 
     // Initilize new playlist
-    let mut playlists = Playlists::new(deps.storage);
-    playlists.initilize_playlist_for_new_channel(channel_id.clone());
+    let mut playlists = PlaylistsManager::new();
+    playlists.initialize_playlist_for_new_channel(deps.storage, channel_id.clone());
 
     let onft_data = ChannelOnftData {
         channel_id: channel_id.clone(),
         user_name: user_name.clone(),
+        onft_id: onft_id.clone(),
     };
 
     let string_onft_data =
@@ -203,8 +204,8 @@ fn publish(
     pause_state.error_if_paused(deps.storage)?;
 
     // Find and validate the channel being published to is owned by the sender
-    let channels = Channels::new(deps.storage);
-    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
@@ -231,11 +232,21 @@ fn publish(
         onft_id: asset_onft_id.clone(),
     };
 
-    let mut playlists = Playlists::new(deps.storage);
-    playlists.add_asset_to_playlist(channel_id.clone(), "My Videos".to_string(), asset.clone())?;
+    let mut playlists = PlaylistsManager::new();
+    playlists.add_asset_to_playlist(
+        deps.storage,
+        channel_id.clone(),
+        "My Videos".to_string(),
+        asset.clone(),
+    )?;
 
     if let Some(playlist_id) = playlist_id.clone() {
-        playlists.add_asset_to_playlist(channel_id.clone(), playlist_id.clone(), asset.clone())?;
+        playlists.add_asset_to_playlist(
+            deps.storage,
+            channel_id.clone(),
+            playlist_id.clone(),
+            asset.clone(),
+        )?;
     }
 
     let response = Response::new()
@@ -263,8 +274,8 @@ fn create_playlist(
     pause_state.error_if_paused(deps.storage)?;
 
     // Find and validate the channel being published to is owned by the sender
-    let channels = Channels::new(deps.storage);
-    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channel_manager = ChannelsManager::new();
+    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
@@ -275,8 +286,8 @@ fn create_playlist(
         info.sender.clone().to_string(),
     )?;
 
-    let mut playlists = Playlists::new(deps.storage);
-    playlists.add_new_playlist(channel_id.clone(), playlist_id.clone())?;
+    let mut playlists = PlaylistsManager::new();
+    playlists.add_new_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "create_playlist")
@@ -335,14 +346,13 @@ fn set_channel_details(
     channel_id: String,
     description: String,
 ) -> Result<Response, ContractError> {
-    // First, handle pause state and immutable querying
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
-
-    let channels = Channels::new(deps.storage);
-    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channels_manager = ChannelsManager::new();
+    let mut channel_details =
+        channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id.clone();
 
     let _channel_onft = get_onft_with_owner(
@@ -351,16 +361,14 @@ fn set_channel_details(
         channel_onft_id,
         info.sender.to_string(),
     )?;
-
-    let mut channels = Channels::new(deps.storage); // Re-borrow mutably
-    let mut channel_details = channels.get_channel_details(channel_id.clone())?;
-
-    // Update and validate the details
     channel_details.description = description.clone();
-    channel_details.validate_channel_details()?;
+    channel_details.validate()?;
 
-    // Save updated channel details
-    channels.set_channel_details(channel_id.clone(), channel_details)?;
+    channels_manager.update_channel_details(
+        deps.storage,
+        channel_id.clone(),
+        channel_details.clone(),
+    )?;
 
     let response = Response::new()
         .add_attribute("action", "set_channel_details")
@@ -379,8 +387,8 @@ fn remove_playlist(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
-    let channels = Channels::new(deps.storage);
-    let channel_details = channels.get_channel_details(channel_id.clone())?;
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
     let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
@@ -391,8 +399,8 @@ fn remove_playlist(
         info.sender.clone().to_string(),
     )?;
 
-    let mut playlists = Playlists::new(deps.storage);
-    playlists.remove_playlist(channel_id.clone(), playlist_id.clone())?;
+    let mut playlists = PlaylistsManager::new();
+    playlists.remove_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "remove_playlist")
@@ -403,7 +411,7 @@ fn remove_playlist(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: DepsMut, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::IsPaused {} => to_json_binary(&query_is_paused(deps)?),
         QueryMsg::Pausers {} => to_json_binary(&query_pausers(deps)?),
@@ -426,59 +434,57 @@ pub fn query(deps: DepsMut, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_channel_details(
-    deps: DepsMut,
-    channel_id: String,
-) -> Result<ChannelDetails, ContractError> {
-    let channels = Channels::new(deps.storage);
-    let channel_details = channels.get_channel_details(channel_id.clone())?;
+fn query_channel_details(deps: Deps, channel_id: String) -> Result<ChannelDetails, ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     Ok(channel_details)
 }
 
 fn query_channels(
-    deps: DepsMut,
+    deps: Deps,
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<ChannelDetails>, ContractError> {
-    let channels = Channels::new(deps.storage);
-    let channels_list = channels.get_channels_list(start_after, limit)?;
+    let channels = ChannelsManager::new();
+    let channels_list = channels.get_channels_list(deps.storage, start_after, limit)?;
     Ok(channels_list)
 }
 
 fn query_playlist(
-    deps: DepsMut,
+    deps: Deps,
     channel_id: String,
     playlist_id: String,
 ) -> Result<Playlist, ContractError> {
-    let playlists = Playlists::new(deps.storage);
-    let playlist = playlists.get_playlist(channel_id.clone(), playlist_id.clone())?;
+    let playlists = PlaylistsManager::new();
+    let playlist = playlists.get_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
     Ok(playlist)
 }
 
 fn query_playlists(
-    deps: DepsMut,
+    deps: Deps,
     channel_id: String,
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<Playlist>, ContractError> {
-    let playlists = Playlists::new(deps.storage);
-    let playlists_list = playlists.get_all_playlists(channel_id.clone(), start_after, limit);
+    let playlists = PlaylistsManager::new();
+    let playlists_list =
+        playlists.get_all_playlists(deps.storage, channel_id.clone(), start_after, limit)?;
     Ok(playlists_list)
 }
 
-fn query_channel_id(deps: DepsMut, user_name: String) -> Result<String, ContractError> {
-    let channels = Channels::new(deps.storage);
-    let channel_id = channels.get_channel_id(user_name.clone())?;
+fn query_channel_id(deps: Deps, user_name: String) -> Result<String, ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_id = channels.get_channel_id(deps.storage, user_name.clone())?;
     Ok(channel_id)
 }
 
-fn query_is_paused(deps: DepsMut) -> Result<bool, ContractError> {
+fn query_is_paused(deps: Deps) -> Result<bool, ContractError> {
     let pause_state = PauseState::new()?;
     let is_paused = pause_state.is_paused(deps.storage)?;
     Ok(is_paused)
 }
 
-fn query_pausers(deps: DepsMut) -> Result<Vec<Addr>, ContractError> {
+fn query_pausers(deps: Deps) -> Result<Vec<Addr>, ContractError> {
     let pause_state = PauseState::new()?;
     let pausers = pause_state.get_pausers(deps.storage)?;
     Ok(pausers)

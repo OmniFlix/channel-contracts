@@ -1,51 +1,40 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, StdError, StdResult, Storage};
+use cosmwasm_std::{Order, StdError, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
-
-pub const USERNAME_TO_CHANNEL_ID: Map<UserName, ChannelId> = Map::new("username_to_channel_id");
-
-pub const CHANNEL_ID_TO_USERNAME: Map<ChannelId, UserName> = Map::new("channel_id_to_username");
-pub const CHANNEL_ID_TO_ONFT_ID: Map<ChannelId, OnftId> = Map::new("channel_id_to_onft_id");
-pub const CHANNELDETAILS: Map<ChannelId, ChannelDetails> = Map::new("channel_details");
 
 pub type ChannelId = String;
 pub type UserName = String;
-pub type OnftId = String;
 
 #[cw_serde]
 pub struct ChannelDetails {
     pub channel_id: String,
     pub user_name: String,
-    pub onft_id: String,
     pub description: String,
+    pub onft_id: String,
 }
 
 impl ChannelDetails {
     pub fn new(
         channel_id: String,
         user_name: String,
-        onft_id: String,
         description: String,
+        onft_id: String,
     ) -> Self {
         Self {
             channel_id,
             user_name,
-            onft_id,
             description,
+            onft_id,
         }
     }
 
-    pub fn validate_channel_details(&self) -> Result<(), StdError> {
-        let user_name = &self.user_name;
-        let description = &self.description;
-
-        if user_name.len() < 3 || user_name.len() > 32 {
+    pub fn validate(&self) -> Result<(), StdError> {
+        if self.user_name.len() < 3 || self.user_name.len() > 32 {
             return Err(StdError::generic_err(
                 "Username must be between 3 and 32 characters",
             ));
         }
-
-        if description.len() < 3 || description.len() > 256 {
+        if self.description.len() < 3 || self.description.len() > 256 {
             return Err(StdError::generic_err(
                 "Description must be between 3 and 256 characters",
             ));
@@ -54,96 +43,142 @@ impl ChannelDetails {
     }
 }
 
-pub struct Channels<'a> {
-    pub storage: &'a mut dyn Storage,
+const CHANNEL_DETAILS_STORAGE_KEY: &str = "channel_details";
+const USERNAME_TO_CHANNEL_ID_STORAGE_KEY: &str = "username_to_channel_id";
+const CHANNEL_ID_TO_USERNAME_STORAGE_KEY: &str = "channel_id_to_username";
+
+pub struct ChannelsManager<'a> {
+    // Define the three maps using storage keys
+    pub channel_details: Map<'a, ChannelId, ChannelDetails>,
+    pub username_to_channel_id: Map<'a, UserName, ChannelId>,
+    pub channel_id_to_username: Map<'a, ChannelId, UserName>,
 }
 
-impl<'a> Channels<'a> {
-    pub fn new(storage: &'a mut dyn Storage) -> Self {
-        Self { storage }
+impl<'a> ChannelsManager<'a> {
+    // Constructor to initialize the three maps
+    pub const fn new() -> Self {
+        ChannelsManager {
+            channel_details: Map::new(CHANNEL_DETAILS_STORAGE_KEY),
+            username_to_channel_id: Map::new(USERNAME_TO_CHANNEL_ID_STORAGE_KEY),
+            channel_id_to_username: Map::new(CHANNEL_ID_TO_USERNAME_STORAGE_KEY),
+        }
     }
 
-    // Function to add a new channel with uniqueness checks
-    pub fn add_channel(
-        &mut self,
+    // Query methods
+    pub fn get_channel_details(
+        &self,
+        store: &dyn Storage,
         channel_id: ChannelId,
-        user_name: UserName,
-        onft_id: String,
-        channel_details: ChannelDetails,
-    ) -> StdResult<()> {
-        // Check if the channel ID already exists
-        if CHANNELDETAILS.has(self.storage, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID already exists"));
-        }
-
-        // Check if the username is already mapped to another channel
-        if USERNAME_TO_CHANNEL_ID.has(self.storage, user_name.clone()) {
-            return Err(StdError::generic_err("Username already taken"));
-        }
-
-        // Create and save channel details
-        CHANNELDETAILS.save(self.storage, channel_id.clone(), &channel_details)?;
-
-        // Map username to channel ID and channel ID to username
-        USERNAME_TO_CHANNEL_ID.save(self.storage, user_name.clone(), &channel_id)?;
-        CHANNEL_ID_TO_USERNAME.save(self.storage, channel_id, &user_name)?;
-
-        Ok(())
-    }
-
-    pub fn get_channel_details(&self, channel_id: ChannelId) -> Result<ChannelDetails, StdError> {
-        let channel_details = CHANNELDETAILS
-            .load(self.storage, channel_id)
-            .or_else(|_| Err(StdError::generic_err("Channel ID does not exist")))?;
-        Ok(channel_details)
-    }
-    pub fn set_channel_details(
-        &mut self,
-        channel_id: ChannelId,
-        channel_details: ChannelDetails,
-    ) -> StdResult<()> {
-        // Check if the channel ID exists
-        if !CHANNELDETAILS.has(self.storage, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID does not exist"));
-        }
-        CHANNELDETAILS.save(self.storage, channel_id, &channel_details)?;
-
-        Ok(())
+    ) -> StdResult<ChannelDetails> {
+        self.channel_details
+            .load(store, channel_id)
+            .map_err(|_| StdError::generic_err("Channel ID does not exist"))
     }
 
     pub fn get_channels_list(
         &self,
+        store: &dyn Storage,
         start_after: Option<String>,
         limit: Option<u32>,
-    ) -> Result<Vec<ChannelDetails>, StdError> {
-        // Define the default limit, if no limit is provided
+    ) -> StdResult<Vec<ChannelDetails>> {
         let limit = limit.unwrap_or(25) as usize;
-
-        // Set the start point for pagination (exclusive start)
         let start = start_after.map(Bound::exclusive);
 
-        CHANNELDETAILS
-            .range(self.storage, start, None, cosmwasm_std::Order::Ascending)
-            .take(limit) // Apply the limit
-            .map(|item| {
-                // Handle each result, map errors to StdError
-                item.map(|(_, details)| details).map_err(|err| {
-                    StdError::generic_err(format!("Error loading channel details: {}", err))
-                })
-            })
-            .collect() // Collect the results into a Vec<ChannelDetails> or return the first error encountered
+        self.channel_details
+            .range(store, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(|(_, details)| details))
+            .collect()
     }
 
-    pub fn get_channel_id(&self, user_name: UserName) -> Result<ChannelId, StdError> {
-        let channel_id = USERNAME_TO_CHANNEL_ID
-            .load(self.storage, user_name)
-            .or_else(|_| Err(StdError::generic_err("Username does not exist")))?;
-        Ok(channel_id)
+    pub fn get_channel_id(&self, store: &dyn Storage, user_name: UserName) -> StdResult<ChannelId> {
+        self.username_to_channel_id
+            .load(store, user_name)
+            .map_err(|_| StdError::generic_err("Username does not exist"))
+    }
+
+    // Mutation methods
+    pub fn add_channel(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        user_name: UserName,
+        channel_details: ChannelDetails,
+    ) -> StdResult<()> {
+        // Check if the channel ID or username already exists
+        if self.channel_details.has(store, channel_id.clone()) {
+            return Err(StdError::generic_err("Channel ID already exists"));
+        }
+        if self.username_to_channel_id.has(store, user_name.clone()) {
+            return Err(StdError::generic_err("Username already taken"));
+        }
+
+        // Save the details and mappings
+        self.channel_details
+            .save(store, channel_id.clone(), &channel_details)?;
+        self.username_to_channel_id
+            .save(store, user_name.clone(), &channel_id)?;
+        self.channel_id_to_username
+            .save(store, channel_id, &user_name)?;
+
+        Ok(())
+    }
+
+    pub fn update_channel_details(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        updated_details: ChannelDetails,
+    ) -> StdResult<()> {
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(StdError::generic_err("Channel ID does not exist"));
+        }
+        self.channel_details
+            .save(store, channel_id, &updated_details)?;
+        Ok(())
+    }
+
+    pub fn remove_channel(&self, store: &mut dyn Storage, channel_id: ChannelId) -> StdResult<()> {
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(StdError::generic_err("Channel ID does not exist"));
+        }
+
+        let user_name = self
+            .channel_id_to_username
+            .load(store, channel_id.clone())
+            .map_err(|_| StdError::generic_err("Username not found for channel ID"))?;
+
+        // Remove channel details and mappings
+        self.channel_details.remove(store, channel_id.clone());
+        self.username_to_channel_id.remove(store, user_name.clone());
+        self.channel_id_to_username.remove(store, channel_id);
+
+        Ok(())
+    }
+
+    pub fn get_channel_id_from_username(
+        &self,
+        store: &mut dyn Storage,
+        user_name: UserName,
+    ) -> StdResult<ChannelId> {
+        self.username_to_channel_id
+            .load(store, user_name)
+            .map_err(|_| StdError::generic_err("Username does not exist"))
+    }
+
+    pub fn get_username_from_channel_id(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+    ) -> StdResult<UserName> {
+        self.channel_id_to_username
+            .load(store, channel_id)
+            .map_err(|_| StdError::generic_err("Channel ID does not exist"))
     }
 }
-
 #[cw_serde]
 pub struct ChannelOnftData {
+    pub onft_id: String,
     pub channel_id: String,
     pub user_name: String,
 }
