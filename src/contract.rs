@@ -1,20 +1,19 @@
 use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
-    generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
+    check_payment, generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::playlist::{self, Asset, Playlist, PlaylistsManager};
+use crate::playlist::{Asset, Playlist, PlaylistsManager};
+use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
-use crate::state::{ChannelConractConfig, CHANNELS_COLLECTION_ID};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure_eq, to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
 };
-use omniflix_std::types::cosmos::base::query;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -137,6 +136,11 @@ fn register_channel(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
+    // Check if the payment provided in the message matches the required creation fee
+    check_payment(config.channel_creation_fee.clone(), info.funds.clone())?;
+
     // Generate a random channel onft ID
     let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
 
@@ -163,8 +167,8 @@ fn register_channel(
     )?;
 
     // Initilize new playlist
-    let mut playlists = PlaylistsManager::new();
-    playlists.initialize_playlist_for_new_channel(deps.storage, channel_id.clone());
+    let playlists = PlaylistsManager::new();
+    playlists.initialize_playlist_for_new_channel(deps.storage, channel_id.clone())?;
 
     let onft_data = ChannelOnftData {
         channel_id: channel_id.clone(),
@@ -177,7 +181,7 @@ fn register_channel(
 
     let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
         id: onft_id.clone(),
-        denom_id: CHANNELS_COLLECTION_ID.load(deps.storage)?,
+        denom_id: config.channels_collection_id.clone(),
         sender: env.contract.address.clone().to_string(),
         recipient: info.sender.clone().to_string(),
         data: string_onft_data,
@@ -203,21 +207,22 @@ fn publish(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
     // Find and validate the channel being published to is owned by the sender
     let channels = ChannelsManager::new();
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
-    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
-    let channel_onft = get_onft_with_owner(
+    let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
-        channels_collection_id.clone(),
+        config.channels_collection_id.clone(),
         channel_onft_id,
         info.sender.clone().to_string(),
     )?;
 
     // Find and validate the asset being published
-    let asset_onft = get_onft_with_owner(
+    let _asset_onft = get_onft_with_owner(
         deps.as_ref(),
         asset_onft_collection_id.clone(),
         asset_onft_id.clone(),
@@ -232,16 +237,18 @@ fn publish(
         onft_id: asset_onft_id.clone(),
     };
 
-    let mut playlists = PlaylistsManager::new();
-    playlists.add_asset_to_playlist(
+    // Add the asset to the channel's default playlist
+    let playlist_manager = PlaylistsManager::new();
+    playlist_manager.add_asset_to_playlist(
         deps.storage,
         channel_id.clone(),
         "My Videos".to_string(),
         asset.clone(),
     )?;
 
+    // Add the asset to the specified playlist if provided
     if let Some(playlist_id) = playlist_id.clone() {
-        playlists.add_asset_to_playlist(
+        playlist_manager.add_asset_to_playlist(
             deps.storage,
             channel_id.clone(),
             playlist_id.clone(),
@@ -273,21 +280,22 @@ fn create_playlist(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
     // Find and validate the channel being published to is owned by the sender
     let channel_manager = ChannelsManager::new();
     let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
-    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
     let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
-        channels_collection_id.clone(),
+        config.channels_collection_id.clone(),
         channel_onft_id,
         info.sender.clone().to_string(),
     )?;
 
-    let mut playlists = PlaylistsManager::new();
-    playlists.add_new_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
+    let playlist_manager = PlaylistsManager::new();
+    playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "create_playlist")
@@ -349,7 +357,8 @@ fn set_channel_details(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
-    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+
     let channels_manager = ChannelsManager::new();
     let mut channel_details =
         channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
@@ -357,10 +366,11 @@ fn set_channel_details(
 
     let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
-        channels_collection_id.clone(),
+        config.channels_collection_id.clone(),
         channel_onft_id,
         info.sender.to_string(),
     )?;
+
     channel_details.description = description.clone();
     channel_details.validate()?;
 
@@ -387,20 +397,21 @@ fn remove_playlist(
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
     let channels = ChannelsManager::new();
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
-    let channels_collection_id = CHANNELS_COLLECTION_ID.load(deps.storage)?;
 
     let _channel_onft = get_onft_with_owner(
         deps.as_ref(),
-        channels_collection_id.clone(),
+        config.channels_collection_id.clone(),
         channel_onft_id,
         info.sender.clone().to_string(),
     )?;
 
-    let mut playlists = PlaylistsManager::new();
-    playlists.remove_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
+    let playlist_manager = PlaylistsManager::new();
+    playlist_manager.remove_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "remove_playlist")
@@ -431,6 +442,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         } => to_json_binary(&query_playlists(deps, channel_id, start_after, limit)?),
+
+        QueryMsg::Config {} => to_json_binary(&CONFIG.load(deps.storage)?),
     }
 }
 

@@ -16,6 +16,7 @@ pub fn setup() -> SetupResponse {
         height: 1_000,
         time: Timestamp::from_nanos(1_000),
     });
+
     mint_to_address(&mut app, admin.to_string(), coins(1000000000, "uflix"));
     mint_to_address(&mut app, creator.to_string(), coins(1000000000, "uflix"));
     mint_to_address(&mut app, collector.to_string(), coins(1000000000, "uflix"));

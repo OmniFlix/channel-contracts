@@ -1,13 +1,12 @@
 use cosmwasm_std::{Binary, Env, StdError};
 use cosmwasm_std::{Coin, Deps, Uint128};
+use cw_utils::NativeBalance;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
 use rand_core::{RngCore, SeedableRng};
 use rand_xoshiro::Xoshiro128PlusPlus;
 use sha2::{Digest, Sha256};
 use std::str::FromStr;
-
-use crate::channels::ChannelDetails;
 
 pub fn get_collection_creation_fee(deps: Deps) -> Coin {
     let onft_querier = OnftQuerier::new(&deps.querier);
@@ -76,6 +75,27 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     }
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
+}
+
+pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), StdError> {
+    let mut expected_balance = NativeBalance::default();
+    for coin in expected {
+        expected_balance += coin;
+    }
+
+    let mut received_balance = NativeBalance::default();
+    for coin in received {
+        received_balance += coin;
+    }
+
+    expected_balance.normalize();
+    received_balance.normalize();
+
+    if expected_balance != received_balance {
+        return Err(StdError::generic_err("Payment amount mismatch"));
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

@@ -8,7 +8,7 @@ pub struct InstantiateMsg {
     pub channels_collection_id: String,
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
-    pub channel_creation_fee: Coin,
+    pub channel_creation_fee: Vec<Coin>,
 }
 
 #[cw_serde]
@@ -67,4 +67,5 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    Config {},
 }

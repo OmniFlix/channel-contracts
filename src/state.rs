@@ -5,7 +5,6 @@ use cw_storage_plus::Item;
 pub type ChannelsCollectionId = String;
 
 // Define storage items
-pub const CHANNELS_COLLECTION_ID: Item<ChannelsCollectionId> = Item::new("channels_collection");
 pub const CONFIG: Item<ChannelConractConfig> = Item::new("channel_registry_params");
 pub const AUTH_DETAILS: Item<AuthDetails> = Item::new("auth_details");
 
@@ -22,5 +21,5 @@ pub struct ChannelConractConfig {
     pub channels_collection_id: String,
     pub admin: Addr,
     pub fee_collector: Addr,
-    pub channel_creation_fee: Coin,
+    pub channel_creation_fee: Vec<Coin>,
 }
