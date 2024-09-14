@@ -2,6 +2,7 @@ use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
 use crate::pauser::PauseError;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -49,9 +50,25 @@ pub enum ContractError {
     #[error("Asset to be published not found")]
     AssetNotFound {},
 
-    #[error("Channel Onft not found")]
+    #[error("Channel ONFT not found")]
     ChannelOnftNotFound {},
+
+    #[error("Query ONFT failed")]
+    OnftQueryFailed {},
+
+    #[error("ONFT not found")]
+    OnftNotFound {},
+
+    #[error("ONFT not owned by the user")]
+    OnftNotOwned {},
+
+    #[error("Payment amount mismatch")]
+    PaymentMismatch {},
+
+    #[error("Failed to fetch collection creation fee")]
+    CollectionCreationFeeError {},
 }
+
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {
         StdError::generic_err(err.to_string())

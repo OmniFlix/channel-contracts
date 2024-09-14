@@ -1,5 +1,5 @@
-use cosmwasm_std::{Binary, Env, StdError};
-use cosmwasm_std::{Coin, Deps, Uint128};
+use crate::ContractError;
+use cosmwasm_std::{Binary, Coin, Deps, Env, Uint128};
 use cw_utils::NativeBalance;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
@@ -8,20 +8,22 @@ use rand_xoshiro::Xoshiro128PlusPlus;
 use sha2::{Digest, Sha256};
 use std::str::FromStr;
 
-pub fn get_collection_creation_fee(deps: Deps) -> Coin {
+pub fn get_collection_creation_fee(deps: Deps) -> Result<Coin, ContractError> {
     let onft_querier = OnftQuerier::new(&deps.querier);
     let collection_creation_fee = onft_querier
         .params()
-        .unwrap()
+        .map_err(|_| ContractError::CollectionCreationFeeError {})?
         .params
-        .unwrap()
+        .ok_or_else(|| ContractError::CollectionCreationFeeError {})?
         .denom_creation_fee
-        .unwrap();
+        .ok_or_else(|| ContractError::CollectionCreationFeeError {})?;
+
     let collection_creation_fee = Coin {
         denom: collection_creation_fee.denom,
-        amount: Uint128::from_str(&collection_creation_fee.amount).unwrap(),
+        amount: Uint128::from_str(&collection_creation_fee.amount)
+            .map_err(|_| ContractError::CollectionCreationFeeError {})?,
     };
-    collection_creation_fee
+    Ok(collection_creation_fee)
 }
 
 pub fn get_onft_with_owner(
@@ -29,23 +31,42 @@ pub fn get_onft_with_owner(
     collection_id: String,
     onft_id: String,
     owner: String,
-) -> Result<Onft, StdError> {
-    // Return the ONFT if it exists and is owned by the user
-    // Else, return an error
+) -> Result<Onft, ContractError> {
     let onft_querier = OnftQuerier::new(&deps.querier);
     let onft_response = onft_querier
         .onft(collection_id, onft_id)
-        .map_err(|_| StdError::generic_err("Query ONFT failed"))?;
+        .map_err(|_| ContractError::OnftQueryFailed {})?;
 
     let onft = onft_response
         .onft
-        .ok_or_else(|| StdError::generic_err("ONFT not found"))?;
+        .ok_or_else(|| ContractError::OnftNotFound {})?;
 
     if onft.owner != owner {
-        return Err(StdError::generic_err("ONFT not owned by the user"));
+        return Err(ContractError::OnftNotOwned {});
     }
 
     Ok(onft)
+}
+
+pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), ContractError> {
+    let mut expected_balance = NativeBalance::default();
+    for coin in expected {
+        expected_balance += coin;
+    }
+
+    let mut received_balance = NativeBalance::default();
+    for coin in received {
+        received_balance += coin;
+    }
+
+    expected_balance.normalize();
+    received_balance.normalize();
+
+    if expected_balance != received_balance {
+        return Err(ContractError::PaymentMismatch {});
+    }
+
+    Ok(())
 }
 
 fn byte_to_alphanumeric(byte: u8) -> char {
@@ -75,27 +96,6 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     }
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
-}
-
-pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), StdError> {
-    let mut expected_balance = NativeBalance::default();
-    for coin in expected {
-        expected_balance += coin;
-    }
-
-    let mut received_balance = NativeBalance::default();
-    for coin in received {
-        received_balance += coin;
-    }
-
-    expected_balance.normalize();
-    received_balance.normalize();
-
-    if expected_balance != received_balance {
-        return Err(StdError::generic_err("Payment amount mismatch"));
-    }
-
-    Ok(())
 }
 
 #[cfg(test)]

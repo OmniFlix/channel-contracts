@@ -47,7 +47,7 @@ pub fn instantiate(
     // Save the channel CONFIG to the contract state
     CONFIG.save(deps.storage, &channel_contract_config)?;
 
-    let collection_creation_fee = get_collection_creation_fee(deps.as_ref());
+    let collection_creation_fee = get_collection_creation_fee(deps.as_ref())?;
 
     // Check if the payment provided in the message matches the required creation fee
     ensure_eq!(
