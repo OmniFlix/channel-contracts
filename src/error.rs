@@ -82,6 +82,24 @@ pub enum ContractError {
 
     #[error("Cannot delete the default playlist")]
     CannotDeleteDefaultPlaylist {},
+
+    #[error("Invalid username, must be between 3 and 32 characters")]
+    InvalidUserName {},
+
+    #[error("Invalid description, must be between 3 and 256 characters")]
+    InvalidDescription {},
+
+    #[error("Channel ID already exists")]
+    ChannelIdAlreadyExists {},
+
+    #[error("Username already taken")]
+    UserNameAlreadyTaken {},
+
+    #[error("Channel ID does not exist")]
+    ChannelIdNotFound {},
+
+    #[error("Username does not exist")]
+    UserNameNotFound {},
 }
 
 impl From<ContractError> for StdError {

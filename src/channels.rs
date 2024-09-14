@@ -1,5 +1,6 @@
+use crate::ContractError;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Order, StdError, StdResult, Storage};
+use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 pub type ChannelId = String;
@@ -28,16 +29,12 @@ impl ChannelDetails {
         }
     }
 
-    pub fn validate(&self) -> Result<(), StdError> {
+    pub fn validate(&self) -> Result<(), ContractError> {
         if self.user_name.len() < 3 || self.user_name.len() > 32 {
-            return Err(StdError::generic_err(
-                "Username must be between 3 and 32 characters",
-            ));
+            return Err(ContractError::InvalidUserName {});
         }
         if self.description.len() < 3 || self.description.len() > 256 {
-            return Err(StdError::generic_err(
-                "Description must be between 3 and 256 characters",
-            ));
+            return Err(ContractError::InvalidDescription {});
         }
         Ok(())
     }
@@ -48,14 +45,12 @@ const USERNAME_TO_CHANNEL_ID_STORAGE_KEY: &str = "username_to_channel_id";
 const CHANNEL_ID_TO_USERNAME_STORAGE_KEY: &str = "channel_id_to_username";
 
 pub struct ChannelsManager<'a> {
-    // Define the three maps using storage keys
     pub channel_details: Map<'a, ChannelId, ChannelDetails>,
     pub username_to_channel_id: Map<'a, UserName, ChannelId>,
     pub channel_id_to_username: Map<'a, ChannelId, UserName>,
 }
 
 impl<'a> ChannelsManager<'a> {
-    // Constructor to initialize the three maps
     pub const fn new() -> Self {
         ChannelsManager {
             channel_details: Map::new(CHANNEL_DETAILS_STORAGE_KEY),
@@ -69,10 +64,10 @@ impl<'a> ChannelsManager<'a> {
         &self,
         store: &dyn Storage,
         channel_id: ChannelId,
-    ) -> StdResult<ChannelDetails> {
+    ) -> Result<ChannelDetails, ContractError> {
         self.channel_details
             .load(store, channel_id)
-            .map_err(|_| StdError::generic_err("Channel ID does not exist"))
+            .map_err(|_| ContractError::ChannelIdNotFound {})
     }
 
     pub fn get_channels_list(
@@ -91,10 +86,14 @@ impl<'a> ChannelsManager<'a> {
             .collect()
     }
 
-    pub fn get_channel_id(&self, store: &dyn Storage, user_name: UserName) -> StdResult<ChannelId> {
+    pub fn get_channel_id(
+        &self,
+        store: &dyn Storage,
+        user_name: UserName,
+    ) -> Result<ChannelId, ContractError> {
         self.username_to_channel_id
             .load(store, user_name)
-            .map_err(|_| StdError::generic_err("Username does not exist"))
+            .map_err(|_| ContractError::UserNameNotFound {})
     }
 
     // Mutation methods
@@ -104,13 +103,13 @@ impl<'a> ChannelsManager<'a> {
         channel_id: ChannelId,
         user_name: UserName,
         channel_details: ChannelDetails,
-    ) -> StdResult<()> {
+    ) -> Result<(), ContractError> {
         // Check if the channel ID or username already exists
         if self.channel_details.has(store, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID already exists"));
+            return Err(ContractError::ChannelIdAlreadyExists {});
         }
         if self.username_to_channel_id.has(store, user_name.clone()) {
-            return Err(StdError::generic_err("Username already taken"));
+            return Err(ContractError::UserNameAlreadyTaken {});
         }
 
         // Save the details and mappings
@@ -129,24 +128,28 @@ impl<'a> ChannelsManager<'a> {
         store: &mut dyn Storage,
         channel_id: ChannelId,
         updated_details: ChannelDetails,
-    ) -> StdResult<()> {
+    ) -> Result<(), ContractError> {
         if !self.channel_details.has(store, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID does not exist"));
+            return Err(ContractError::ChannelIdNotFound {});
         }
         self.channel_details
             .save(store, channel_id, &updated_details)?;
         Ok(())
     }
 
-    pub fn remove_channel(&self, store: &mut dyn Storage, channel_id: ChannelId) -> StdResult<()> {
+    pub fn remove_channel(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+    ) -> Result<(), ContractError> {
         if !self.channel_details.has(store, channel_id.clone()) {
-            return Err(StdError::generic_err("Channel ID does not exist"));
+            return Err(ContractError::ChannelIdNotFound {});
         }
 
         let user_name = self
             .channel_id_to_username
             .load(store, channel_id.clone())
-            .map_err(|_| StdError::generic_err("Username not found for channel ID"))?;
+            .map_err(|_| ContractError::UserNameNotFound {})?;
 
         // Remove channel details and mappings
         self.channel_details.remove(store, channel_id.clone());
@@ -160,20 +163,20 @@ impl<'a> ChannelsManager<'a> {
         &self,
         store: &mut dyn Storage,
         user_name: UserName,
-    ) -> StdResult<ChannelId> {
+    ) -> Result<ChannelId, ContractError> {
         self.username_to_channel_id
             .load(store, user_name)
-            .map_err(|_| StdError::generic_err("Username does not exist"))
+            .map_err(|_| ContractError::UserNameNotFound {})
     }
 
     pub fn get_username_from_channel_id(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
-    ) -> StdResult<UserName> {
+    ) -> Result<UserName, ContractError> {
         self.channel_id_to_username
             .load(store, channel_id)
-            .map_err(|_| StdError::generic_err("Channel ID does not exist"))
+            .map_err(|_| ContractError::ChannelIdNotFound {})
     }
 }
 #[cw_serde]
