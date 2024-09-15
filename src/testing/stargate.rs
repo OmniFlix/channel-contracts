@@ -105,6 +105,9 @@ impl Stargate for StargateKeeper {
             if let Ok(msg) = query_msg {
                 let key = format!("collections:{}:{}", COLLECTION_PREFIX, msg.denom_id);
                 let serialized_collection = storage.get(key.as_bytes());
+                if serialized_collection.is_none() {
+                    return Ok(to_json_binary(&QueryOnftResponse { onft: None })?);
+                }
                 let collection: Collection = from_json(serialized_collection.unwrap())
                     .expect("Failed to deserialize Collection");
                 let onft = collection
