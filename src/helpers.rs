@@ -107,8 +107,12 @@ pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> 
     for coin in amount.clone() {
         final_amount += coin;
     }
+    // Remove any zero coins
     final_amount.normalize();
-
+    // If the final amount is empty, return an empty vec
+    if final_amount.is_empty() {
+        return vec![];
+    }
     let bank_msg: CosmosMsg = CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
         to_address: recipient,
         amount: final_amount.0,

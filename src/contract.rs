@@ -198,7 +198,6 @@ fn create_channel(
         ..Default::default()
     }
     .into();
-
     // Pay the channel creation fee to the fee collector
     let bank_channel_fee_msg = bank_msg_wrapper(
         config.fee_collector.into_string(),
