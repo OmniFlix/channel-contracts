@@ -100,31 +100,3 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use cosmwasm_std::testing::mock_env;
-
-    #[test]
-    fn test_generate_publish_id() {
-        let channel_id = generate_random_id_with_prefix(
-            &Binary::from_base64("salt").unwrap(),
-            &mock_env(),
-            "channel",
-        );
-
-        let onft_id = generate_random_id_with_prefix(
-            &Binary::from_base64("salt").unwrap(),
-            &mock_env(),
-            "onft",
-        );
-        // remove the prefixes
-        let channel_id = channel_id.split_at(7).1;
-        let onft_id = onft_id.split_at(4).1;
-
-        assert_eq!(channel_id.len(), 32);
-        assert_eq!(onft_id.len(), 32);
-        assert_ne!(channel_id, onft_id);
-    }
-}

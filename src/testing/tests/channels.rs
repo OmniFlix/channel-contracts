@@ -1,10 +1,11 @@
 use crate::channels::ChannelDetails;
+use crate::helpers::generate_random_id_with_prefix;
 use crate::msg::{ExecuteMsg, QueryMsg};
 use crate::playlist::Playlist;
-use crate::state::ChannelConractConfig;
 use crate::ContractError;
 use crate::{msg::InstantiateMsg, testing::setup::setup};
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::testing::mock_env;
+use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 
 #[test]
@@ -177,6 +178,7 @@ fn set_channel_details() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
+    let collector = setup_response.test_accounts.collector.clone();
 
     let instantiate_msg = InstantiateMsg {
         admin: setup_response.test_accounts.admin.clone(),
@@ -276,6 +278,22 @@ fn set_channel_details() {
     let typed_err = err.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::ChannelIdNotFound {});
 
+    // Unauthorized
+    let res = app
+        .execute_contract(
+            collector.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::SetChannelDetails {
+                channel_id: channel_id.clone(),
+                description: "creator".to_string(),
+            },
+            &[],
+        )
+        .unwrap_err();
+    let err = res.source().unwrap();
+    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(typed_err, &ContractError::OnftNotOwned {});
+
     // Happy path
     let _res = app
         .execute_contract(
@@ -301,4 +319,139 @@ fn set_channel_details() {
         )
         .unwrap();
     assert_eq!(channel.description, "new description");
+}
+
+#[test]
+fn same_user_name() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+    let collector = setup_response.test_accounts.collector.clone();
+
+    let instantiate_msg = InstantiateMsg {
+        admin: setup_response.test_accounts.admin.clone(),
+        channel_creation_fee: vec![coin(1000000, "uflix")],
+        fee_collector: setup_response.test_accounts.admin,
+        channels_collection_id: "Channels".to_string(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+    };
+
+    // Instantiate the contract
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let _res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::CreateChannel {
+                salt: Binary::default(),
+                user_name: "creator".to_string(),
+                description: "creator".to_string(),
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap();
+
+    // Collector tries to create a channel with the same user_name
+    // We are using diffirent salt to avoid the channel_id collision
+    // We can use the same salt, but change the env variables as if the transaction is in a different block
+    let res = app
+        .execute_contract(
+            collector.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::CreateChannel {
+                salt: Binary::from("salt".as_bytes()),
+                user_name: "creator".to_string(),
+                description: "creator".to_string(),
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
+    let err = res.source().unwrap();
+    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(typed_err, &ContractError::UserNameAlreadyTaken {});
+
+    // Set block params to simulate a different block
+    app.set_block(BlockInfo {
+        height: 123123,
+        time: Timestamp::from_nanos(123123),
+        chain_id: "test".to_string(),
+    });
+
+    // Collector tries to create a channel with the same user_name
+    // This time we are using the same salt
+    let res = app
+        .execute_contract(
+            collector.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::CreateChannel {
+                salt: Binary::default(),
+                user_name: "creator".to_string(),
+                description: "creator".to_string(),
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
+    let err = res.source().unwrap();
+    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(typed_err, &ContractError::UserNameAlreadyTaken {});
+}
+
+#[test]
+fn random_id_generator() {
+    let channel_id = generate_random_id_with_prefix(
+        &Binary::from_base64("salt").unwrap(),
+        &mock_env(),
+        "channel",
+    );
+
+    let onft_id =
+        generate_random_id_with_prefix(&Binary::from_base64("salt").unwrap(), &mock_env(), "onft");
+
+    // remove the prefixes
+    let channel_id = channel_id.split_at(7).1;
+    let onft_id = onft_id.split_at(4).1;
+
+    assert_eq!(channel_id.len(), 32);
+    assert_eq!(onft_id.len(), 32);
+    // They should not be the same because of the prefixes are used as entropy
+    assert_ne!(channel_id, onft_id);
+
+    // Same salt but try as if its the first transaction in the first block
+    let mut env = mock_env();
+    env.block.height = 1;
+    env.block.time = Timestamp::from_nanos(1);
+    env.transaction.as_mut().unwrap().index = 0;
+
+    let channel_id = generate_random_id_with_prefix(
+        &Binary::from_base64("salt").unwrap(),
+        &env.clone(),
+        "channel",
+    );
+
+    let onft_id =
+        generate_random_id_with_prefix(&Binary::from_base64("salt").unwrap(), &env, "onft");
+
+    // remove the prefixes
+    let channel_id = channel_id.split_at(7).1;
+    let onft_id = onft_id.split_at(4).1;
+
+    assert_eq!(channel_id.len(), 32);
+    assert_eq!(onft_id.len(), 32);
+    assert_ne!(channel_id, onft_id);
 }

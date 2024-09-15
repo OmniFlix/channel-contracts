@@ -59,7 +59,7 @@ pub enum ContractError {
     #[error("ONFT not found")]
     OnftNotFound {},
 
-    #[error("ONFT not owned by the user")]
+    #[error("ONFT not owned by the sender")]
     OnftNotOwned {},
 
     #[error("Failed to fetch collection creation fee")]
