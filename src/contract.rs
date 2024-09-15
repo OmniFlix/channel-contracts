@@ -238,7 +238,11 @@ fn publish(
         config.channels_collection_id.clone(),
         channel_onft_id,
         info.sender.clone().to_string(),
-    )?;
+    )
+    .map_err(|err| match err {
+        ContractError::OnftNotOwned {} => ContractError::ChannelNotOwned {}, // Specific error for channel ownership
+        _ => err, // Return the original error if it's not ownership related
+    })?;
 
     // Find and validate the asset being published
     let _asset_onft = get_onft_with_owner(
@@ -246,7 +250,11 @@ fn publish(
         asset_onft_collection_id.clone(),
         asset_onft_id.clone(),
         info.sender.clone().to_string(),
-    )?;
+    )
+    .map_err(|err| match err {
+        ContractError::OnftNotOwned {} => ContractError::AssetNotOwned {}, // Specific error for asset ownership
+        _ => err, // Return the original error if it's not ownership related
+    })?;
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 

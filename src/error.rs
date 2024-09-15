@@ -100,6 +100,12 @@ pub enum ContractError {
 
     #[error("Invalid channel query")]
     InvalidChannelQuery {},
+
+    #[error("Channel not owned by the sender")]
+    ChannelNotOwned {},
+
+    #[error("Asset not owned by the sender")]
+    AssetNotOwned {},
 }
 
 impl From<ContractError> for StdError {
