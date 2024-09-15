@@ -1,6 +1,5 @@
 use anyhow::Result;
 use cosmwasm_std::{from_json, to_json_binary, Addr, Api, Binary, BlockInfo, Querier, Storage};
-use cw_multi_test::error::Error;
 use cw_multi_test::{error::AnyResult, AppResponse, CosmosRouter, Stargate};
 use omniflix_std::types::omniflix::onft::v1beta1::{
     Collection, Denom, MsgCreateDenom, MsgMintOnft, QueryOnftRequest, QueryOnftResponse,

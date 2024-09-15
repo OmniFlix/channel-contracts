@@ -1,5 +1,3 @@
-use std::env;
-
 use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
@@ -16,7 +14,6 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use cw4_group::helpers;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

@@ -1,12 +1,9 @@
-use crate::channels::ChannelDetails;
-use crate::helpers::generate_random_id_with_prefix;
 use crate::msg::{ExecuteMsg, QueryMsg};
 use crate::playlist::Playlist;
 use crate::testing::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 use crate::ContractError;
 use crate::{msg::InstantiateMsg, testing::setup::setup};
-use cosmwasm_std::testing::mock_env;
-use cosmwasm_std::{coin, Binary, BlockInfo, CosmosMsg, Timestamp};
+use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 
 #[test]
@@ -18,7 +15,6 @@ fn publish_asset() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
-    let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
     let instantiate_msg = InstantiateMsg {
@@ -250,7 +246,6 @@ fn publish_non_existing_playlist() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
-    let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
     let instantiate_msg = InstantiateMsg {
@@ -343,7 +338,6 @@ fn publish_under_playlist() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
-    let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
     let instantiate_msg = InstantiateMsg {
@@ -480,7 +474,6 @@ fn try_recreating_same_playlist() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
-    let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
     let instantiate_msg = InstantiateMsg {

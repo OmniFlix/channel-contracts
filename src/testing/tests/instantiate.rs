@@ -2,8 +2,7 @@ use crate::msg::QueryMsg;
 use crate::state::ChannelConractConfig;
 use crate::ContractError;
 use crate::{msg::InstantiateMsg, testing::setup::setup};
-use cosmwasm_std::Decimal;
-use cosmwasm_std::{coin, coins, Addr, BlockInfo, Timestamp, Uint128};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 
 #[test]
