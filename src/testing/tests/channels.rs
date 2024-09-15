@@ -240,6 +240,7 @@ fn set_channel_details() {
     // Current channel_id
     // Its random, so we need to get it from the query
     let channel_id = channel.channel_id.clone();
+    let onft_id = channel.onft_id.clone();
 
     // Missing channel_id
     let res = app
@@ -303,7 +304,13 @@ fn set_channel_details() {
         .unwrap_err();
     let err = res.source().unwrap();
     let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::OnftNotOwned {});
+    assert_eq!(
+        typed_err,
+        &ContractError::OnftNotOwned {
+            collection_id: "Channels".to_string(),
+            onft_id: onft_id.clone()
+        }
+    );
 
     // Happy path
     let _res = app

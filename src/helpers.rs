@@ -35,15 +35,21 @@ pub fn get_onft_with_owner(
 ) -> Result<Onft, ContractError> {
     let onft_querier = OnftQuerier::new(&deps.querier);
     let onft_response = onft_querier
-        .onft(collection_id, onft_id)
+        .onft(collection_id.clone(), onft_id.clone())
         .map_err(|_| ContractError::OnftQueryFailed {})?;
 
     let onft = onft_response
         .onft
-        .ok_or_else(|| ContractError::OnftNotFound {})?;
+        .ok_or_else(|| ContractError::OnftNotFound {
+            collection_id: collection_id.clone(),
+            onft_id: onft_id.clone(),
+        })?;
 
     if onft.owner != owner {
-        return Err(ContractError::OnftNotOwned {});
+        return Err(ContractError::OnftNotOwned {
+            collection_id: collection_id,
+            onft_id: onft_id,
+        });
     }
 
     Ok(onft)
