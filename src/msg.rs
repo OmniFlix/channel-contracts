@@ -23,14 +23,14 @@ pub enum ExecuteMsg {
         asset_onft_id: String,
         salt: Binary,
         channel_id: String,
-        playlist_id: Option<String>,
+        playlist_name: Option<String>,
     },
     CreatePlaylist {
-        playlist_id: String,
+        playlist_name: String,
         channel_id: String,
     },
     RemovePlaylist {
-        playlist_id: String,
+        playlist_name: String,
         channel_id: String,
     },
     CreateChannel {
@@ -57,7 +57,7 @@ pub enum QueryMsg {
     },
     Playlist {
         channel_id: String,
-        playlist_id: String,
+        playlist_name: String,
     },
     Channels {
         start_after: Option<String>,

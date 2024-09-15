@@ -104,7 +104,7 @@ pub fn execute(
             asset_onft_id,
             salt,
             channel_id,
-            playlist_id,
+            playlist_name,
         } => publish(
             deps,
             env,
@@ -113,12 +113,12 @@ pub fn execute(
             asset_onft_id,
             salt,
             channel_id,
-            playlist_id,
+            playlist_name,
         ),
         ExecuteMsg::CreatePlaylist {
-            playlist_id,
+            playlist_name,
             channel_id,
-        } => create_playlist(deps, env, info, channel_id, playlist_id),
+        } => create_playlist(deps, env, info, channel_id, playlist_name),
         ExecuteMsg::CreateChannel {
             user_name,
             salt,
@@ -129,9 +129,9 @@ pub fn execute(
             description,
         } => set_channel_details(deps, info, channel_id, description),
         ExecuteMsg::RemovePlaylist {
-            playlist_id,
+            playlist_name,
             channel_id,
-        } => remove_playlist(deps, info, channel_id, playlist_id),
+        } => remove_playlist(deps, info, channel_id, playlist_name),
     }
 }
 
@@ -198,6 +198,7 @@ fn create_channel(
         ..Default::default()
     }
     .into();
+
     // Pay the channel creation fee to the fee collector
     let bank_channel_fee_msg = bank_msg_wrapper(
         config.fee_collector.into_string(),
@@ -221,7 +222,7 @@ fn publish(
     asset_onft_id: String,
     salt: Binary,
     channel_id: String,
-    playlist_id: Option<String>,
+    playlist_name: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -266,11 +267,11 @@ fn publish(
     )?;
 
     // Add the asset to the specified playlist if provided
-    if let Some(playlist_id) = playlist_id.clone() {
+    if let Some(playlist_name) = playlist_name.clone() {
         playlist_manager.add_asset_to_playlist(
             deps.storage,
             channel_id.clone(),
-            playlist_id.clone(),
+            playlist_name.clone(),
             asset.clone(),
         )?;
     }
@@ -280,8 +281,8 @@ fn publish(
         .add_attribute("publish_id", publish_id)
         .add_attribute("channel_id", channel_id)
         .add_attribute(
-            "playlist_id",
-            playlist_id.unwrap_or("My Videos".to_string()),
+            "playlist_name",
+            playlist_name.unwrap_or("My Videos".to_string()),
         )
         .add_attribute("asset_onft_collection_id", asset_onft_collection_id)
         .add_attribute("asset_onft_id", asset_onft_id);
@@ -294,7 +295,7 @@ fn create_playlist(
     _env: Env,
     info: MessageInfo,
     channel_id: String,
-    playlist_id: String,
+    playlist_name: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -314,12 +315,12 @@ fn create_playlist(
     )?;
 
     let playlist_manager = PlaylistsManager::new();
-    playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
+    playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "create_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_id", playlist_id);
+        .add_attribute("playlist_name", playlist_name);
 
     Ok(response)
 }
@@ -411,7 +412,7 @@ fn remove_playlist(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
-    playlist_id: String,
+    playlist_name: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -430,12 +431,12 @@ fn remove_playlist(
     )?;
 
     let playlist_manager = PlaylistsManager::new();
-    playlist_manager.remove_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
+    playlist_manager.remove_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "remove_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_id", playlist_id);
+        .add_attribute("playlist_name", playlist_name);
 
     Ok(response)
 }
@@ -451,8 +452,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_json_binary(&query_channel_details(deps, channel_id, user_name)?),
         QueryMsg::Playlist {
             channel_id,
-            playlist_id,
-        } => to_json_binary(&query_playlist(deps, channel_id, playlist_id)?),
+            playlist_name,
+        } => to_json_binary(&query_playlist(deps, channel_id, playlist_name)?),
         QueryMsg::Channels { start_after, limit } => {
             to_json_binary(&query_channels(deps, start_after, limit)?)
         }
@@ -498,10 +499,11 @@ fn query_channels(
 fn query_playlist(
     deps: Deps,
     channel_id: String,
-    playlist_id: String,
+    playlist_name: String,
 ) -> Result<Playlist, ContractError> {
     let playlists = PlaylistsManager::new();
-    let playlist = playlists.get_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
+    let playlist =
+        playlists.get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
     Ok(playlist)
 }
 
