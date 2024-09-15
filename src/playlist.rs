@@ -172,6 +172,13 @@ impl<'a> PlaylistsManager<'a> {
         if playlist_name == DEFAULT_PLAYLIST_NAME {
             return Err(ContractError::CannotDeleteDefaultPlaylist {});
         }
+        if self
+            .playlists
+            .load(store, (channel_id.clone(), playlist_name.clone()))
+            .is_err()
+        {
+            return Err(ContractError::PlaylistNotFound {});
+        }
 
         self.playlists.remove(store, (channel_id, playlist_name));
         Ok(())
