@@ -107,18 +107,20 @@ impl<'a> PlaylistsManager<'a> {
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-        asset: Asset,
+        publish_id: String,
     ) -> Result<(), ContractError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .map_err(|_| ContractError::PlaylistNotFound {})?;
 
-        if !playlist.assets.contains(&asset) {
-            return Err(ContractError::AssetNotInPlaylist {});
-        }
+        let asset_index = playlist
+            .assets
+            .iter()
+            .position(|asset| asset.publish_id == publish_id)
+            .ok_or(ContractError::AssetNotInPlaylist {})?;
 
-        playlist.assets.retain(|a| a != &asset);
+        playlist.assets.remove(asset_index);
 
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)?;

@@ -6,3 +6,6 @@ pub mod channels;
 
 #[cfg(test)]
 pub mod publish;
+
+#[cfg(test)]
+pub mod playlist;

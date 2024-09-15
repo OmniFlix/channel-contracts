@@ -33,6 +33,11 @@ pub enum ExecuteMsg {
         playlist_name: String,
         channel_id: String,
     },
+    RemoveAsset {
+        publish_id: String,
+        channel_id: String,
+        playlist_name: String,
+    },
     CreateChannel {
         salt: Binary,
         user_name: String,
