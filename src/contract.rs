@@ -12,7 +12,8 @@ use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -134,6 +135,11 @@ pub fn execute(
             channel_id,
             playlist_name,
         } => remove_asset(deps, info, publish_id, channel_id, playlist_name),
+        ExecuteMsg::SetConfig {
+            channel_creation_fee,
+            admin,
+            fee_collector,
+        } => set_config(deps, info, channel_creation_fee, admin, fee_collector),
     }
 }
 
@@ -479,6 +485,43 @@ fn remove_asset(
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
         .add_attribute("publish_id", publish_id);
+
+    Ok(response)
+}
+
+fn set_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_creation_fee: Option<Vec<Coin>>,
+    admin: Option<String>,
+    fee_collector: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.admin {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(admin) = admin {
+        let admin = deps.api.addr_validate(&admin)?;
+        config.admin = admin;
+    }
+
+    if let Some(fee_collector) = fee_collector {
+        let fee_collector = deps.api.addr_validate(&fee_collector)?;
+        config.fee_collector = fee_collector;
+    }
+
+    if let Some(channel_creation_fee) = channel_creation_fee {
+        config.channel_creation_fee = channel_creation_fee;
+    }
+
+    CONFIG.save(deps.storage, &config)?;
+
+    let response = Response::new()
+        .add_attribute("action", "set_config")
+        .add_attribute("admin", config.admin.to_string())
+        .add_attribute("fee_collector", config.fee_collector.to_string());
 
     Ok(response)
 }

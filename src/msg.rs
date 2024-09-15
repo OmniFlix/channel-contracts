@@ -47,6 +47,11 @@ pub enum ExecuteMsg {
         channel_id: String,
         description: String,
     },
+    SetConfig {
+        channel_creation_fee: Option<Vec<Coin>>,
+        admin: Option<String>,
+        fee_collector: Option<String>,
+    },
 }
 
 #[cw_serde]
