@@ -3,7 +3,8 @@ use std::env;
 use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
-    check_payment, generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
+    bank_msg_wrapper, check_payment, generate_random_id_with_prefix, get_collection_creation_fee,
+    get_onft_with_owner,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
@@ -15,6 +16,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw4_group::helpers;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -196,9 +198,15 @@ fn create_channel(
         ..Default::default()
     }
     .into();
+    // Pay the channel creation fee to the fee collector
+    let bank_channel_fee_msg = bank_msg_wrapper(
+        config.fee_collector.into_string(),
+        config.channel_creation_fee,
+    );
 
     let response = Response::new()
         .add_message(mint_onft_msg)
+        .add_messages(bank_channel_fee_msg)
         .add_attribute("action", "register_channel")
         .add_attribute("channel_id", channel_id)
         .add_attribute("user_name", user_name)

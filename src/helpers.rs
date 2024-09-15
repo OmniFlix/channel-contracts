@@ -1,4 +1,5 @@
 use crate::ContractError;
+use cosmwasm_std::CosmosMsg;
 use cosmwasm_std::{Binary, Coin, Deps, Env, Uint128};
 use cw_utils::NativeBalance;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
@@ -99,4 +100,18 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     }
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
+}
+
+pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> {
+    let mut final_amount = NativeBalance::default();
+    for coin in amount.clone() {
+        final_amount += coin;
+    }
+    final_amount.normalize();
+
+    let bank_msg: CosmosMsg = CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
+        to_address: recipient,
+        amount: final_amount.0,
+    });
+    vec![bank_msg]
 }

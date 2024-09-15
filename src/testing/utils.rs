@@ -26,3 +26,12 @@ pub fn mint_to_address(app: &mut OmniflixApp, to_address: String, amount: Vec<Co
     app.sudo(SudoMsg::Bank(BankSudo::Mint { to_address, amount }))
         .unwrap();
 }
+pub fn get_event_attribute(res: AppResponse, event_type: &str, attribute_key: &str) -> String {
+    res.events
+        .iter()
+        .find(|e| e.ty == event_type) // Find the event by type
+        .and_then(|e| {
+            e.attributes.iter().find(|attr| attr.key == attribute_key) // Find the attribute by key
+        })
+        .map_or(String::new(), |attr| attr.value.clone()) // Return value or empty string
+}

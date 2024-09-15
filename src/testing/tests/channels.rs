@@ -2,6 +2,7 @@ use crate::channels::ChannelDetails;
 use crate::helpers::generate_random_id_with_prefix;
 use crate::msg::{ExecuteMsg, QueryMsg};
 use crate::playlist::Playlist;
+use crate::testing::utils::get_event_attribute;
 use crate::ContractError;
 use crate::{msg::InstantiateMsg, testing::setup::setup};
 use cosmwasm_std::testing::mock_env;
@@ -121,7 +122,7 @@ fn create_channel() {
     assert_eq!(typed_err, &ContractError::InvalidDescription {});
 
     // Happy path
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -133,6 +134,14 @@ fn create_channel() {
             &[coin(1000000, "uflix")],
         )
         .unwrap();
+    // Validate the creation fee was sent to the fee collector
+    let amount = get_event_attribute(res.clone(), "transfer", "amount");
+    assert_eq!(amount, "1000000uflix");
+    let recipient = get_event_attribute(res.clone(), "transfer", "recipient");
+    assert_eq!(recipient, admin);
+
+    // Get onftid from events
+    let onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");
 
     // Query channels
     let channels: Vec<ChannelDetails> = app
@@ -148,6 +157,8 @@ fn create_channel() {
     assert_eq!(channels.len(), 1);
     assert_eq!(channels[0].user_name, "creator");
     assert_eq!(channels[0].description, "creator");
+    // Validate the onft_id
+    assert_eq!(channels[0].onft_id, onft_id);
 
     // Validate the playlist created by the channel
     let channel_id = channels[0].channel_id.clone();
