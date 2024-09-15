@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
@@ -11,14 +13,13 @@ use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult,
+    to_json_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -32,16 +33,15 @@ pub fn instantiate(
     // Validate the fee collector address, or default to the admin address if validation fails
     let fee_collector = deps
         .api
-        .addr_validate(&msg.fee_collector.clone().into_string())
-        .unwrap_or(admin.clone());
+        .addr_validate(&msg.fee_collector.clone().into_string())?;
 
     // Save channel CONFIG
     let channel_contract_config = ChannelConractConfig {
         admin: admin.clone(),
         fee_collector: fee_collector.clone(),
         channels_collection_id: msg.channels_collection_id.clone(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
+        channels_collection_name: msg.channels_collection_name.clone(),
+        channels_collection_symbol: msg.channels_collection_symbol.clone(),
         channel_creation_fee: msg.channel_creation_fee.clone(),
     };
     // Save the channel CONFIG to the contract state
@@ -50,14 +50,10 @@ pub fn instantiate(
     let collection_creation_fee = get_collection_creation_fee(deps.as_ref())?;
 
     // Check if the payment provided in the message matches the required creation fee
-    ensure_eq!(
+    check_payment(
+        [collection_creation_fee.clone()].to_vec(),
         info.funds.clone(),
-        vec![collection_creation_fee.clone()],
-        ContractError::PaymentError {
-            expected: vec![collection_creation_fee.clone()],
-            received: info.funds.clone()
-        }
-    );
+    )?;
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =
@@ -66,6 +62,7 @@ pub fn instantiate(
             name: msg.channels_collection_name.clone(),
             symbol: msg.channels_collection_symbol.clone(),
             creation_fee: Some(collection_creation_fee.into()),
+            sender: env.contract.address.clone().to_string(),
             ..Default::default()
         }
         .into();
@@ -73,7 +70,18 @@ pub fn instantiate(
     // Build and return the response with the necessary messages and attributes
     let response = Response::new()
         .add_message(onft_creation_message)
-        .add_attribute("action", "instantiate");
+        .add_attribute("action", "instantiate")
+        .add_attribute("admin", admin.clone().to_string())
+        .add_attribute("fee_collector", fee_collector.clone().to_string())
+        .add_attribute("channels_collection_id", msg.channels_collection_id.clone())
+        .add_attribute(
+            "channels_collection_name",
+            msg.channels_collection_name.clone(),
+        )
+        .add_attribute(
+            "channels_collection_symbol",
+            msg.channels_collection_symbol.clone(),
+        );
 
     Ok(response)
 }
@@ -109,11 +117,11 @@ pub fn execute(
             playlist_id,
             channel_id,
         } => create_playlist(deps, env, info, channel_id, playlist_id),
-        ExecuteMsg::RegisterChannel {
+        ExecuteMsg::CreateChannel {
             user_name,
             salt,
             description,
-        } => register_channel(deps, env, info, salt, description, user_name),
+        } => create_channel(deps, env, info, salt, description, user_name),
         ExecuteMsg::SetChannelDetails {
             channel_id,
             description,
@@ -125,7 +133,7 @@ pub fn execute(
     }
 }
 
-fn register_channel(
+fn create_channel(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -152,8 +160,8 @@ fn register_channel(
     let channel_details = ChannelDetails::new(
         channel_id.clone(),
         user_name.clone(),
-        onft_id.clone(),
         description.clone(),
+        onft_id.clone(),
     );
     channel_details.clone().validate()?;
 
@@ -191,7 +199,10 @@ fn register_channel(
 
     let response = Response::new()
         .add_message(mint_onft_msg)
-        .add_attribute("action", "register_channel");
+        .add_attribute("action", "register_channel")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("user_name", user_name)
+        .add_attribute("onft_id", onft_id);
     Ok(response)
 }
 fn publish(

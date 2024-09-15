@@ -50,12 +50,12 @@ pub fn get_onft_with_owner(
 
 pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), ContractError> {
     let mut expected_balance = NativeBalance::default();
-    for coin in expected {
+    for coin in expected.clone() {
         expected_balance += coin;
     }
 
     let mut received_balance = NativeBalance::default();
-    for coin in received {
+    for coin in received.clone() {
         received_balance += coin;
     }
 
@@ -63,7 +63,10 @@ pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), Con
     received_balance.normalize();
 
     if expected_balance != received_balance {
-        return Err(ContractError::PaymentMismatch {});
+        return Err(ContractError::PaymentError {
+            expected: expected,
+            received: received,
+        });
     }
 
     Ok(())

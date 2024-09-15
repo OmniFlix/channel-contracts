@@ -3,7 +3,7 @@ use cosmwasm_std::{from_json, to_json_binary, Addr, Api, Binary, BlockInfo, Quer
 use cw_multi_test::error::Error;
 use cw_multi_test::{error::AnyResult, AppResponse, CosmosRouter, Stargate};
 use omniflix_std::types::omniflix::onft::v1beta1::{
-    Collection, Denom, MsgCreateDenom, MsgMintOnft,
+    Collection, Denom, MsgCreateDenom, MsgMintOnft, QueryOnftRequest,
 };
 use omniflix_std::types::{
     cosmos::base::v1beta1::Coin,
@@ -99,6 +99,21 @@ impl Stargate for StargateKeeper {
                 }),
             };
             return Ok(to_json_binary(&params)?);
+        }
+        if path == *"/OmniFlix.onft.v1beta1.Query/Onft" {
+            let query_msg: Result<QueryOnftRequest, DecodeError> = Message::decode(data.as_slice());
+            if let Ok(msg) = query_msg {
+                let key = format!("collections:{}:{}", COLLECTION_PREFIX, msg.denom_id);
+                let serialized_collection = _storage.get(key.as_bytes());
+                let collection: Collection = from_json(serialized_collection.unwrap())
+                    .expect("Failed to deserialize Collection");
+                let onft = collection
+                    .onfts
+                    .iter()
+                    .find(|onft| onft.id == msg.id)
+                    .expect("Onft not found");
+                return Ok(to_json_binary(&onft)?);
+            }
         }
         Ok(data)
     }

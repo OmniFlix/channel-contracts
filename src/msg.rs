@@ -33,7 +33,7 @@ pub enum ExecuteMsg {
         playlist_id: String,
         channel_id: String,
     },
-    RegisterChannel {
+    CreateChannel {
         salt: Binary,
         user_name: String,
         description: String,

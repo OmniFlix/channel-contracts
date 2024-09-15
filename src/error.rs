@@ -62,9 +62,6 @@ pub enum ContractError {
     #[error("ONFT not owned by the user")]
     OnftNotOwned {},
 
-    #[error("Payment amount mismatch")]
-    PaymentMismatch {},
-
     #[error("Failed to fetch collection creation fee")]
     CollectionCreationFeeError {},
 
