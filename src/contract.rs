@@ -437,9 +437,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::IsPaused {} => to_json_binary(&query_is_paused(deps)?),
         QueryMsg::Pausers {} => to_json_binary(&query_pausers(deps)?),
-        QueryMsg::ChannelDetails { channel_id } => {
-            to_json_binary(&query_channel_details(deps, channel_id)?)
-        }
+        QueryMsg::ChannelDetails {
+            channel_id,
+            user_name,
+        } => to_json_binary(&query_channel_details(deps, channel_id, user_name)?),
         QueryMsg::Playlist {
             channel_id,
             playlist_id,
@@ -458,9 +459,21 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_channel_details(deps: Deps, channel_id: String) -> Result<ChannelDetails, ContractError> {
+fn query_channel_details(
+    deps: Deps,
+    channel_id: Option<String>,
+    user_name: Option<String>,
+) -> Result<ChannelDetails, ContractError> {
     let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    // Match channels Id and user name
+    let channel_details = match (channel_id, user_name) {
+        (Some(channel_id), None) => channels.get_channel_details(deps.storage, channel_id)?,
+        (None, Some(user_name)) => {
+            let channel_id = channels.get_channel_id(deps.storage, user_name)?;
+            channels.get_channel_details(deps.storage, channel_id)?
+        }
+        _ => return Err(ContractError::InvalidChannelQuery {}),
+    };
     Ok(channel_details)
 }
 

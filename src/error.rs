@@ -97,6 +97,9 @@ pub enum ContractError {
 
     #[error("Username does not exist")]
     UserNameNotFound {},
+
+    #[error("Invalid channel query")]
+    InvalidChannelQuery {},
 }
 
 impl From<ContractError> for StdError {

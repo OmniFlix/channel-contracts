@@ -49,7 +49,8 @@ pub enum QueryMsg {
     IsPaused {},
     Pausers {},
     ChannelDetails {
-        channel_id: String,
+        channel_id: Option<String>,
+        user_name: Option<String>,
     },
     ChannelId {
         user_name: String,

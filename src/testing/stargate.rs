@@ -3,7 +3,7 @@ use cosmwasm_std::{from_json, to_json_binary, Addr, Api, Binary, BlockInfo, Quer
 use cw_multi_test::error::Error;
 use cw_multi_test::{error::AnyResult, AppResponse, CosmosRouter, Stargate};
 use omniflix_std::types::omniflix::onft::v1beta1::{
-    Collection, Denom, MsgCreateDenom, MsgMintOnft, QueryOnftRequest,
+    Collection, Denom, MsgCreateDenom, MsgMintOnft, QueryOnftRequest, QueryOnftResponse,
 };
 use omniflix_std::types::{
     cosmos::base::v1beta1::Coin,
@@ -36,7 +36,7 @@ impl Stargate for StargateKeeper {
                         creator: sender.to_string(),
                         data: msg.data,
                         name: msg.name,
-                        id: msg.id,
+                        id: msg.id.clone(),
                         preview_uri: msg.preview_uri,
                         description: msg.description,
                         schema: msg.schema,
@@ -47,7 +47,7 @@ impl Stargate for StargateKeeper {
                     }),
                     onfts: vec![],
                 };
-                let key = format!("collections:{}:{}", COLLECTION_PREFIX, sender);
+                let key = format!("collections:{}:{}", COLLECTION_PREFIX, msg.id);
                 let serialized_collection =
                     to_json_binary(&collection).expect("Failed to serialize Collection");
                 storage.set(key.as_bytes(), &serialized_collection);
@@ -56,7 +56,7 @@ impl Stargate for StargateKeeper {
         if type_url == *"/OmniFlix.onft.v1beta1.MsgMintONFT" {
             let parsed_msg: Result<MsgMintOnft, DecodeError> = Message::decode(value.as_slice());
             if let Ok(msg) = parsed_msg {
-                let key = format!("collections:{}:{}", COLLECTION_PREFIX, sender);
+                let key = format!("collections:{}:{}", COLLECTION_PREFIX, msg.denom_id);
                 let serialized_collection = storage.get(key.as_bytes());
                 let mut collection: Collection = from_json(serialized_collection.unwrap())
                     .expect("Failed to deserialize Collection");
@@ -83,7 +83,7 @@ impl Stargate for StargateKeeper {
     fn query(
         &self,
         _api: &dyn Api,
-        _storage: &dyn Storage,
+        storage: &dyn Storage,
         _querier: &dyn Querier,
         _block: &BlockInfo,
         path: String,
@@ -100,11 +100,11 @@ impl Stargate for StargateKeeper {
             };
             return Ok(to_json_binary(&params)?);
         }
-        if path == *"/OmniFlix.onft.v1beta1.Query/Onft" {
+        if path == *"/OmniFlix.onft.v1beta1.Query/ONFT" {
             let query_msg: Result<QueryOnftRequest, DecodeError> = Message::decode(data.as_slice());
             if let Ok(msg) = query_msg {
                 let key = format!("collections:{}:{}", COLLECTION_PREFIX, msg.denom_id);
-                let serialized_collection = _storage.get(key.as_bytes());
+                let serialized_collection = storage.get(key.as_bytes());
                 let collection: Collection = from_json(serialized_collection.unwrap())
                     .expect("Failed to deserialize Collection");
                 let onft = collection
@@ -112,7 +112,10 @@ impl Stargate for StargateKeeper {
                     .iter()
                     .find(|onft| onft.id == msg.id)
                     .expect("Onft not found");
-                return Ok(to_json_binary(&onft)?);
+                let response = QueryOnftResponse {
+                    onft: Some(onft.clone()),
+                };
+                return Ok(to_json_binary(&response)?);
             }
         }
         Ok(data)

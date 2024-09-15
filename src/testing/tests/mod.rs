@@ -2,4 +2,4 @@
 pub mod instantiate;
 
 #[cfg(test)]
-pub mod create_channel;
+pub mod channels;

@@ -8,6 +8,7 @@ pub type PlaylistName = String;
 
 #[cw_serde]
 pub struct Playlist {
+    pub playlist_name: String,
     pub assets: Vec<Asset>,
 }
 
@@ -38,7 +39,10 @@ impl<'a> PlaylistsManager<'a> {
         store: &mut dyn Storage,
         channel_id: ChannelId,
     ) -> StdResult<()> {
-        let playlist = Playlist { assets: vec![] };
+        let playlist = Playlist {
+            playlist_name: DEFAULT_PLAYLIST_NAME.to_string(),
+            assets: vec![],
+        };
         self.playlists.save(
             store,
             (channel_id, DEFAULT_PLAYLIST_NAME.to_string()),
@@ -54,7 +58,10 @@ impl<'a> PlaylistsManager<'a> {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
     ) -> Result<(), ContractError> {
-        let playlist = Playlist { assets: vec![] };
+        let playlist = Playlist {
+            assets: vec![],
+            playlist_name: playlist_name.clone(),
+        };
 
         if self
             .playlists
