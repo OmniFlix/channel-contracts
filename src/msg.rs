@@ -1,5 +1,7 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
+
+use crate::{channels::ChannelDetails, playlist::Playlist, state::ChannelConractConfig};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -55,28 +57,35 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(bool)]
     IsPaused {},
+    #[returns(Vec<String>)]
     Pausers {},
+    #[returns(ChannelDetails)]
     ChannelDetails {
         channel_id: Option<String>,
         user_name: Option<String>,
     },
+    #[returns(Vec<ChannelDetails>)]
     Channels {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    ChannelId {
-        user_name: String,
-    },
+    #[returns(String)]
+    ChannelId { user_name: String },
+    #[returns(Playlist)]
     Playlist {
         channel_id: String,
         playlist_name: String,
     },
+    #[returns(Vec<Playlist>)]
     Playlists {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(ChannelConractConfig)]
     Config {},
 }
