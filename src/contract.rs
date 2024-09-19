@@ -6,7 +6,7 @@ use crate::helpers::{
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::pauser::PauseState;
-use crate::playlist::{Asset, Playlist, PlaylistsManager};
+use crate::playlist::{Asset, Playlist, PlaylistsManager, Visibility};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 #[cfg(not(feature = "library"))]
@@ -262,6 +262,7 @@ fn publish(
         publish_id: publish_id.clone(),
         collection_id: asset_onft_collection_id.clone(),
         onft_id: asset_onft_id.clone(),
+        visibility: Visibility::Listed,
     };
 
     // Add the asset to the channel's default playlist

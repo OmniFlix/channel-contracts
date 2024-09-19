@@ -17,6 +17,13 @@ pub struct Asset {
     pub publish_id: String,
     pub collection_id: String,
     pub onft_id: String,
+    pub visibility: Visibility,
+}
+
+#[cw_serde]
+pub enum Visibility {
+    Listed,
+    Unlisted,
 }
 
 const PLAYLISTS_STORAGE_KEY: &str = "playlists";
