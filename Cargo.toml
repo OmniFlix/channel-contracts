@@ -1,38 +1,19 @@
-[package]
-name = "omniflix-channel"
-version = "0.1.0"
-authors = ["Ninjatosba <adenizcorlu@gmail.com>"]
-edition = "2021"
+[workspace]
+members = [
+    "contracts/omniflix-channel",
+]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
-
-[[bin]]
-name = "schema"
-path = "src/bin/schema.rs"
-doc  = false
-
-[features]
-# for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces"]
-# use library feature to disable all instantiate/execute/query exports
-library = []
+resolver = "2"
 
 
-[dependencies]
+[workspace.package]
+version    = "0.0.1-beta"
+edition    = "2021"
+homepage   = ""
+repository = ""
+license    = "Apache-2.0"
+
+[workspace.dependencies]
 cosmwasm-schema = "1.5.5"
 schemars             = "0.8.11"
 cosmwasm-std    = { version = "1.5.5", features = ["iterator", "staking", "stargate", "cosmwasm_1_2"] }
@@ -58,6 +39,3 @@ rand_xoshiro    = { version = "0.6.0", default-features = false }
 cw-multi-test = "0.20.0"
 prost = {version = "0.12.3", default-features = false, features = ["prost-derive"]}
 anyhow = "1.0.79"
-
-[dev-dependencies]
-cosmwasm-schema = "1.5.5"  

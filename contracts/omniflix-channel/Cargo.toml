@@ -1,0 +1,55 @@
+[package]
+name = "omniflix-channel"
+version = "0.1.0"
+authors = ["Ninjatosba <adenizcorlu@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+
+[dependencies]
+cosmwasm-schema = { workspace = true }
+schemars             = { workspace = true }
+cosmwasm-std    = { workspace = true }
+omniflix-std         = { workspace = true }
+cw-controllers       = { workspace = true }
+cw2                  = { workspace = true }
+cw4                  = { workspace = true }
+cw4-group            = { workspace = true }
+cw721                = { workspace = true }
+cw721-base           = { workspace = true }
+cw-storage-plus      = { workspace = true }
+cw-utils             = { workspace = true }
+thiserror            = { workspace = true }
+semver               = { workspace = true }
+cw-ownable           = { workspace = true }
+cosmwasm-storage     = { workspace = true }
+serde                = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+rand_core       = { workspace = true }
+rand_xoshiro    = { workspace = true }
+cw-multi-test = { workspace = true }
+prost = { workspace = true }
+anyhow = { workspace = true }
