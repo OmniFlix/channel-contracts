@@ -1,7 +1,28 @@
-use crate::ContractError;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
+use thiserror::Error;
+
+#[derive(Error, Debug, PartialEq)]
+pub enum PlaylistError {
+    #[error("Playlist not found")]
+    PlaylistNotFound {},
+
+    #[error("Playlist already exists")]
+    PlaylistAlreadyExists {},
+
+    #[error("Asset already exists in playlist")]
+    AssetAlreadyExistsInPlaylist {},
+
+    #[error("Asset not in playlist")]
+    AssetNotInPlaylist {},
+
+    #[error("Cannot delete default playlist")]
+    CannotDeleteDefaultPlaylist {},
+
+    #[error("Error saving playlist")]
+    SavePlaylistError {},
+}
 
 pub type ChannelId = String;
 pub type PlaylistName = String;
@@ -64,7 +85,7 @@ impl<'a> PlaylistsManager<'a> {
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-    ) -> Result<(), ContractError> {
+    ) -> Result<(), PlaylistError> {
         let playlist = Playlist {
             assets: vec![],
             playlist_name: playlist_name.clone(),
@@ -74,11 +95,12 @@ impl<'a> PlaylistsManager<'a> {
             .playlists
             .has(store, (channel_id.clone(), playlist_name.clone()))
         {
-            return Err(ContractError::PlaylistAlreadyExists {});
+            return Err(PlaylistError::PlaylistAlreadyExists {});
         }
 
         self.playlists
-            .save(store, (channel_id, playlist_name), &playlist)?;
+            .save(store, (channel_id, playlist_name), &playlist)
+            .map_err(|_| PlaylistError::PlaylistAlreadyExists {})?;
 
         Ok(())
     }
@@ -90,20 +112,21 @@ impl<'a> PlaylistsManager<'a> {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
         asset: Asset,
-    ) -> Result<(), ContractError> {
+    ) -> Result<(), PlaylistError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
-            .map_err(|_| ContractError::PlaylistNotFound {})?;
+            .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
         if playlist.assets.contains(&asset) {
-            return Err(ContractError::AssetAlreadyExistsInPlaylist {});
+            return Err(PlaylistError::AssetAlreadyExistsInPlaylist {});
         }
 
         playlist.assets.push(asset);
 
         self.playlists
-            .save(store, (channel_id, playlist_name), &playlist)?;
+            .save(store, (channel_id, playlist_name), &playlist)
+            .map_err(|_| PlaylistError::SavePlaylistError {})?;
 
         Ok(())
     }
@@ -115,22 +138,23 @@ impl<'a> PlaylistsManager<'a> {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
         publish_id: String,
-    ) -> Result<(), ContractError> {
+    ) -> Result<(), PlaylistError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
-            .map_err(|_| ContractError::PlaylistNotFound {})?;
+            .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
         let asset_index = playlist
             .assets
             .iter()
             .position(|asset| asset.publish_id == publish_id)
-            .ok_or(ContractError::AssetNotInPlaylist {})?;
+            .ok_or(PlaylistError::AssetNotInPlaylist {})?;
 
         playlist.assets.remove(asset_index);
 
         self.playlists
-            .save(store, (channel_id, playlist_name), &playlist)?;
+            .save(store, (channel_id, playlist_name), &playlist)
+            .map_err(|_| PlaylistError::SavePlaylistError {})?;
 
         Ok(())
     }
@@ -141,10 +165,10 @@ impl<'a> PlaylistsManager<'a> {
         store: &dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-    ) -> Result<Playlist, ContractError> {
+    ) -> Result<Playlist, PlaylistError> {
         self.playlists
             .load(store, (channel_id, playlist_name))
-            .map_err(|_| ContractError::PlaylistNotFound {})
+            .map_err(|_| PlaylistError::PlaylistNotFound {})
     }
 
     // Get all playlists for a channel (with pagination support)
@@ -175,16 +199,16 @@ impl<'a> PlaylistsManager<'a> {
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-    ) -> Result<(), ContractError> {
+    ) -> Result<(), PlaylistError> {
         if playlist_name == DEFAULT_PLAYLIST_NAME {
-            return Err(ContractError::CannotDeleteDefaultPlaylist {});
+            return Err(PlaylistError::CannotDeleteDefaultPlaylist {});
         }
         if self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .is_err()
         {
-            return Err(ContractError::PlaylistNotFound {});
+            return Err(PlaylistError::PlaylistNotFound {});
         }
 
         self.playlists.remove(store, (channel_id, playlist_name));

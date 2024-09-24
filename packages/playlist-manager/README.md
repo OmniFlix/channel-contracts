@@ -1,0 +1,1 @@
+This rust package is a storage manager for the playlists. It is responsible for storing the playlists.

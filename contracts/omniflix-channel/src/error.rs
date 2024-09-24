@@ -3,6 +3,7 @@ use thiserror::Error;
 
 use channel_manager::ChannelError;
 use pauser::PauseError;
+use playlist_manager::PlaylistError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -14,6 +15,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Channel(#[from] ChannelError),
+
+    #[error(transparent)]
+    Playlist(#[from] PlaylistError),
 
     #[error("Unauthorized")]
     Unauthorized {},

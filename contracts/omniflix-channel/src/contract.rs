@@ -4,7 +4,6 @@ use crate::helpers::{
     get_onft_with_owner,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::playlist::{Asset, Playlist, PlaylistsManager, Visibility};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use channel_manager::{ChannelDetails, ChannelOnftData, ChannelsManager};
@@ -15,6 +14,7 @@ use cosmwasm_std::{
     StdResult,
 };
 use pauser::PauseState;
+use playlist_manager::{Asset, Playlist, PlaylistsManager, Visibility};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

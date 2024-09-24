@@ -55,3 +55,4 @@ prost = { workspace = true }
 anyhow = { workspace = true }
 pauser = { workspace = true }
 channel-manager = { workspace = true }
+playlist-manager = { workspace = true }

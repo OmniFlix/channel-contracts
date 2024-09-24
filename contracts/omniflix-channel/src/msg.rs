@@ -1,8 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
-use crate::{playlist::Playlist, state::ChannelConractConfig};
+use crate::state::ChannelConractConfig;
 use channel_manager::ChannelDetails;
+use playlist_manager::Playlist;
 
 #[cw_serde]
 pub struct InstantiateMsg {

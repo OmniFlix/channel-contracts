@@ -45,3 +45,4 @@ testing = { path = "packages/testing" }
 omniflix-channel = { path = "contracts/omniflix-channel" }
 pauser = { path = "packages/pauser" }
 channel-manager = { path = "packages/channel-manager" }
+playlist-manager = { path = "packages/playlist-manager" }
