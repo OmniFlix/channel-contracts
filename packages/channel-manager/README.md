@@ -1,0 +1,1 @@
+This rust package is a storage manager for the channels. It is responsible for storing the channels and their metadata.
