@@ -1,4 +1,3 @@
-use crate::channels::{ChannelDetails, ChannelOnftData, ChannelsManager};
 use crate::error::ContractError;
 use crate::helpers::{
     bank_msg_wrapper, check_payment, generate_random_id_with_prefix, get_collection_creation_fee,
@@ -8,6 +7,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::playlist::{Asset, Playlist, PlaylistsManager, Visibility};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
+use channel_manager::{ChannelDetails, ChannelOnftData, ChannelsManager};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

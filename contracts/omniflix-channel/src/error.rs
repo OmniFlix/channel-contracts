@@ -1,6 +1,7 @@
 use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
+use channel_manager::ChannelError;
 use pauser::PauseError;
 
 #[derive(Error, Debug, PartialEq)]
@@ -10,6 +11,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Pause(#[from] PauseError),
+
+    #[error(transparent)]
+    Channel(#[from] ChannelError),
 
     #[error("Unauthorized")]
     Unauthorized {},

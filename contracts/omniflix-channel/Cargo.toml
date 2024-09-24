@@ -54,3 +54,4 @@ cw-multi-test = { workspace = true }
 prost = { workspace = true }
 anyhow = { workspace = true }
 pauser = { workspace = true }
+channel-manager = { workspace = true }

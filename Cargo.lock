@@ -748,6 +748,7 @@ name = "omniflix-channel"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "channel-manager",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
