@@ -1,7 +1,7 @@
 use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
-use crate::pauser::PauseError;
+use pauser::PauseError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {

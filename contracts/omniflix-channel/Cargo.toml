@@ -53,3 +53,4 @@ rand_xoshiro    = { workspace = true }
 cw-multi-test = { workspace = true }
 prost = { workspace = true }
 anyhow = { workspace = true }
+pauser = { workspace = true }

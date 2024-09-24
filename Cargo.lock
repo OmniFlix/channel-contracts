@@ -750,6 +750,7 @@ dependencies = [
  "cw721-base 0.18.0",
  "hex",
  "omniflix-std",
+ "pauser",
  "prost 0.12.6",
  "rand_core 0.6.4",
  "rand_xoshiro",
@@ -801,6 +802,19 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
+
+[[package]]
+name = "pauser"
+version = "0.0.1-beta"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw721-base 0.18.0",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "pkcs8"

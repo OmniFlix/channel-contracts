@@ -5,7 +5,6 @@ use crate::helpers::{
     get_onft_with_owner,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::pauser::PauseState;
 use crate::playlist::{Asset, Playlist, PlaylistsManager, Visibility};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
@@ -15,6 +14,7 @@ use cosmwasm_std::{
     to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
 };
+use pauser::PauseState;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
