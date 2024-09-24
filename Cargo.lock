@@ -647,6 +647,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "0.0.1-beta"
+dependencies = [
+ "anyhow",
+ "bech32",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "derivative",
+ "itertools 0.12.1",
+ "omniflix-channel",
+ "omniflix-std",
+ "prost 0.12.6",
+ "schemars",
+ "serde",
+ "testing",
+ "thiserror",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1090,6 +1115,28 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "testing"
+version = "0.0.1-beta"
+dependencies = [
+ "anyhow",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "itertools 0.12.1",
+ "omniflix-channel",
+ "omniflix-std",
+ "prost 0.12.6",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

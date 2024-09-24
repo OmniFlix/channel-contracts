@@ -1,0 +1,43 @@
+[package]
+authors     = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
+name = "integration-tests"
+edition = { workspace = true }
+version     = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+
+[lib]
+doctest = false
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+
+[dependencies]
+cosmwasm-storage = { workspace = true }
+omniflix-std = { workspace=true }
+cosmwasm-schema      = { workspace = true }
+cosmwasm-std = { version = "1.5.0", features = ["iterator", "staking", "stargate"] }
+cw-controllers       = { workspace = true }
+cw2                  = { workspace = true }
+cw-storage-plus = "1.2.0"
+cw-utils = "1.0.3"
+schemars = "0.8.16"
+cw-multi-test = "0.20.0"
+anyhow = "1.0.79"
+prost = "0.12.3"
+bech32 = "0.9.1"
+derivative = "2.2.0"
+itertools = "0.12.0"
+serde = "1.0.195"
+thiserror = "1.0.56"
+testing = { workspace=true }
+omniflix-channel = { workspace=true }
+
+
+
+
+
+
+
