@@ -1,9 +1,9 @@
+use asset_manager::error::AssetError;
+use asset_manager::error::PlaylistError;
+use channel_manager::error::ChannelError;
 use cosmwasm_std::{Coin, StdError};
-use thiserror::Error;
-
-use channel_manager::ChannelError;
 use pauser::PauseError;
-use playlist_manager::PlaylistError;
+use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -18,6 +18,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Playlist(#[from] PlaylistError),
+
+    #[error(transparent)]
+    Asset(#[from] AssetError),
 
     #[error("Unauthorized")]
     Unauthorized {},

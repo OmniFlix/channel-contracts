@@ -6,7 +6,6 @@ use crate::helpers::{
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
-use channel_manager::{ChannelDetails, ChannelOnftData, ChannelsManager};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -14,7 +13,6 @@ use cosmwasm_std::{
     StdResult,
 };
 use pauser::PauseState;
-use playlist_manager::{Asset, Playlist, PlaylistsManager, Visibility};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
