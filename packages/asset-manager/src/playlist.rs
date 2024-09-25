@@ -9,7 +9,6 @@ type ChannelId = String;
 type PlaylistName = String;
 
 const PLAYLISTS_STORAGE_KEY: &str = "playlists";
-const DEFAULT_PLAYLIST_NAME: &str = "My Videos";
 
 pub struct PlaylistsManager<'a> {
     pub playlists: Map<'a, (ChannelId, PlaylistName), Playlist>,
@@ -21,25 +20,6 @@ impl<'a> PlaylistsManager<'a> {
             playlists: Map::new(PLAYLISTS_STORAGE_KEY),
         }
     }
-
-    // Initialize a default playlist for a new channel
-    pub fn initialize_playlist_for_new_channel(
-        &self,
-        store: &mut dyn Storage,
-        channel_id: ChannelId,
-    ) -> StdResult<()> {
-        let playlist = Playlist {
-            playlist_name: DEFAULT_PLAYLIST_NAME.to_string(),
-            assets: vec![],
-        };
-        self.playlists.save(
-            store,
-            (channel_id, DEFAULT_PLAYLIST_NAME.to_string()),
-            &playlist,
-        )?;
-        Ok(())
-    }
-
     // Add a new playlist to a channel
     pub fn add_new_playlist(
         &self,
@@ -161,9 +141,6 @@ impl<'a> PlaylistsManager<'a> {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
     ) -> Result<(), PlaylistError> {
-        if playlist_name == DEFAULT_PLAYLIST_NAME {
-            return Err(PlaylistError::CannotDeleteDefaultPlaylist {});
-        }
         if self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))

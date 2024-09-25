@@ -20,6 +20,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
 
 [[package]]
+name = "asset-manager"
+version = "0.0.1-beta"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw721-base 0.18.0",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,6 +761,7 @@ name = "omniflix-channel"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "asset-manager",
  "channel-manager",
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -765,7 +779,6 @@ dependencies = [
  "hex",
  "omniflix-std",
  "pauser",
- "playlist-manager",
  "prost 0.12.6",
  "rand_core 0.6.4",
  "rand_xoshiro",
@@ -839,19 +852,6 @@ checksum = "f950b2377845cebe5cf8b5165cb3cc1a5e0fa5cfa3e1f7f55707d8fd82e0a7b7"
 dependencies = [
  "der",
  "spki",
-]
-
-[[package]]
-name = "playlist-manager"
-version = "0.0.1-beta"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "cw721-base 0.18.0",
- "serde",
- "thiserror",
 ]
 
 [[package]]
