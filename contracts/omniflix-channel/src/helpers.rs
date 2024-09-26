@@ -105,7 +105,8 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     // Prefix the result
     format!("{}{}", prefix, &id) // Ensure the string is exactly 32 characters long
 }
-
+/// Purpose: We can directy create a bank message but if the value is zero, that message will fail.
+/// This function will check if the value is zero and if it is, it will return an empty vec. If it is not, it will return the bank message.
 pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> {
     let mut final_amount = NativeBalance::default();
     for coin in amount.clone() {

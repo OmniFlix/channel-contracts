@@ -6,13 +6,20 @@ use crate::helpers::{
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
+use asset_manager::assets::Assets;
+use asset_manager::playlist::PlaylistsManager;
+use asset_manager::types::{Asset, Playlist, Visibility};
+use channel_manager::channel::ChannelsManager;
+use channel_manager::types::{ChannelDetails, ChannelOnftData};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
 };
+use cw_utils::maybe_addr;
 use pauser::PauseState;
+use serde::de;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -101,6 +108,7 @@ pub fn execute(
             salt,
             channel_id,
             playlist_name,
+            visibility,
         } => publish(
             deps,
             env,
@@ -110,6 +118,7 @@ pub fn execute(
             salt,
             channel_id,
             playlist_name,
+            visibility,
         ),
         ExecuteMsg::CreatePlaylist {
             playlist_name,
@@ -119,7 +128,8 @@ pub fn execute(
             user_name,
             salt,
             description,
-        } => create_channel(deps, env, info, salt, description, user_name),
+            collabarators,
+        } => create_channel(deps, env, info, salt, description, user_name, collabarators),
         ExecuteMsg::SetChannelDetails {
             channel_id,
             description,
@@ -148,6 +158,7 @@ fn create_channel(
     salt: Binary,
     description: String,
     user_name: String,
+    collabarators: Option<Vec<String>>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -165,11 +176,21 @@ fn create_channel(
 
     let channels_manager = ChannelsManager::new();
 
+    // Validate the collabarators addresses
+    // If no collabarators are provided, the vector will be empty
+    let addr_collaborators: Vec<Addr> = collabarators
+        .clone()
+        .unwrap_or_default()
+        .iter()
+        .map(|collaborator| deps.api.addr_validate(collaborator))
+        .collect::<Result<Vec<Addr>, _>>()?;
+
     let channel_details = ChannelDetails::new(
         channel_id.clone(),
         user_name.clone(),
         description.clone(),
         onft_id.clone(),
+        addr_collaborators,
     );
     channel_details.clone().validate()?;
 
@@ -182,10 +203,7 @@ fn create_channel(
         channel_details.clone(),
     )?;
 
-    // Initilize new playlist
-    let playlists = PlaylistsManager::new();
-    playlists.initialize_playlist_for_new_channel(deps.storage, channel_id.clone())?;
-
+    // Create the onft data for the channel. This data will be stored in the onft's data field
     let onft_data = ChannelOnftData {
         channel_id: channel_id.clone(),
         user_name: user_name.clone(),
@@ -204,6 +222,7 @@ fn create_channel(
         ..Default::default()
     }
     .into();
+
     // Pay the channel creation fee to the fee collector
     let bank_channel_fee_msg = bank_msg_wrapper(
         config.fee_collector.into_string(),
@@ -228,6 +247,7 @@ fn publish(
     salt: Binary,
     channel_id: String,
     playlist_name: Option<String>,
+    visibity: Visibility,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -235,16 +255,20 @@ fn publish(
     let config = CONFIG.load(deps.storage)?;
 
     // Find and validate the channel being published to is owned by the sender
+    // or the sender is a collaborator
     let channels = ChannelsManager::new();
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
-
-    let _channel_onft = get_onft_with_owner(
-        deps.as_ref(),
-        config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
-    )?;
+    // Check if the sender is a collaborator
+    // Else check if the sender is the owner
+    if !channel_details.collabarators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
 
     // Find and validate the asset being published
     let _asset_onft = get_onft_with_owner(
@@ -255,32 +279,17 @@ fn publish(
     )?;
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
-
+    // Define the asset to be published
     let asset = Asset {
+        channel_id: channel_id.clone(),
         publish_id: publish_id.clone(),
         collection_id: asset_onft_collection_id.clone(),
         onft_id: asset_onft_id.clone(),
-        visibility: Visibility::Listed,
+        visibility: visibity,
     };
-
-    // Add the asset to the channel's default playlist
-    let playlist_manager = PlaylistsManager::new();
-    playlist_manager.add_asset_to_playlist(
-        deps.storage,
-        channel_id.clone(),
-        "My Videos".to_string(),
-        asset.clone(),
-    )?;
-
-    // Add the asset to the specified playlist if provided
-    if let Some(playlist_name) = playlist_name.clone() {
-        playlist_manager.add_asset_to_playlist(
-            deps.storage,
-            channel_id.clone(),
-            playlist_name.clone(),
-            asset.clone(),
-        )?;
-    }
+    // Add asset to the channel's asset list
+    let assets = Assets::new();
+    assets.add_asset(deps.storage, channel_id.clone(), asset.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "publish")
