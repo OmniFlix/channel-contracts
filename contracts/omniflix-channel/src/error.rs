@@ -117,6 +117,9 @@ pub enum ContractError {
 
     #[error("Invalid channel query")]
     InvalidChannelQuery {},
+
+    #[error("Asset is not visible")]
+    AssetNotVisible {},
 }
 
 impl From<ContractError> for StdError {

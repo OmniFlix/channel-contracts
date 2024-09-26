@@ -7,7 +7,7 @@ use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
-use asset_manager::types::{Asset, Playlist, Visibility};
+use asset_manager::types::{Asset, Playlist};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -106,7 +106,7 @@ pub fn execute(
             salt,
             channel_id,
             playlist_name,
-            visibility,
+            is_visible,
         } => publish(
             deps,
             env,
@@ -116,7 +116,7 @@ pub fn execute(
             salt,
             channel_id,
             playlist_name,
-            visibility,
+            is_visible,
         ),
         ExecuteMsg::CreatePlaylist {
             playlist_name,
@@ -146,6 +146,19 @@ pub fn execute(
             admin,
             fee_collector,
         } => set_config(deps, info, channel_creation_fee, admin, fee_collector),
+        ExecuteMsg::AddAsset {
+            publish_id,
+            asset_channel_id,
+            channel_id,
+            playlist_name,
+        } => add_asset(
+            deps,
+            info,
+            asset_channel_id,
+            publish_id,
+            channel_id,
+            playlist_name,
+        ),
     }
 }
 
@@ -245,7 +258,7 @@ fn publish(
     salt: Binary,
     channel_id: String,
     playlist_name: Option<String>,
-    visibity: Visibility,
+    is_visible: bool,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -283,7 +296,7 @@ fn publish(
         publish_id: publish_id.clone(),
         collection_id: asset_onft_collection_id.clone(),
         onft_id: asset_onft_id.clone(),
-        visibility: visibity,
+        is_visible: is_visible,
     };
     // Add asset to the channel's asset list
     let assets = Assets::new();
@@ -453,7 +466,58 @@ fn remove_playlist(
 
     Ok(response)
 }
+fn add_asset(
+    deps: DepsMut,
+    info: MessageInfo,
+    asset_channel_id: String,
+    publish_id: String,
+    channel_id: String,
+    playlist_name: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+
+    if !channel_details.collabarators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
+
+    let playlist_manager = PlaylistsManager::new();
+
+    // Load the asset
+    let assets = Assets::new();
+    let asset = assets.get_asset(deps.storage, asset_channel_id.clone(), publish_id.clone())?;
+
+    // Verify that the asset is visible
+    if asset.is_visible == false {
+        return Err(ContractError::AssetNotVisible {});
+    }
+    // Add asset to playlist
+    playlist_manager.add_asset_to_playlist(
+        deps.storage,
+        channel_id.clone(),
+        playlist_name.clone(),
+        asset.clone(),
+    )?;
+
+    let response = Response::new()
+        .add_attribute("action", "add_asset")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("playlist_name", playlist_name)
+        .add_attribute("publish_id", publish_id);
+
+    Ok(response)
+}
 fn remove_asset(
     deps: DepsMut,
     info: MessageInfo,

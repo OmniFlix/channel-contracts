@@ -1,4 +1,4 @@
-use asset_manager::types::{Playlist, Visibility};
+use asset_manager::types::Playlist;
 use channel_manager::types::ChannelDetails;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
         salt: Binary,
         channel_id: String,
         playlist_name: Option<String>,
-        visibility: Visibility,
+        is_visible: bool,
     },
     CreatePlaylist {
         playlist_name: String,
@@ -37,6 +37,12 @@ pub enum ExecuteMsg {
     RemovePlaylist {
         playlist_name: String,
         channel_id: String,
+    },
+    AddAsset {
+        publish_id: String,
+        asset_channel_id: String,
+        channel_id: String,
+        playlist_name: String,
     },
     RemoveAsset {
         publish_id: String,

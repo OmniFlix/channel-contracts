@@ -41,11 +41,11 @@ impl Assets<'_> {
     pub fn get_asset(
         &self,
         store: &dyn Storage,
-        channel_id: ChannelId,
+        asset_channel_id: ChannelId,
         publish_id: PublishId,
     ) -> Result<Asset, AssetError> {
         self.assets
-            .load(store, (channel_id, publish_id))
+            .load(store, (asset_channel_id, publish_id))
             .map_err(|_| AssetError::AssetNotFound {})
     }
 
