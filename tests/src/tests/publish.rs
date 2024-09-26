@@ -1,10 +1,13 @@
-use crate::msg::{ExecuteMsg, QueryMsg};
-use crate::playlist::Playlist;
-use crate::testing::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
-use crate::ContractError;
-use crate::{msg::InstantiateMsg, testing::setup::setup};
+use asset_manager::types::Playlist;
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
+use omniflix_channel::ContractError;
+
+use crate::helpers::{
+    setup::setup,
+    utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
+};
 
 #[test]
 fn publish_asset() {
@@ -42,6 +45,7 @@ fn publish_asset() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -62,6 +66,7 @@ fn publish_asset() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
+        is_visible: true,
     };
 
     let res = app
@@ -110,6 +115,7 @@ fn publish_asset() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
+        is_visible: true,
     };
 
     let res = app
@@ -175,6 +181,7 @@ fn publish_asset_without_owning_the_channel() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -215,6 +222,7 @@ fn publish_asset_without_owning_the_channel() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
+        is_visible: true,
     };
 
     let res = app
@@ -273,6 +281,7 @@ fn publish_non_existing_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -313,6 +322,7 @@ fn publish_non_existing_playlist() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: Some("Wrong playlist".to_string()),
+        is_visible: true,
     };
 
     let res = app
@@ -365,6 +375,7 @@ fn publish_under_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -420,6 +431,7 @@ fn publish_under_playlist() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: Some("My Videos 2".to_string()),
+        is_visible: true,
     };
 
     let res = app
@@ -501,6 +513,7 @@ fn try_recreating_same_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app

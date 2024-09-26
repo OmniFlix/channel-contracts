@@ -692,7 +692,10 @@ name = "integration-tests"
 version = "0.0.1-beta"
 dependencies = [
  "anyhow",
+ "asset-manager",
  "bech32",
+ "channel-manager",
+ "channel-types",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -705,6 +708,7 @@ dependencies = [
  "itertools 0.12.1",
  "omniflix-channel",
  "omniflix-std",
+ "pauser",
  "prost 0.12.6",
  "schemars",
  "serde",

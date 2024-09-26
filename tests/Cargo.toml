@@ -34,6 +34,11 @@ serde = "1.0.195"
 thiserror = "1.0.56"
 testing = { workspace=true }
 omniflix-channel = { workspace=true }
+pauser = { workspace=true }
+channel-manager = { workspace=true }
+asset-manager = { workspace=true }
+channel-types = { workspace=true }
+
 
 
 
