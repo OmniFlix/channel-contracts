@@ -91,9 +91,7 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
     let height = env.block.height;
 
     // Generate a SHA-256 hash of the salt, block time, tx_index, and height
-    let hash = Sha256::digest(
-        format!("{}{}{}{}{}", block_time, tx_index, height, prefix, salt).as_bytes(),
-    );
+    let hash = Sha256::digest(format!("{}{}{}{}", block_time, tx_index, height, salt).as_bytes());
 
     // Use the first 16 bytes from the hash
     let randomness: [u8; 16] = hash[..16].try_into().unwrap();

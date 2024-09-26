@@ -45,6 +45,7 @@ pub fn instantiate(
     // Save the channel CONFIG to the contract state
     CONFIG.save(deps.storage, &channel_contract_config)?;
 
+    // Query the collection creation fee from onft module
     let collection_creation_fee = get_collection_creation_fee(deps.as_ref())?;
 
     // Check if the payment provided in the message matches the required creation fee
@@ -65,7 +66,6 @@ pub fn instantiate(
         }
         .into();
 
-    // Build and return the response with the necessary messages and attributes
     let response = Response::new()
         .add_message(onft_creation_message)
         .add_attribute("action", "instantiate")
