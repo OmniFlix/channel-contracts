@@ -46,3 +46,4 @@ omniflix-channel = { path = "contracts/omniflix-channel" }
 pauser = { path = "packages/pauser" }
 channel-manager = { path = "packages/channel-manager" }
 asset-manager = { path = "packages/asset-manager" }
+channel-types = { path = "packages/types" }

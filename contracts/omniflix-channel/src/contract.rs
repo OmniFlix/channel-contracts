@@ -3,7 +3,6 @@ use crate::helpers::{
     bank_msg_wrapper, check_payment, generate_random_id_with_prefix, get_collection_creation_fee,
     get_onft_with_owner,
 };
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
@@ -11,15 +10,14 @@ use asset_manager::playlist::PlaylistsManager;
 use asset_manager::types::{Asset, Playlist, Visibility};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
 };
-use cw_utils::maybe_addr;
 use pauser::PauseState;
-use serde::de;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
