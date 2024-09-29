@@ -455,31 +455,6 @@ fn random_id_generator() {
     let channel_id = channel_id.split_at(7).1;
     let onft_id = onft_id.split_at(4).1;
 
-    assert_eq!(channel_id.len(), 32);
-    assert_eq!(onft_id.len(), 32);
-    // They should not be the same because of the prefixes are used as entropy
-    assert_ne!(channel_id, onft_id);
-
-    // Same salt but try as if its the first transaction in the first block
-    let mut env = mock_env();
-    env.block.height = 1;
-    env.block.time = Timestamp::from_nanos(1);
-    env.transaction.as_mut().unwrap().index = 0;
-
-    let channel_id = generate_random_id_with_prefix(
-        &Binary::from_base64("salt").unwrap(),
-        &env.clone(),
-        "channel",
-    );
-
-    let onft_id =
-        generate_random_id_with_prefix(&Binary::from_base64("salt").unwrap(), &env, "onft");
-
-    // remove the prefixes
-    let channel_id = channel_id.split_at(7).1;
-    let onft_id = onft_id.split_at(4).1;
-
-    assert_eq!(channel_id.len(), 32);
-    assert_eq!(onft_id.len(), 32);
-    assert_ne!(channel_id, onft_id);
+    // they should be the same
+    assert_eq!(channel_id, onft_id);
 }

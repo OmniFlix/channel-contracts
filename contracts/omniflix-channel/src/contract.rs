@@ -118,7 +118,7 @@ pub fn execute(
             playlist_name,
             is_visible,
         ),
-        ExecuteMsg::CreatePlaylist {
+        ExecuteMsg::PlaylistCreate {
             playlist_name,
             channel_id,
         } => create_playlist(deps, env, info, channel_id, playlist_name),
@@ -132,11 +132,11 @@ pub fn execute(
             channel_id,
             description,
         } => set_channel_details(deps, info, channel_id, description),
-        ExecuteMsg::RemovePlaylist {
+        ExecuteMsg::PlaylistDelete {
             playlist_name,
             channel_id,
-        } => remove_playlist(deps, info, channel_id, playlist_name),
-        ExecuteMsg::RemoveAsset {
+        } => delete_playlist(deps, info, channel_id, playlist_name),
+        ExecuteMsg::PlaylistRemoveAsset {
             publish_id,
             channel_id,
             playlist_name,
@@ -146,7 +146,7 @@ pub fn execute(
             admin,
             fee_collector,
         } => set_config(deps, info, channel_creation_fee, admin, fee_collector),
-        ExecuteMsg::AddAsset {
+        ExecuteMsg::PlaylistAddAsset {
             publish_id,
             asset_channel_id,
             channel_id,
@@ -434,7 +434,7 @@ fn set_channel_details(
     Ok(response)
 }
 
-fn remove_playlist(
+fn delete_playlist(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
@@ -460,7 +460,7 @@ fn remove_playlist(
     playlist_manager.remove_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
 
     let response = Response::new()
-        .add_attribute("action", "remove_playlist")
+        .add_attribute("action", "delete_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name);
 
