@@ -40,9 +40,6 @@ pub enum ContractError {
     #[error("Missing minter creation fee")]
     MissingMinterCreationFee {},
 
-    #[error("MultiMinter not enabled")]
-    MultiMinterNotEnabled {},
-
     #[error("Channel already exists")]
     ChannelAlreadyExists {},
 
@@ -81,21 +78,6 @@ pub enum ContractError {
 
     #[error("Failed to fetch collection creation fee")]
     CollectionCreationFeeError {},
-
-    #[error("Playlist already exists")]
-    PlaylistAlreadyExists {},
-
-    #[error("Playlist does not exist")]
-    PlaylistNotFound {},
-
-    #[error("Asset already exists in the playlist")]
-    AssetAlreadyExistsInPlaylist {},
-
-    #[error("Asset does not exist in the playlist")]
-    AssetNotInPlaylist {},
-
-    #[error("Cannot delete the default playlist")]
-    CannotDeleteDefaultPlaylist {},
 
     #[error("Invalid username, must be between 3 and 32 characters")]
     InvalidUserName {},

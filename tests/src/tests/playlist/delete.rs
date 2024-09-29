@@ -1,18 +1,88 @@
-use asset_manager::error::PlaylistError;
-use asset_manager::types::Playlist;
-use channel_manager::types::ChannelDetails;
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use cosmwasm_std::testing::mock_env;
-use cosmwasm_std::{coin, Binary, BlockInfo, CosmosMsg, Timestamp};
-use cw_multi_test::Executor;
-use omniflix_channel::helpers::generate_random_id_with_prefix;
-use omniflix_channel::ContractError;
-
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
+use asset_manager::error::PlaylistError;
+use asset_manager::types::Playlist;
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_std::{coin, Binary, CosmosMsg};
+use cw_multi_test::Executor;
+use omniflix_channel::ContractError;
 
 #[test]
-fn delete_playlist() {
+fn does_not_exist() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = InstantiateMsg {
+        admin: setup_response.test_accounts.admin.clone(),
+        channel_creation_fee: vec![],
+        fee_collector: setup_response.test_accounts.admin,
+        channels_collection_id: "Channels".to_string(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+    };
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = ExecuteMsg::CreateChannel {
+        salt: Binary::from("salt".as_bytes()),
+        user_name: "user_name".to_string(),
+        description: "description".to_string(),
+        collabarators: None,
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+
+    // Get the channel_id from the event
+    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
+
+    // Remove a playlist that does not exist
+    let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
+        playlist_name: "My Playlist".to_string(),
+        channel_id: channel_id.clone(),
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &delete_playlist_msg,
+            &[],
+        )
+        .unwrap_err();
+    let err = res.source().unwrap();
+    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(
+        typed_err,
+        &ContractError::Playlist(PlaylistError::PlaylistNotFound {})
+    );
+}
+
+// Delete a playlist without owning the channel
+#[test]
+fn not_owned() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
@@ -59,30 +129,12 @@ fn delete_playlist() {
             &[],
         )
         .unwrap();
+
     // Get the channel_id from the event
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
-    let channel_onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");
-
-    // Remove a playlist that does not exist
-    let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
-        playlist_name: "My Playlist".to_string(),
-        channel_id: channel_id.clone(),
-    };
-
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &delete_playlist_msg,
-            &[],
-        )
-        .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::PlaylistNotFound {});
 
     // Remove a playlist without owning the channel
-    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
+    let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
     };
@@ -91,7 +143,7 @@ fn delete_playlist() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &create_playlist_msg,
+            &delete_playlist_msg,
             &[],
         )
         .unwrap_err();
@@ -100,29 +152,63 @@ fn delete_playlist() {
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {
-            onft_id: channel_onft_id.clone(),
+            onft_id: channel_id.clone().to_string().replace("channel", "onft"),
             collection_id: "Channels".to_string(),
         }
     );
+}
 
-    // Try to delete the default playlist
-    let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
-        playlist_name: "My Videos".to_string(),
-        channel_id: channel_id.clone(),
+// Happy path
+#[test]
+fn happy_path() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = InstantiateMsg {
+        admin: setup_response.test_accounts.admin.clone(),
+        channel_creation_fee: vec![],
+        fee_collector: setup_response.test_accounts.admin,
+        channels_collection_id: "Channels".to_string(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+    };
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = ExecuteMsg::CreateChannel {
+        salt: Binary::from("salt".as_bytes()),
+        user_name: "user_name".to_string(),
+        description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &delete_playlist_msg,
+            &create_channel_msg,
             &[],
         )
-        .unwrap_err();
+        .unwrap();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::CannotDeleteDefaultPlaylist {});
+    // Get the channel_id from the event
+    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // Create a playlist
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
@@ -140,7 +226,6 @@ fn delete_playlist() {
         .unwrap();
 
     // Add an asset to the playlist
-
     let asset_collection_id = "id".to_string();
     let asset_id = "asset_id".to_string();
 
@@ -167,11 +252,29 @@ fn delete_playlist() {
         is_visible: true,
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
             &publish_msg,
+            &[],
+        )
+        .unwrap();
+    let publish_id = get_event_attribute(res, "wasm", "publish_id");
+
+    // Playlist Add Asset
+    let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
+        publish_id: publish_id.clone(),
+        asset_channel_id: channel_id.clone(),
+        channel_id: channel_id.clone(),
+        playlist_name: "My Playlist".to_string(),
+    };
+
+    let _res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &add_asset_msg,
             &[],
         )
         .unwrap();
@@ -217,10 +320,5 @@ fn delete_playlist() {
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(playlists.len(), 1);
-    assert_eq!(playlists[0].playlist_name, "My Videos");
-
-    // Validate the asset was not removed from the default playlist
-    assert_eq!(playlists[0].assets.len(), 1);
-    assert_eq!(playlists[0].assets[0].onft_id, asset_id.clone());
+    assert_eq!(playlists.len(), 0);
 }

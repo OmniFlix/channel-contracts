@@ -1,4 +1,4 @@
-use asset_manager::types::Playlist;
+use asset_manager::{error::PlaylistError, types::Playlist};
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
@@ -336,7 +336,10 @@ fn publish_non_existing_playlist() {
 
     let err = res.source().unwrap();
     let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::PlaylistNotFound {});
+    assert_eq!(
+        typed_err,
+        &ContractError::Playlist(PlaylistError::PlaylistNotFound {})
+    );
 }
 
 #[test]
@@ -410,7 +413,7 @@ fn publish_under_playlist() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Create a playlist
-    let create_playlist_msg = ExecuteMsg::CreatePlaylist {
+    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos 2".to_string(),
         channel_id: channel_id.clone(),
     };
@@ -528,7 +531,7 @@ fn try_recreating_same_playlist() {
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // Creator tries to create a playlist named "My Videos"
-    let create_playlist_msg = ExecuteMsg::CreatePlaylist {
+    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
     };
@@ -544,5 +547,8 @@ fn try_recreating_same_playlist() {
 
     let err = res.source().unwrap();
     let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::PlaylistAlreadyExists {});
+    assert_eq!(
+        typed_err,
+        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
+    );
 }
