@@ -1,9 +1,12 @@
-use crate::msg::{ExecuteMsg, QueryMsg};
-use crate::state::ChannelConractConfig;
-use crate::ContractError;
-use crate::{msg::InstantiateMsg, testing::setup::setup};
+use channel_types::{
+    config::ChannelConractConfig,
+    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
+};
 use cosmwasm_std::coin;
 use cw_multi_test::Executor;
+use omniflix_channel::ContractError;
+
+use crate::helpers::setup::setup;
 
 #[test]
 fn instantiate_channel_contract() {

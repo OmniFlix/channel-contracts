@@ -1,10 +1,14 @@
-use crate::msg::{ExecuteMsg, QueryMsg};
-use crate::playlist::Playlist;
-use crate::testing::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
-use crate::ContractError;
-use crate::{msg::InstantiateMsg, testing::setup::setup};
-use cosmwasm_std::{coin, Binary, CosmosMsg};
+use asset_manager::types::Playlist;
+use channel_manager::types::ChannelDetails;
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_std::testing::mock_env;
+use cosmwasm_std::{coin, Binary, BlockInfo, CosmosMsg, Timestamp};
 use cw_multi_test::Executor;
+use omniflix_channel::helpers::generate_random_id_with_prefix;
+use omniflix_channel::ContractError;
+
+use crate::helpers::setup::setup;
+use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 
 #[test]
 fn create_playlist() {
@@ -43,6 +47,7 @@ fn create_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -170,6 +175,7 @@ fn remove_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -285,6 +291,7 @@ fn remove_playlist() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: Some("My Playlist".to_string()),
+        is_visible: true,
     };
 
     let _res = app
@@ -381,6 +388,7 @@ fn try_recreating_same_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -451,6 +459,7 @@ fn remove_asset_from_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
+        collabarators: None,
     };
 
     let res = app
@@ -573,6 +582,7 @@ fn remove_asset_from_playlist() {
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: Some("My Playlist".to_string()),
+        is_visible: true,
     };
 
     let res = app

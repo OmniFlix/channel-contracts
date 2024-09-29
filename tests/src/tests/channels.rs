@@ -1,13 +1,14 @@
-use crate::helpers::generate_random_id_with_prefix;
-use crate::msg::{ExecuteMsg, QueryMsg};
-use crate::playlist::Playlist;
-use crate::testing::utils::get_event_attribute;
-use crate::ContractError;
-use crate::{msg::InstantiateMsg, testing::setup::setup};
+use asset_manager::types::Playlist;
+use channel_manager::types::ChannelDetails;
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
-use omniflix_channel::ChannelDetails;
+use omniflix_channel::helpers::generate_random_id_with_prefix;
+use omniflix_channel::ContractError;
+
+use crate::helpers::setup::setup;
+use crate::helpers::utils::get_event_attribute;
 
 #[test]
 fn create_channel() {
@@ -49,6 +50,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[],
         )
@@ -72,6 +74,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000001, "uflix")],
         )
@@ -95,6 +98,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -113,6 +117,7 @@ fn create_channel() {
                 user_name: "creator".to_string(),
                 // Generate a sting with 257 characters
                 description: "a".repeat(257),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -130,6 +135,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -221,6 +227,7 @@ fn set_channel_details() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -380,6 +387,7 @@ fn same_user_name() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -396,6 +404,7 @@ fn same_user_name() {
                 salt: Binary::from("salt".as_bytes()),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -421,6 +430,7 @@ fn same_user_name() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
+                collabarators: None,
             },
             &[coin(1000000, "uflix")],
         )
