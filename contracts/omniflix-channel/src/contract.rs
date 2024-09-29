@@ -6,11 +6,11 @@ use crate::helpers::{
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
-use asset_manager::playlist::PlaylistsManager;
+use asset_manager::playlist::{self, PlaylistsManager};
 use asset_manager::types::{Asset, Playlist};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_types::msg::{self, ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -301,6 +301,15 @@ fn publish(
     // Add asset to the channel's asset list
     let assets = Assets::new();
     assets.add_asset(deps.storage, channel_id.clone(), asset.clone())?;
+    if let Some(playlist_name) = playlist_name.clone() {
+        let playlist_manager = PlaylistsManager::new();
+        playlist_manager.add_asset_to_playlist(
+            deps.storage,
+            channel_id.clone(),
+            playlist_name.clone(),
+            asset.clone(),
+        )?;
+    }
 
     let response = Response::new()
         .add_attribute("action", "publish")
@@ -620,6 +629,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_json_binary(&query_playlists(deps, channel_id, start_after, limit)?),
 
         QueryMsg::Config {} => to_json_binary(&CONFIG.load(deps.storage)?),
+        QueryMsg::Assets {
+            channel_id,
+            start_after,
+            limit,
+        } => to_json_binary(&query_assets(deps, channel_id, start_after, limit)?),
+        QueryMsg::Asset {
+            channel_id,
+            publish_id,
+        } => to_json_binary(&query_asset(deps, channel_id, publish_id)?),
     }
 }
 
@@ -690,6 +708,23 @@ fn query_pausers(deps: Deps) -> Result<Vec<Addr>, ContractError> {
     let pause_state = PauseState::new()?;
     let pausers = pause_state.get_pausers(deps.storage)?;
     Ok(pausers)
+}
+
+fn query_assets(
+    deps: Deps,
+    channel_id: String,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<Asset>, ContractError> {
+    let assets = Assets::new();
+    let assets_list = assets.get_all_assets(deps.storage, channel_id, start_after, limit)?;
+    Ok(assets_list)
+}
+
+fn query_asset(deps: Deps, channel_id: String, publish_id: String) -> Result<Asset, ContractError> {
+    let assets = Assets::new();
+    let asset = assets.get_asset(deps.storage, channel_id, publish_id)?;
+    Ok(asset)
 }
 
 #[cfg(test)]

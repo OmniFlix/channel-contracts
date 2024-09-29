@@ -1,4 +1,4 @@
-use asset_manager::types::Playlist;
+use asset_manager::types::{Asset, Playlist};
 use channel_manager::types::ChannelDetails;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
@@ -99,4 +99,15 @@ pub enum QueryMsg {
     },
     #[returns(ChannelConractConfig)]
     Config {},
+    #[returns(Vec<Asset>)]
+    Assets {
+        channel_id: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    #[returns(Asset)]
+    Asset {
+        channel_id: String,
+        publish_id: String,
+    },
 }

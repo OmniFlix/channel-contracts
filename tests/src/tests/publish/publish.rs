@@ -1,4 +1,7 @@
-use asset_manager::{error::PlaylistError, types::Playlist};
+use asset_manager::{
+    error::PlaylistError,
+    types::{Asset, Playlist},
+};
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
@@ -10,7 +13,7 @@ use crate::helpers::{
 };
 
 #[test]
-fn publish_asset() {
+fn asset_does_not_exist() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
@@ -86,6 +89,57 @@ fn publish_asset() {
             onft_id: "asset_id".to_string()
         }
     );
+}
+
+#[test]
+fn happy_path() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = InstantiateMsg {
+        admin: setup_response.test_accounts.admin.clone(),
+        channel_creation_fee: vec![],
+        fee_collector: setup_response.test_accounts.admin,
+        channels_collection_id: "Channels".to_string(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+    };
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = ExecuteMsg::CreateChannel {
+        salt: Binary::from("salt".as_bytes()),
+        user_name: "user_name".to_string(),
+        description: "description".to_string(),
+        collabarators: None,
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+    // Get the channel_id from the event
+    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // We need to create a denom for creator
     // Then we will mint a onft representing the asset
@@ -130,18 +184,19 @@ fn publish_asset() {
     let publish_id = get_event_attribute(res.clone(), "wasm", "publish_id");
 
     // Query the asset
-    let query_msg = QueryMsg::Playlist {
+    let query_msg = QueryMsg::Asset {
         channel_id: channel_id.clone(),
-        playlist_name: "My Videos".to_string(), // Default playlist name
+        publish_id: publish_id.clone(),
     };
 
-    let playlist: Playlist = app
+    let asset: Asset = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(playlist.assets.len(), 1);
-    assert_eq!(playlist.assets[0].publish_id, publish_id);
+    assert_eq!(asset.publish_id, publish_id);
+    assert_eq!(asset.collection_id, asset_collection_id);
+    assert_eq!(asset.onft_id, asset_id);
 }
 
 #[test]
@@ -315,7 +370,7 @@ fn publish_non_existing_playlist() {
     let cosmos_msg: CosmosMsg = mint_onft_msg.into();
     let _res = app.execute(creator.clone(), cosmos_msg);
 
-    // Publish the asset under the wrong playlist name
+    // Publish the asset with wrong playlist name
     let publish_msg = ExecuteMsg::Publish {
         asset_onft_collection_id: asset_collection_id.clone(),
         asset_onft_id: asset_id.clone(),
@@ -414,7 +469,7 @@ fn publish_under_playlist() {
 
     // Create a playlist
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
-        playlist_name: "My Videos 2".to_string(),
+        playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
     };
 
@@ -433,7 +488,7 @@ fn publish_under_playlist() {
         asset_onft_id: asset_id.clone(),
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
-        playlist_name: Some("My Videos 2".to_string()),
+        playlist_name: Some("My Videos".to_string()),
         is_visible: true,
     };
 
@@ -448,10 +503,10 @@ fn publish_under_playlist() {
 
     let publish_id = get_event_attribute(res.clone(), "wasm", "publish_id");
 
-    // Query the default playlist
+    // Query the new playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Videos".to_string(), // Default playlist name
+        playlist_name: "My Videos".to_string(),
     };
 
     let playlist: Playlist = app
@@ -459,96 +514,6 @@ fn publish_under_playlist() {
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    // Query the new playlist
-    let query_msg = QueryMsg::Playlist {
-        channel_id: channel_id.clone(),
-        playlist_name: "My Videos 2".to_string(),
-    };
-
-    let playlist_2: Playlist = app
-        .wrap()
-        .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
-        .unwrap();
-
-    // Default playlist will always have the asset published
-    // We expect the new playlist to have the asset published as well
-
     assert_eq!(playlist.assets.len(), 1);
     assert_eq!(playlist.assets[0].publish_id, publish_id);
-
-    assert_eq!(playlist_2.assets.len(), 1);
-    assert_eq!(playlist_2.assets[0].publish_id, publish_id);
-}
-
-#[test]
-fn try_recreating_same_playlist() {
-    // Setup testing environment
-    let setup_response = setup();
-    let mut app = setup_response.app;
-
-    // Actors
-    let admin = setup_response.test_accounts.admin.clone();
-    let creator = setup_response.test_accounts.creator.clone();
-
-    // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
-
-    let channel_contract_addr = app
-        .instantiate_contract(
-            setup_response.channel_contract_code_id,
-            admin.clone(),
-            &instantiate_msg,
-            &[coin(1000000, "uflix")],
-            "Instantiate Channel Contract",
-            None,
-        )
-        .unwrap();
-
-    // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collabarators: None,
-    };
-
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &create_channel_msg,
-            &[],
-        )
-        .unwrap();
-    // Get the channel_id from the event
-    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
-
-    // Creator tries to create a playlist named "My Videos"
-    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
-        playlist_name: "My Videos".to_string(),
-        channel_id: channel_id.clone(),
-    };
-
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &create_playlist_msg,
-            &[],
-        )
-        .unwrap_err();
-
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
-    );
 }

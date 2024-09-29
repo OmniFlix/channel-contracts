@@ -344,7 +344,7 @@ fn not_owned() {
         asset_onft_id: asset_id.clone(),
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
-        playlist_name: Some("My Playlist".to_string()),
+        playlist_name: None,
         is_visible: true,
     };
 
