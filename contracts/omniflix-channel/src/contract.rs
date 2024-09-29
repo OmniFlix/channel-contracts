@@ -6,11 +6,11 @@ use crate::helpers::{
 use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
-use asset_manager::playlist::{self, PlaylistsManager};
+use asset_manager::playlist::PlaylistsManager;
 use asset_manager::types::{Asset, Playlist};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
-use channel_types::msg::{self, ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -302,26 +302,27 @@ fn publish(
     let assets = Assets::new();
     assets.add_asset(deps.storage, channel_id.clone(), asset.clone())?;
     if let Some(playlist_name) = playlist_name.clone() {
-        let playlist_manager = PlaylistsManager::new();
-        playlist_manager.add_asset_to_playlist(
-            deps.storage,
-            channel_id.clone(),
-            playlist_name.clone(),
-            asset.clone(),
-        )?;
+        if is_visible {
+            let playlist_manager = PlaylistsManager::new();
+            playlist_manager.add_asset_to_playlist(
+                deps.storage,
+                channel_id.clone(),
+                playlist_name.clone(),
+                asset.clone(),
+            )?;
+        }
     }
 
-    let response = Response::new()
+    let mut response = Response::new()
         .add_attribute("action", "publish")
         .add_attribute("publish_id", publish_id)
         .add_attribute("channel_id", channel_id)
-        .add_attribute(
-            "playlist_name",
-            playlist_name.unwrap_or("My Videos".to_string()),
-        )
         .add_attribute("asset_onft_collection_id", asset_onft_collection_id)
         .add_attribute("asset_onft_id", asset_onft_id);
 
+    if let Some(playlist_name) = playlist_name {
+        response = response.add_attribute("playlist_name", playlist_name);
+    }
     Ok(response)
 }
 

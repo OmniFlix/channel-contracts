@@ -517,3 +517,103 @@ fn publish_under_playlist() {
     assert_eq!(playlist.assets.len(), 1);
     assert_eq!(playlist.assets[0].publish_id, publish_id);
 }
+
+#[test]
+fn asset_not_owned() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+    let collector = setup_response.test_accounts.collector.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = InstantiateMsg {
+        admin: setup_response.test_accounts.admin.clone(),
+        channel_creation_fee: vec![],
+        fee_collector: setup_response.test_accounts.admin,
+        channels_collection_id: "Channels".to_string(),
+        channels_collection_name: "Channels".to_string(),
+        channels_collection_symbol: "CH".to_string(),
+    };
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = ExecuteMsg::CreateChannel {
+        salt: Binary::from("salt".as_bytes()),
+        user_name: "user_name".to_string(),
+        description: "description".to_string(),
+        collabarators: None,
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+
+    // Get the channel_id from the event
+    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
+
+    // Publish an asset
+    let asset_collection_id = "id".to_string();
+    let asset_id = "asset_id".to_string();
+
+    let create_denom_msg = create_denom_msg(
+        creator.clone().to_string(),
+        asset_collection_id.clone(),
+        Some("Media asset collection".to_string()),
+    );
+    let _res = app.execute(creator.clone(), create_denom_msg);
+    let mint_onft_msg = mint_onft_msg(
+        "id".to_string(),
+        "asset_id".to_string(),
+        collector.clone().to_string(),
+    );
+    let _res = app.execute(creator.clone(), mint_onft_msg);
+
+    // Asset is owned by collector
+    // Creator tries to publish the asset
+    let publish_msg = ExecuteMsg::Publish {
+        asset_onft_collection_id: asset_collection_id.clone(),
+        asset_onft_id: asset_id.clone(),
+        salt: Binary::from("salt".as_bytes()),
+        channel_id: channel_id.clone(),
+        playlist_name: None,
+        is_visible: true,
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &publish_msg,
+            &[],
+        )
+        .unwrap_err();
+
+    let err = res.source().unwrap();
+    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(
+        typed_err,
+        &ContractError::OnftNotOwned {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone()
+        }
+    );
+}

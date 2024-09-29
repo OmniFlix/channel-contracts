@@ -10,6 +10,7 @@ pub fn setup() -> SetupResponse {
     let admin = Addr::unchecked("admin");
     let creator = Addr::unchecked("creator");
     let collector = Addr::unchecked("collector");
+    let creator2 = Addr::unchecked("creator2");
 
     app.set_block(BlockInfo {
         chain_id: "test_1".to_string(),
@@ -55,6 +56,7 @@ pub fn setup() -> SetupResponse {
             admin,
             creator,
             collector,
+            creator2,
         },
         channel_contract_code_id,
     }
@@ -68,5 +70,6 @@ pub struct SetupResponse {
 pub struct TestAccounts {
     pub admin: Addr,
     pub creator: Addr,
+    pub creator2: Addr,
     pub collector: Addr,
 }
