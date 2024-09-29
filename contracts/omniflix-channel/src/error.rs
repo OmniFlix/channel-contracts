@@ -40,12 +40,6 @@ pub enum ContractError {
     #[error("Missing minter creation fee")]
     MissingMinterCreationFee {},
 
-    #[error("Channel already exists")]
-    ChannelAlreadyExists {},
-
-    #[error("Channel not found")]
-    ChannelNotFound {},
-
     #[error("Payment error")]
     PaymentError {
         expected: Vec<Coin>,
@@ -57,9 +51,6 @@ pub enum ContractError {
 
     #[error("Asset to be published not found")]
     AssetNotFound {},
-
-    #[error("Channel ONFT not found")]
-    ChannelOnftNotFound {},
 
     #[error("Query ONFT failed")]
     OnftQueryFailed {},
@@ -79,20 +70,8 @@ pub enum ContractError {
     #[error("Failed to fetch collection creation fee")]
     CollectionCreationFeeError {},
 
-    #[error("Invalid username, must be between 3 and 32 characters")]
-    InvalidUserName {},
-
-    #[error("Invalid description, must be between 3 and 256 characters")]
-    InvalidDescription {},
-
-    #[error("Channel ID already exists")]
-    ChannelIdAlreadyExists {},
-
     #[error("Username already taken")]
     UserNameAlreadyTaken {},
-
-    #[error("Channel ID does not exist")]
-    ChannelIdNotFound {},
 
     #[error("Username does not exist")]
     UserNameNotFound {},
