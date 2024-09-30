@@ -5,7 +5,7 @@ pub mod instantiate;
 pub mod channels;
 
 #[cfg(test)]
-pub mod publish;
+pub mod assets;
 
 #[cfg(test)]
 pub mod playlist;
