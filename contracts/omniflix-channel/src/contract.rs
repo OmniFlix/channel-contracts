@@ -159,7 +159,7 @@ pub fn execute(
             asset_channel_id,
             channel_id,
             playlist_name,
-        } => add_asset(
+        } => add_asset_to_playlist(
             deps,
             info,
             asset_channel_id,
@@ -167,6 +167,11 @@ pub fn execute(
             channel_id,
             playlist_name,
         ),
+        ExecuteMsg::AssetSetDetails {
+            publish_id,
+            channel_id,
+            is_visible,
+        } => set_asset_details(deps, info, publish_id, channel_id, is_visible),
     }
 }
 
@@ -565,7 +570,7 @@ fn delete_playlist(
 
     Ok(response)
 }
-fn add_asset(
+fn add_asset_to_playlist(
     deps: DepsMut,
     info: MessageInfo,
     asset_channel_id: String,
@@ -610,7 +615,7 @@ fn add_asset(
     )?;
 
     let response = Response::new()
-        .add_attribute("action", "add_asset")
+        .add_attribute("action", "add_asset_to_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
         .add_attribute("publish_id", publish_id);
@@ -654,6 +659,50 @@ fn remove_asset_from_playlist(
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
         .add_attribute("publish_id", publish_id);
+
+    Ok(response)
+}
+
+fn set_asset_details(
+    deps: DepsMut,
+    info: MessageInfo,
+    publish_id: String,
+    channel_id: String,
+    is_visible: bool,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let config = CONFIG.load(deps.storage)?;
+
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    // Only channel owner can set asset details
+    // Collaborators cannot set asset details
+    let _channel_onft = get_onft_with_owner(
+        deps.as_ref(),
+        config.channels_collection_id.clone(),
+        channel_onft_id,
+        info.sender.clone().to_string(),
+    )?;
+
+    let assets = Assets::new();
+    let mut asset = assets.get_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
+    asset.is_visible = is_visible;
+
+    assets.update_asset(
+        deps.storage,
+        channel_id.clone(),
+        publish_id.clone(),
+        asset.clone(),
+    )?;
+
+    let response = Response::new()
+        .add_attribute("action", "set_asset_details")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("publish_id", publish_id)
+        .add_attribute("is_visible", is_visible.to_string());
 
     Ok(response)
 }

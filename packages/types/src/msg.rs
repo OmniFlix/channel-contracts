@@ -34,6 +34,11 @@ pub enum ExecuteMsg {
         publish_id: String,
         channel_id: String,
     },
+    AssetSetDetails {
+        publish_id: String,
+        channel_id: String,
+        is_visible: bool,
+    },
     PlaylistCreate {
         playlist_name: String,
         channel_id: String,
