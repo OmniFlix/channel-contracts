@@ -30,6 +30,10 @@ pub enum ExecuteMsg {
         playlist_name: Option<String>,
         is_visible: bool,
     },
+    Unpublish {
+        publish_id: String,
+        channel_id: String,
+    },
     PlaylistCreate {
         playlist_name: String,
         channel_id: String,
@@ -47,6 +51,10 @@ pub enum ExecuteMsg {
 
     PlaylistRemoveAsset {
         publish_id: String,
+        channel_id: String,
+        playlist_name: String,
+    },
+    PlaylistRefresh {
         channel_id: String,
         playlist_name: String,
     },

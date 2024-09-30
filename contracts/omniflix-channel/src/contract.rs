@@ -14,8 +14,8 @@ use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult,
+    to_json_binary, Addr, Attribute, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    Response, StdResult,
 };
 use pauser::PauseState;
 
@@ -118,6 +118,14 @@ pub fn execute(
             playlist_name,
             is_visible,
         ),
+        ExecuteMsg::Unpublish {
+            publish_id,
+            channel_id,
+        } => unpublish(deps, info, publish_id, channel_id),
+        ExecuteMsg::PlaylistRefresh {
+            channel_id,
+            playlist_name,
+        } => refresh_playlist(deps, info, channel_id, playlist_name),
         ExecuteMsg::PlaylistCreate {
             playlist_name,
             channel_id,
@@ -140,7 +148,7 @@ pub fn execute(
             publish_id,
             channel_id,
             playlist_name,
-        } => remove_asset(deps, info, publish_id, channel_id, playlist_name),
+        } => remove_asset_from_playlist(deps, info, publish_id, channel_id, playlist_name),
         ExecuteMsg::SetConfig {
             channel_creation_fee,
             admin,
@@ -323,6 +331,87 @@ fn publish(
     if let Some(playlist_name) = playlist_name {
         response = response.add_attribute("playlist_name", playlist_name);
     }
+    Ok(response)
+}
+
+fn unpublish(
+    deps: DepsMut,
+    info: MessageInfo,
+    publish_id: String,
+    channel_id: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let config = CONFIG.load(deps.storage)?;
+
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collabarators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
+
+    let assets = Assets::new();
+    assets.remove_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "unpublish")
+        .add_attribute("publish_id", publish_id)
+        .add_attribute("channel_id", channel_id);
+
+    Ok(response)
+}
+
+fn refresh_playlist(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    playlist_name: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let config = CONFIG.load(deps.storage)?;
+
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collabarators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
+
+    let playlist_manager = PlaylistsManager::new();
+    let assets_removed = playlist_manager.refresh_playlist(
+        deps.storage,
+        channel_id.clone(),
+        playlist_name.clone(),
+    )?;
+    let attributes: Vec<Attribute> = assets_removed
+        .iter()
+        // Improve attributes
+        .map(|asset| Attribute::new("publish_id_of_removed", asset.publish_id.clone()))
+        .collect();
+
+    let response = Response::new()
+        .add_attribute("action", "refresh_playlist")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("playlist_name", playlist_name)
+        .add_attributes(attributes);
+
     Ok(response)
 }
 
@@ -528,7 +617,7 @@ fn add_asset(
 
     Ok(response)
 }
-fn remove_asset(
+fn remove_asset_from_playlist(
     deps: DepsMut,
     info: MessageInfo,
     publish_id: String,
@@ -561,7 +650,7 @@ fn remove_asset(
     )?;
 
     let response = Response::new()
-        .add_attribute("action", "remove_asset")
+        .add_attribute("action", "remove_asset_from_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
         .add_attribute("publish_id", publish_id);

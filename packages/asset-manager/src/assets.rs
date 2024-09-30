@@ -90,16 +90,11 @@ impl Assets<'_> {
     pub fn asset_exists(
         &self,
         store: &dyn Storage,
+        channel_id: ChannelId,
         publish_id: PublishId,
     ) -> Result<bool, AssetError> {
-        let exists = self
-            .assets
-            .range(store, None, None, Order::Descending) // range in reverse order
-            .map(|item| item.map(|((_, pub_id), _)| pub_id)) // Only deal with publish_id
-            .filter(|result| result.is_ok() && result.as_ref().unwrap() == &publish_id) // filter by publish_id
-            .next(); // Stop as soon as we find the first match
-
-        Ok(exists.is_some()) // If we found any, return true
+        let exists = self.assets.load(store, (channel_id, publish_id)).is_ok();
+        Ok(exists)
     }
     pub fn update_asset(
         &self,

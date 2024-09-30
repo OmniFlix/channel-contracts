@@ -2,6 +2,7 @@ use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use crate::{
+    assets::Assets,
     error::PlaylistError,
     types::{Asset, Playlist},
 };
@@ -151,5 +152,49 @@ impl<'a> PlaylistsManager<'a> {
 
         self.playlists.remove(store, (channel_id, playlist_name));
         Ok(())
+    }
+
+    // Refresh the playlist
+    // We iterate through all the playlists and remove any assets that are not found in the asset manager or are not visible
+    pub fn refresh_playlist(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        playlist_name: PlaylistName,
+    ) -> Result<Vec<Asset>, PlaylistError> {
+        // Load the playlist
+        let mut playlist = self
+            .playlists
+            .load(store, (channel_id.clone(), playlist_name.clone()))
+            .map_err(|_| PlaylistError::PlaylistNotFound {})?;
+
+        let assets_in_playlist = playlist.assets.clone();
+        let asset_manager = Assets::new();
+
+        // Filter and collect visible assets
+        let new_assets: Vec<Asset> = assets_in_playlist
+            .iter()
+            .filter_map(|asset| {
+                asset_manager
+                    .get_asset(store, channel_id.clone(), asset.publish_id.clone())
+                    .ok()
+                    .filter(|asset_details| asset_details.is_visible)
+                    .map(|_| asset.clone()) // If asset is visible, clone it for new playlist
+            })
+            .collect();
+
+        // Update the playlist with filtered assets
+        playlist.assets = new_assets.clone();
+
+        // Save the updated playlist back to storage
+        self.playlists
+            .save(store, (channel_id, playlist_name), &playlist)
+            .map_err(|_| PlaylistError::SavePlaylistError {})?;
+
+        // Return the removed assets (those that were not added to the new_assets)
+        Ok(assets_in_playlist
+            .into_iter()
+            .filter(|asset| !new_assets.contains(asset))
+            .collect())
     }
 }
