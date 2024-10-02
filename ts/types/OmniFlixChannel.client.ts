@@ -232,7 +232,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelId: string;
     publishId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  assetSetDetails: ({
+  assetUpdateDetails: ({
     channelId,
     isVisible,
     publishId
@@ -282,7 +282,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelId: string;
     playlistName: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  createChannel: ({
+  channelCreate: ({
     collabarators,
     description,
     salt,
@@ -293,7 +293,12 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     salt: Binary;
     userName: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  setChannelDetails: ({
+  channelDelete: ({
+    channelId
+  }: {
+    channelId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  channelUpdateDetails: ({
     channelId,
     description
   }: {
@@ -325,14 +330,15 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.setPausers = this.setPausers.bind(this);
     this.publish = this.publish.bind(this);
     this.unpublish = this.unpublish.bind(this);
-    this.assetSetDetails = this.assetSetDetails.bind(this);
+    this.assetUpdateDetails = this.assetUpdateDetails.bind(this);
     this.playlistCreate = this.playlistCreate.bind(this);
     this.playlistDelete = this.playlistDelete.bind(this);
     this.playlistAddAsset = this.playlistAddAsset.bind(this);
     this.playlistRemoveAsset = this.playlistRemoveAsset.bind(this);
     this.playlistRefresh = this.playlistRefresh.bind(this);
-    this.createChannel = this.createChannel.bind(this);
-    this.setChannelDetails = this.setChannelDetails.bind(this);
+    this.channelCreate = this.channelCreate.bind(this);
+    this.channelDelete = this.channelDelete.bind(this);
+    this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
   }
 
@@ -397,7 +403,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  assetSetDetails = async ({
+  assetUpdateDetails = async ({
     channelId,
     isVisible,
     publishId
@@ -407,7 +413,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      asset_set_details: {
+      asset_update_details: {
         channel_id: channelId,
         is_visible: isVisible,
         publish_id: publishId
@@ -493,7 +499,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  createChannel = async ({
+  channelCreate = async ({
     collabarators,
     description,
     salt,
@@ -505,7 +511,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     userName: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      create_channel: {
+      channel_create: {
         collabarators,
         description,
         salt,
@@ -513,7 +519,18 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  setChannelDetails = async ({
+  channelDelete = async ({
+    channelId
+  }: {
+    channelId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      channel_delete: {
+        channel_id: channelId
+      }
+    }, fee, memo, _funds);
+  };
+  channelUpdateDetails = async ({
     channelId,
     description
   }: {
@@ -521,7 +538,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     description: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      set_channel_details: {
+      channel_update_details: {
         channel_id: channelId,
         description
       }

@@ -42,7 +42,7 @@ export type ExecuteMsg = {
     publish_id: string;
   };
 } | {
-  asset_set_details: {
+  asset_update_details: {
     channel_id: string;
     is_visible: boolean;
     publish_id: string;
@@ -76,14 +76,18 @@ export type ExecuteMsg = {
     playlist_name: string;
   };
 } | {
-  create_channel: {
+  channel_create: {
     collabarators?: string[] | null;
     description: string;
     salt: Binary;
     user_name: string;
   };
 } | {
-  set_channel_details: {
+  channel_delete: {
+    channel_id: string;
+  };
+} | {
+  channel_update_details: {
     channel_id: string;
     description: string;
   };

@@ -40,7 +40,7 @@ export interface OmniFlixChannelMsg {
     channelId: string;
     publishId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  assetSetDetails: ({
+  assetUpdateDetails: ({
     channelId,
     isVisible,
     publishId
@@ -90,7 +90,7 @@ export interface OmniFlixChannelMsg {
     channelId: string;
     playlistName: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  createChannel: ({
+  channelCreate: ({
     collabarators,
     description,
     salt,
@@ -101,7 +101,12 @@ export interface OmniFlixChannelMsg {
     salt: Binary;
     userName: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  setChannelDetails: ({
+  channelDelete: ({
+    channelId
+  }: {
+    channelId: string;
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  channelUpdateDetails: ({
     channelId,
     description
   }: {
@@ -130,14 +135,15 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     this.setPausers = this.setPausers.bind(this);
     this.publish = this.publish.bind(this);
     this.unpublish = this.unpublish.bind(this);
-    this.assetSetDetails = this.assetSetDetails.bind(this);
+    this.assetUpdateDetails = this.assetUpdateDetails.bind(this);
     this.playlistCreate = this.playlistCreate.bind(this);
     this.playlistDelete = this.playlistDelete.bind(this);
     this.playlistAddAsset = this.playlistAddAsset.bind(this);
     this.playlistRemoveAsset = this.playlistRemoveAsset.bind(this);
     this.playlistRefresh = this.playlistRefresh.bind(this);
-    this.createChannel = this.createChannel.bind(this);
-    this.setChannelDetails = this.setChannelDetails.bind(this);
+    this.channelCreate = this.channelCreate.bind(this);
+    this.channelDelete = this.channelDelete.bind(this);
+    this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
   }
 
@@ -242,7 +248,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  assetSetDetails = ({
+  assetUpdateDetails = ({
     channelId,
     isVisible,
     publishId
@@ -257,7 +263,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          asset_set_details: {
+          asset_update_details: {
             channel_id: channelId,
             is_visible: isVisible,
             publish_id: publishId
@@ -386,7 +392,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  createChannel = ({
+  channelCreate = ({
     collabarators,
     description,
     salt,
@@ -403,7 +409,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          create_channel: {
+          channel_create: {
             collabarators,
             description,
             salt,
@@ -414,7 +420,26 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  setChannelDetails = ({
+  channelDelete = ({
+    channelId
+  }: {
+    channelId: string;
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          channel_delete: {
+            channel_id: channelId
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  channelUpdateDetails = ({
     channelId,
     description
   }: {
@@ -427,7 +452,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          set_channel_details: {
+          channel_update_details: {
             channel_id: channelId,
             description
           }
