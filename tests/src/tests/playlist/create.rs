@@ -41,7 +41,7 @@ fn already_exists() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -145,7 +145,7 @@ fn not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -221,7 +221,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -302,7 +302,7 @@ fn try_creating_same_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),

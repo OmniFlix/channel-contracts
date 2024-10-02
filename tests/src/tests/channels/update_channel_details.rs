@@ -42,7 +42,7 @@ fn missing_channel_id() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
+            &ExecuteMsg::ChannelUpdateDetails {
                 channel_id: "".to_string(),
                 description: "creator".to_string(),
             },
@@ -92,7 +92,7 @@ fn missing_description() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -120,7 +120,7 @@ fn missing_description() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
+            &ExecuteMsg::ChannelUpdateDetails {
                 channel_id: channel_id.clone(),
                 description: "".to_string(),
             },
@@ -171,7 +171,7 @@ fn invalid_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
+            &ExecuteMsg::ChannelUpdateDetails {
                 channel_id: "1".to_string(),
                 description: "creator".to_string(),
             },
@@ -223,7 +223,7 @@ fn unauthorized() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -252,7 +252,7 @@ fn unauthorized() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
+            &ExecuteMsg::ChannelUpdateDetails {
                 channel_id: channel_id.clone(),
                 description: "creator".to_string(),
             },
@@ -306,7 +306,7 @@ fn happy_path() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -334,7 +334,7 @@ fn happy_path() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
+            &ExecuteMsg::ChannelUpdateDetails {
                 channel_id: channel_id.clone(),
                 description: "new description".to_string(),
             },

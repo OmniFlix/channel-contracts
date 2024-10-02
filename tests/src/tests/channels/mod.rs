@@ -1,2 +1,2 @@
 pub mod create;
-pub mod set_channel_details;
+pub mod update_channel_details;

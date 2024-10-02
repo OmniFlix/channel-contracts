@@ -58,7 +58,7 @@ pub enum ExecuteMsg {
 
     /// Updates the details of a published asset, including its visibility status.
     /// Only callable by the channel owner.
-    AssetSetDetails {
+    AssetUpdateDetails {
         /// The ID of the publish to be updated.
         publish_id: String,
         /// The ID of the channel where the asset is published.
@@ -121,7 +121,7 @@ pub enum ExecuteMsg {
     /// Creates a new channel. The contract will generate a channel ID and mint an NFT
     /// for the owner. The owner can add collaborators to the channel.
     /// The owner must pay the `channel_creation_fee` to create a channel.
-    CreateChannel {
+    ChannelCreate {
         /// A salt value used for unique identification.
         salt: Binary,
         /// The user name of the channel owner.
@@ -133,7 +133,7 @@ pub enum ExecuteMsg {
     },
 
     /// Updates the details of an existing channel. Only callable by the channel owner.
-    SetChannelDetails {
+    ChannelUpdateDetails {
         /// The ID of the channel to be updated.
         channel_id: String,
         /// The new description for the channel.

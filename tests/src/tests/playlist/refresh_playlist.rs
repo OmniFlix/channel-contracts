@@ -40,7 +40,7 @@ fn empty_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -144,7 +144,7 @@ fn playlist_with_assets() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -351,7 +351,7 @@ fn playlist_with_assets_and_removed_assets() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -576,7 +576,7 @@ fn not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),

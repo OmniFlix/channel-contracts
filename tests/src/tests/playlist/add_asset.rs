@@ -40,7 +40,7 @@ fn asset_not_visible() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
@@ -166,7 +166,7 @@ fn asset_from_diffirent_channel() {
         .unwrap();
 
     // Creator 1 creates a channel
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "Creator 1".to_string(),
         description: "Creator 1 Description".to_string(),
@@ -189,7 +189,7 @@ fn asset_from_diffirent_channel() {
         height: 5_000_000,
         time: Timestamp::from_nanos(5_000_000),
     });
-    let create_channel_msg = ExecuteMsg::CreateChannel {
+    let create_channel_msg = ExecuteMsg::ChannelCreate {
         salt: Binary::from("salt".as_bytes()),
         user_name: "Creator 2".to_string(),
         description: "Creator 2 description".to_string(),

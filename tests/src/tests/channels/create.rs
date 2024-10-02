@@ -44,7 +44,7 @@ fn missing_creation_fee() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -110,7 +110,7 @@ fn paused() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -163,7 +163,7 @@ fn failed_validations() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
@@ -184,7 +184,7 @@ fn failed_validations() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 // Generate a sting with 257 characters
@@ -238,7 +238,7 @@ fn happy_path() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),

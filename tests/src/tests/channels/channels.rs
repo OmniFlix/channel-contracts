@@ -46,7 +46,7 @@ fn create_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -70,7 +70,7 @@ fn create_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -94,7 +94,7 @@ fn create_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
@@ -112,7 +112,7 @@ fn create_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 // Generate a sting with 257 characters
@@ -131,7 +131,7 @@ fn create_channel() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -187,166 +187,6 @@ fn create_channel() {
 }
 
 #[test]
-fn set_channel_details() {
-    // Setup testing environment
-    let setup_response = setup();
-    let mut app = setup_response.app;
-
-    // Actors
-    let admin = setup_response.test_accounts.admin.clone();
-    let creator = setup_response.test_accounts.creator.clone();
-    let collector = setup_response.test_accounts.collector.clone();
-
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![coin(1000000, "uflix")],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
-
-    // Instantiate the contract
-    let channel_contract_addr = app
-        .instantiate_contract(
-            setup_response.channel_contract_code_id,
-            admin.clone(),
-            &instantiate_msg,
-            &[coin(1000000, "uflix")],
-            "Instantiate Channel Contract",
-            None,
-        )
-        .unwrap();
-
-    // Create a channel
-    let _res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collabarators: None,
-            },
-            &[coin(1000000, "uflix")],
-        )
-        .unwrap();
-
-    // Query Channel
-    let channel: ChannelDetails = app
-        .wrap()
-        .query_wasm_smart(
-            channel_contract_addr.clone(),
-            &QueryMsg::ChannelDetails {
-                channel_id: None,
-                user_name: Some("creator".to_string()),
-            },
-        )
-        .unwrap();
-    // Current channel_id
-    // Its random, so we need to get it from the query
-    let channel_id = channel.channel_id.clone();
-    let onft_id = channel.onft_id.clone();
-
-    // Missing channel_id
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
-                channel_id: "".to_string(),
-                description: "creator".to_string(),
-            },
-            &[],
-        )
-        .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::ChannelIdNotFound {});
-
-    // Missing description
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
-                channel_id: channel_id.clone(),
-                description: "".to_string(),
-            },
-            &[],
-        )
-        .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::InvalidDescription {});
-
-    // Channel not found
-    let res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
-                channel_id: "1".to_string(),
-                description: "creator".to_string(),
-            },
-            &[],
-        )
-        .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::ChannelIdNotFound {});
-
-    // Unauthorized
-    let res = app
-        .execute_contract(
-            collector.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
-                channel_id: channel_id.clone(),
-                description: "creator".to_string(),
-            },
-            &[],
-        )
-        .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::OnftNotOwned {
-            collection_id: "Channels".to_string(),
-            onft_id: onft_id.clone()
-        }
-    );
-
-    // Happy path
-    let _res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::SetChannelDetails {
-                channel_id: channel_id.clone(),
-                description: "new description".to_string(),
-            },
-            &[coin(1000000, "uflix")],
-        )
-        .unwrap();
-
-    // Query Channel
-    let channel: ChannelDetails = app
-        .wrap()
-        .query_wasm_smart(
-            channel_contract_addr.clone(),
-            &QueryMsg::ChannelDetails {
-                channel_id: Some(channel_id.clone()),
-                user_name: None,
-            },
-        )
-        .unwrap();
-    assert_eq!(channel.description, "new description");
-}
-
-#[test]
 fn same_user_name() {
     // Setup testing environment
     let setup_response = setup();
@@ -383,7 +223,7 @@ fn same_user_name() {
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -400,7 +240,7 @@ fn same_user_name() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::from("salt".as_bytes()),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
@@ -426,7 +266,7 @@ fn same_user_name() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::CreateChannel {
+            &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),

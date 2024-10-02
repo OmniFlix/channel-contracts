@@ -130,16 +130,16 @@ pub fn execute(
             playlist_name,
             channel_id,
         } => create_playlist(deps, env, info, channel_id, playlist_name),
-        ExecuteMsg::CreateChannel {
+        ExecuteMsg::ChannelCreate {
             user_name,
             salt,
             description,
             collabarators,
         } => create_channel(deps, env, info, salt, description, user_name, collabarators),
-        ExecuteMsg::SetChannelDetails {
+        ExecuteMsg::ChannelUpdateDetails {
             channel_id,
             description,
-        } => set_channel_details(deps, info, channel_id, description),
+        } => update_channel_details(deps, info, channel_id, description),
         ExecuteMsg::PlaylistDelete {
             playlist_name,
             channel_id,
@@ -167,11 +167,11 @@ pub fn execute(
             channel_id,
             playlist_name,
         ),
-        ExecuteMsg::AssetSetDetails {
+        ExecuteMsg::AssetUpdateDetails {
             publish_id,
             channel_id,
             is_visible,
-        } => set_asset_details(deps, info, publish_id, channel_id, is_visible),
+        } => update_asset_details(deps, info, publish_id, channel_id, is_visible),
     }
 }
 
@@ -498,7 +498,7 @@ fn set_pausers(
     Ok(response)
 }
 
-fn set_channel_details(
+fn update_channel_details(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
@@ -531,7 +531,7 @@ fn set_channel_details(
     )?;
 
     let response = Response::new()
-        .add_attribute("action", "set_channel_details")
+        .add_attribute("action", "update_channel_details")
         .add_attribute("channel_id", channel_id)
         .add_attribute("description", description);
 
@@ -663,7 +663,7 @@ fn remove_asset_from_playlist(
     Ok(response)
 }
 
-fn set_asset_details(
+fn update_asset_details(
     deps: DepsMut,
     info: MessageInfo,
     publish_id: String,
@@ -699,7 +699,7 @@ fn set_asset_details(
     )?;
 
     let response = Response::new()
-        .add_attribute("action", "set_asset_details")
+        .add_attribute("action", "update_asset_details")
         .add_attribute("channel_id", channel_id)
         .add_attribute("publish_id", publish_id)
         .add_attribute("is_visible", is_visible.to_string());
