@@ -1,26 +1,30 @@
 #!/bin/bash
-
-# Define the main directory path (one level up from the scripts directory)
-MAIN_DIR=$(dirname "$(realpath "$0")")/..
+# Main directory is the parent directory of the directory where this script is located
+MAIN_DIR="$(dirname "$(dirname "$(realpath "$0")")")"
 
 # Print out the main directory path for debugging
 echo "Main directory: $MAIN_DIR"
 
 # Define the contract directory
-CONTRACT_DIR="$MAIN_DIR"
+CONTRACTS_DIR="$MAIN_DIR/contracts"
 TS_DIR="$MAIN_DIR/ts"
 
 # Print out the contract directory path for debugging
-echo "Contract directory: $CONTRACT_DIR"
+echo "Contracts directory: $CONTRACTS_DIR"
 
-# Navigate to the contract directory and generate schema
-if [ -d "$CONTRACT_DIR" ]; then
-  echo "Processing directory: $CONTRACT_DIR"
-  cd "$CONTRACT_DIR" || exit
-  cargo schema
+# Navigate to the contracts directory and generate schema files
+# Iterate over each contract directory
+if [ -d "$CONTRACTS_DIR" ]; then
+  cd "$CONTRACTS_DIR" || exit
+  for CONTRACT_DIR in */; do
+    echo "Generating schema files for contract: $CONTRACT_DIR"
+    cd "$CONTRACT_DIR" || exit
+    cargo schema
+    cd ..
+  done
   cd "$MAIN_DIR" || exit
 else
-  echo "Contract directory not found!"
+  echo "Contracts directory not found!"
   exit 1
 fi
 
@@ -37,10 +41,17 @@ else
   exit 1
 fi
 
-# Clean schema files in the contract directory
-if [ -d "$CONTRACT_DIR/schema" ]; then
-  echo "Cleaning schema files in directory: $CONTRACT_DIR"
-  rm -rf "$CONTRACT_DIR/schema"
+# Clean schema files in the contracts directory
+if [ -d "$CONTRACTS_DIR" ]; then
+  cd "$CONTRACTS_DIR" || exit
+  for CONTRACT_DIR in */; do
+    echo "Cleaning schema files for contract: $CONTRACT_DIR"
+    cd "$CONTRACT_DIR" || exit
+    rm -rv schema
+    cd ..
+  done
+  cd "$MAIN_DIR" || exit
 else
-  echo "No schema directory found to clean."
+  echo "Contracts directory not found!"
+  exit 1
 fi

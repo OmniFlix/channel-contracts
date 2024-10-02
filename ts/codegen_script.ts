@@ -2,7 +2,7 @@ import codegen from "@cosmwasm/ts-codegen";
 
 codegen({
   contracts: [
-    { name: "OmniFlixChannel", dir: "../schema" },
+    { name: "OmniFlixChannel", dir: "../contracts/omniflix-channel/schema" },
   ],
   outPath: "./types/",
   options: {
