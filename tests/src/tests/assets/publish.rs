@@ -200,7 +200,7 @@ fn happy_path() {
 }
 
 #[test]
-fn publish_asset_without_owning_the_channel() {
+fn channel_not_owned() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
@@ -301,7 +301,7 @@ fn publish_asset_without_owning_the_channel() {
 }
 
 #[test]
-fn publish_non_existing_playlist() {
+fn playlist_does_not_exist() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
@@ -398,7 +398,7 @@ fn publish_non_existing_playlist() {
 }
 
 #[test]
-fn publish_under_playlist() {
+fn with_playlist() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
