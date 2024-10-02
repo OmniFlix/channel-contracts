@@ -49,7 +49,7 @@ impl Assets<'_> {
             .map_err(|_| AssetError::AssetNotFound {})
     }
 
-    pub fn remove_asset(
+    pub fn delete_asset(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
@@ -116,5 +116,52 @@ impl Assets<'_> {
             .map_err(|_| AssetError::SaveAssetError {})?;
 
         Ok(())
+    }
+    pub fn delete_assets_by_channel_id(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+    ) -> Result<(), AssetError> {
+        self.assets.prefix(channel_id.clone()).clear(store, None);
+        Ok(())
+    }
+}
+
+// Test delete_assets_by_channel_id
+#[cfg(test)]
+
+mod tests {
+    use super::*;
+    use crate::types::Asset;
+    use cosmwasm_std::testing::MockStorage;
+
+    #[test]
+    fn test_delete_assets_by_channel_id() {
+        let mut storage = MockStorage::new();
+        let assets = Assets::new();
+        // Generate 20 assets and add them to the storage
+        for i in 0..20 {
+            let asset = Asset {
+                publish_id: format!("asset{}", i),
+                channel_id: "channel1".to_string(),
+                collection_id: "collection1".to_string(),
+                is_visible: true,
+                onft_id: "onft1".to_string(),
+            };
+            assets
+                .add_asset(&mut storage, "channel1".to_string(), asset)
+                .unwrap();
+        }
+
+        // Check if all assets are added
+        let all_assets = assets
+            .get_all_assets(&storage, "channel1".to_string(), None, None)
+            .unwrap();
+        assert_eq!(all_assets.len(), 20);
+
+        // Delete all assets
+        assets
+            .delete_assets_by_channel_id(&mut storage, "channel1".to_string())
+            .unwrap();
     }
 }

@@ -172,6 +172,7 @@ pub fn execute(
             channel_id,
             is_visible,
         } => update_asset_details(deps, info, publish_id, channel_id, is_visible),
+        ExecuteMsg::ChannelDelete { channel_id } => delete_channel(deps, info, channel_id),
     }
 }
 
@@ -262,6 +263,41 @@ fn create_channel(
         .add_attribute("onft_id", onft_id);
     Ok(response)
 }
+fn delete_channel(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let config = CONFIG.load(deps.storage)?;
+
+    let channels = ChannelsManager::new();
+    let asset_manager = Assets::new();
+    let playlist_manager = PlaylistsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    // Check if the sender is the owner
+    // Collaborators cannot delete channels
+    let _channel_onft = get_onft_with_owner(
+        deps.as_ref(),
+        config.channels_collection_id.clone(),
+        channel_onft_id,
+        info.sender.clone().to_string(),
+    )?;
+
+    channels.delete_channel(deps.storage, channel_id.clone())?;
+    asset_manager.delete_assets_by_channel_id(deps.storage, channel_id.clone())?;
+    playlist_manager.delete_playlists_by_channel_id(deps.storage, channel_id.clone());
+
+    let response = Response::new()
+        .add_attribute("action", "delete_channel")
+        .add_attribute("channel_id", channel_id);
+
+    Ok(response)
+}
+
 fn publish(
     deps: DepsMut,
     env: Env,
@@ -364,7 +400,7 @@ fn unpublish(
     };
 
     let assets = Assets::new();
-    assets.remove_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
+    assets.delete_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "unpublish")
@@ -561,7 +597,7 @@ fn delete_playlist(
     )?;
 
     let playlist_manager = PlaylistsManager::new();
-    playlist_manager.remove_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+    playlist_manager.delete_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "delete_playlist")

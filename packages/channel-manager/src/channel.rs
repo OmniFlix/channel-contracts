@@ -107,7 +107,7 @@ impl<'a> ChannelsManager<'a> {
         Ok(())
     }
 
-    pub fn remove_channel(
+    pub fn delete_channel(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,

@@ -135,8 +135,8 @@ impl<'a> PlaylistsManager<'a> {
         Ok(playlists)
     }
 
-    // Remove a playlist (cannot remove the default playlist)
-    pub fn remove_playlist(
+    // Delete a playlist
+    pub fn delete_playlist(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
@@ -196,5 +196,53 @@ impl<'a> PlaylistsManager<'a> {
             .into_iter()
             .filter(|asset| !new_assets.contains(asset))
             .collect())
+    }
+
+    // Delete all playlists for a channel
+    pub fn delete_playlists_by_channel_id(&self, store: &mut dyn Storage, channel_id: ChannelId) {
+        self.playlists.prefix(channel_id).clear(store, None)
+    }
+}
+
+// Test delete playlists by channel id
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::testing::MockStorage;
+
+    #[test]
+    fn test_delete_playlists_by_channel_id() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+
+        // Add 100 playlists
+        for i in 0..24 {
+            let playlist_name = format!("playlist_{}", i);
+            playlists_manager
+                .add_new_playlist(&mut storage, channel_id.clone(), playlist_name)
+                .unwrap();
+        }
+
+        // Check if the playlists are added
+        let all_playlists = playlists_manager
+            .get_all_playlists(&storage, channel_id.clone(), None, None)
+            .unwrap();
+        assert_eq!(all_playlists.len(), 24);
+
+        // Delete all playlists for the channel
+        playlists_manager.delete_playlists_by_channel_id(&mut storage, channel_id.clone());
+
+        let all_playlists = playlists_manager
+            .get_all_playlists(&storage, channel_id.clone(), None, None)
+            .unwrap();
+        assert_eq!(all_playlists.len(), 0);
+
+        // Check if the playlist is deleted
+        let playlist =
+            playlists_manager.get_playlist(&storage, channel_id.clone(), playlist_name.clone());
+        assert!(playlist.is_err());
     }
 }

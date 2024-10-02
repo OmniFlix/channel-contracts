@@ -132,6 +132,13 @@ pub enum ExecuteMsg {
         collabarators: Option<Vec<String>>,
     },
 
+    /// Deletes an existing channel. The channel ID and related details will be removed
+    /// from the contract state. Only callable by the channel owner.
+    ChannelDelete {
+        /// The ID of the channel to be deleted.
+        channel_id: String,
+    },
+
     /// Updates the details of an existing channel. Only callable by the channel owner.
     ChannelUpdateDetails {
         /// The ID of the channel to be updated.
