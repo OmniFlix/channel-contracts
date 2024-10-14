@@ -1,0 +1,9 @@
+{
+  "denom": "uflix",
+  "prefix": "omniflix",
+  "chain_id": "omniflix-1",
+  "grpc_endpoint": "https://rpc.devnet-alpha.omniflix.network",
+  "api_endpoint": "https://api.devnet-alpha.omniflix.network",
+  "gas_prices": 1.2,
+  "gas_adjustment": 1.4
+}

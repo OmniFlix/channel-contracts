@@ -1,0 +1,8 @@
+/logs
+package-lock.json
+yarn.lock
+/node_modules
+test.log
+configs/test_accounts.ts
+configs/deployment_config.ts
+configs/simulation_config.ts
