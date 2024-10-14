@@ -16,9 +16,9 @@ repository = ""
 license    = "Apache-2.0"
 
 [workspace.dependencies]
-cosmwasm-schema = "1.5.5"
+cosmwasm-schema = "1.5.7"
 schemars             = "0.8.11"
-cosmwasm-std    = { version = "1.5.5", features = ["iterator", "staking", "stargate", "cosmwasm_1_2"] }
+cosmwasm-std    = { version = "1.5.0", features = ["iterator", "staking", "stargate", "cosmwasm_1_2"] }
 omniflix-std         = "1.0.0-beta"
 cw-controllers       = "1.1.0"
 cw2                  = "1.1.0"
@@ -38,7 +38,6 @@ sha2 = "0.10.8"
 hex = "0.4.3"
 rand_core       = { version = "0.6.4", default-features = false }
 rand_xoshiro    = { version = "0.6.0", default-features = false }
-cw-multi-test = "0.20.0"
 prost = {version = "0.12.3", default-features = false, features = ["prost-derive"]}
 anyhow = "1.0.79"
 testing = { path = "packages/testing" }

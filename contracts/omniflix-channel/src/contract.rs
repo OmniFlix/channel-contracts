@@ -3,13 +3,13 @@ use crate::helpers::{
     bank_msg_wrapper, check_payment, generate_random_id_with_prefix, get_collection_creation_fee,
     get_onft_with_owner,
 };
-use crate::state::ChannelConractConfig;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
 use asset_manager::types::{Asset, Playlist};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
+use channel_types::config::ChannelConractConfig;
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -17,6 +17,7 @@ use cosmwasm_std::{
     to_json_binary, Addr, Attribute, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult,
 };
+use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -244,7 +245,17 @@ fn create_channel(
         sender: env.contract.address.clone().to_string(),
         recipient: info.sender.clone().to_string(),
         data: string_onft_data,
-        ..Default::default()
+        metadata: Some(Metadata {
+            media_uri: "mediauri.com".to_string(),
+            name: user_name.clone(),
+            description: description.clone(),
+            preview_uri: "previewuri.com".to_string(),
+            uri_hash: "urihash".to_string(),
+        }),
+        nsfw: false,
+        extensible: false,
+        royalty_share: "1000000".to_string(),
+        transferable: true,
     }
     .into();
 
