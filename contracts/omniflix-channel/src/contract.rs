@@ -11,7 +11,6 @@ use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
 use channel_types::config::ChannelConractConfig;
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Attribute, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,

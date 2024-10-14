@@ -10,13 +10,13 @@ const CHANNEL_DETAILS_STORAGE_KEY: &str = "channel_details";
 const USERNAME_TO_CHANNEL_ID_STORAGE_KEY: &str = "username_to_channel_id";
 const CHANNEL_ID_TO_USERNAME_STORAGE_KEY: &str = "channel_id_to_username";
 
-pub struct ChannelsManager<'a> {
-    pub channel_details: Map<'a, ChannelId, ChannelDetails>,
-    pub username_to_channel_id: Map<'a, UserName, ChannelId>,
-    pub channel_id_to_username: Map<'a, ChannelId, UserName>,
+pub struct ChannelsManager {
+    pub channel_details: Map<ChannelId, ChannelDetails>,
+    pub username_to_channel_id: Map<UserName, ChannelId>,
+    pub channel_id_to_username: Map<ChannelId, UserName>,
 }
 
-impl<'a> ChannelsManager<'a> {
+impl ChannelsManager {
     pub const fn new() -> Self {
         ChannelsManager {
             channel_details: Map::new(CHANNEL_DETAILS_STORAGE_KEY),

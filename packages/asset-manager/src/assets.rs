@@ -7,11 +7,11 @@ use crate::types::Asset;
 type ChannelId = String;
 type PublishId = String;
 
-pub struct Assets<'a> {
-    pub assets: Map<'a, (ChannelId, PublishId), Asset>,
+pub struct Assets {
+    pub assets: Map<(ChannelId, PublishId), Asset>,
 }
 
-impl Assets<'_> {
+impl Assets {
     pub const fn new() -> Self {
         Assets {
             assets: Map::new("assets"),

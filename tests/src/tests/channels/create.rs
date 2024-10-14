@@ -251,7 +251,7 @@ fn happy_path() {
     let amount = get_event_attribute(res.clone(), "transfer", "amount");
     assert_eq!(amount, "1000000uflix");
     let recipient = get_event_attribute(res.clone(), "transfer", "recipient");
-    assert_eq!(recipient, admin);
+    assert_eq!(recipient, admin.to_string());
 
     // Get onftid from events
     let onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");

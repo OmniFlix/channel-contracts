@@ -16,18 +16,18 @@ repository = ""
 license    = "Apache-2.0"
 
 [workspace.dependencies]
-cosmwasm-schema = "1.5.7"
+cosmwasm-schema = "2.0.0"
 schemars             = "0.8.11"
-cosmwasm-std    = { version = "1.5.0", features = ["iterator", "staking", "stargate", "cosmwasm_1_2"] }
-omniflix-std         = "1.0.0-beta"
+cosmwasm-std    = { version = "2.0.0", features = ["iterator", "staking", "stargate", "cosmwasm_1_2"] }
+omniflix-std         = "1.0.1-beta"
 cw-controllers       = "1.1.0"
 cw2                  = "1.1.0"
 cw4                  = "1.1.0"
 cw4-group            = "1.1.0"
 cw721                = "0.18.0"
 cw721-base           = "0.18.0"
-cw-storage-plus      = "1.1.0"
-cw-utils             = "1.0.1"
+cw-storage-plus      = "2.0.0"
+cw-utils             = "2.0.0"
 thiserror            = "1.0.31"
 semver               = "1"
 cw-ownable           = "0.5.1"

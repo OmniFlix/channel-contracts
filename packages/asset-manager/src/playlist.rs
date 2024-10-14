@@ -11,11 +11,11 @@ type PlaylistName = String;
 
 const PLAYLISTS_STORAGE_KEY: &str = "playlists";
 
-pub struct PlaylistsManager<'a> {
-    pub playlists: Map<'a, (ChannelId, PlaylistName), Playlist>,
+pub struct PlaylistsManager {
+    pub playlists: Map<(ChannelId, PlaylistName), Playlist>,
 }
 
-impl<'a> PlaylistsManager<'a> {
+impl PlaylistsManager {
     pub const fn new() -> Self {
         PlaylistsManager {
             playlists: Map::new(PLAYLISTS_STORAGE_KEY),

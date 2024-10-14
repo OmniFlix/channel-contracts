@@ -9,9 +9,6 @@ license = { workspace = true }
 
 [lib]
 doctest = false
-[features]
-# for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces"]
 
 
 [dependencies]
@@ -24,7 +21,7 @@ cw2                  = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 schemars = { workspace = true }
-cw-multi-test = { version = "0.20.0" }
+cw-multi-test = { version = "2.0.0" }
 anyhow = "1.0.79"
 prost = "0.12.3"
 bech32 = "0.9.1"
