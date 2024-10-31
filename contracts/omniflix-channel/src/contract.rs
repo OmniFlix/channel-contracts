@@ -11,7 +11,6 @@ use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
 use channel_types::config::ChannelConractConfig;
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Attribute, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
@@ -27,12 +26,13 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    // Initialize the pause state and set the initial pausers
+    //Initialize the pause state and set the initial pausers
+    let admin = deps.api.addr_validate(&msg.clone().admin.into_string())?;
+    //let admin = Addr::unchecked(msg.admin.clone());
     let pause_state = PauseState::new()?;
-    pause_state.set_pausers(deps.storage, info.sender.clone(), vec![msg.admin.clone()])?;
+    pause_state.set_pausers(deps.storage, info.sender.clone(), vec![admin.clone()])?;
 
     // Validate the admin address provided in the instantiation message
-    let admin = deps.api.addr_validate(&msg.clone().admin.into_string())?;
 
     // Validate the fee collector address, or default to the admin address if validation fails
     let fee_collector = deps
@@ -75,8 +75,8 @@ pub fn instantiate(
     let response = Response::new()
         .add_message(onft_creation_message)
         .add_attribute("action", "instantiate")
-        .add_attribute("admin", admin.clone().to_string())
-        .add_attribute("fee_collector", fee_collector.clone().to_string())
+        // .add_attribute("admin", admin.clone().to_string())
+        // .add_attribute("fee_collector", fee_collector.clone().to_string())
         .add_attribute("channels_collection_id", msg.channels_collection_id.clone())
         .add_attribute(
             "channels_collection_name",

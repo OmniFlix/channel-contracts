@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use cosmwasm_std::{from_json, to_json_binary, Addr, Api, Binary, BlockInfo, Querier, Storage};
 use cw_multi_test::{error::AnyResult, AppResponse, CosmosRouter, Stargate};
 use omniflix_std::types::omniflix::onft::v1beta1::{
@@ -17,7 +17,7 @@ pub struct StargateKeeper {}
 impl StargateKeeper {}
 
 impl Stargate for StargateKeeper {
-    fn execute<ExecC, QueryC>(
+    fn execute_stargate<ExecC, QueryC>(
         &self,
         _api: &dyn Api,
         storage: &mut dyn Storage,
@@ -79,7 +79,7 @@ impl Stargate for StargateKeeper {
         Ok(AppResponse::default())
     }
 
-    fn query(
+    fn query_stargate(
         &self,
         _api: &dyn Api,
         storage: &dyn Storage,
@@ -121,5 +121,32 @@ impl Stargate for StargateKeeper {
             }
         }
         Ok(data)
+    }
+
+    fn execute_any<ExecC, QueryC>(
+        &self,
+        _api: &dyn Api,
+        _storage: &mut dyn Storage,
+        _router: &dyn CosmosRouter<ExecC = ExecC, QueryC = QueryC>,
+        _block: &BlockInfo,
+        _sender: Addr,
+        _msg: cosmwasm_std::AnyMsg,
+    ) -> AnyResult<AppResponse>
+    where
+        ExecC: cosmwasm_std::CustomMsg + serde::de::DeserializeOwned + 'static,
+        QueryC: cosmwasm_std::CustomQuery + serde::de::DeserializeOwned + 'static,
+    {
+        bail!("execute_any not implemented")
+    }
+
+    fn query_grpc(
+        &self,
+        _api: &dyn Api,
+        _storage: &dyn Storage,
+        _querier: &dyn Querier,
+        _block: &BlockInfo,
+        _request: cosmwasm_std::GrpcQuery,
+    ) -> AnyResult<Binary> {
+        bail!("query_grpc not implemented")
     }
 }

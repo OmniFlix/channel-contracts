@@ -2,10 +2,8 @@ use std::ops::{Deref, DerefMut};
 
 use crate::stargate::StargateKeeper;
 use cosmwasm_std::{testing::MockApi, Empty, GovMsg, IbcMsg, IbcQuery, MemoryStorage};
-use cw_multi_test::{
-    no_init, App, AppBuilder, BankKeeper, DistributionKeeper, FailingModule, StakeKeeper,
-    WasmKeeper,
-};
+use cw_multi_test::{no_init, App, AppBuilder, BankKeeper, FailingModule, WasmKeeper};
+
 #[allow(clippy::type_complexity)]
 pub struct OmniflixApp(
     App<
@@ -14,13 +12,14 @@ pub struct OmniflixApp(
         MemoryStorage,
         FailingModule<Empty, Empty, Empty>,
         WasmKeeper<Empty, Empty>,
-        StakeKeeper,
-        DistributionKeeper,
+        FailingModule<Empty, Empty, Empty>,
+        FailingModule<Empty, Empty, Empty>,
         FailingModule<IbcMsg, IbcQuery, Empty>,
         FailingModule<GovMsg, Empty, Empty>,
         StargateKeeper,
     >,
 );
+
 impl Deref for OmniflixApp {
     type Target = App<
         BankKeeper,
@@ -28,8 +27,8 @@ impl Deref for OmniflixApp {
         MemoryStorage,
         FailingModule<Empty, Empty, Empty>,
         WasmKeeper<Empty, Empty>,
-        StakeKeeper,
-        DistributionKeeper,
+        FailingModule<Empty, Empty, Empty>,
+        FailingModule<Empty, Empty, Empty>,
         FailingModule<IbcMsg, IbcQuery, Empty>,
         FailingModule<GovMsg, Empty, Empty>,
         StargateKeeper,
@@ -45,6 +44,7 @@ impl DerefMut for OmniflixApp {
         &mut self.0
     }
 }
+
 impl Default for OmniflixApp {
     fn default() -> Self {
         Self::new()
@@ -53,8 +53,8 @@ impl Default for OmniflixApp {
 
 impl OmniflixApp {
     pub fn new() -> Self {
-        let app_builder = AppBuilder::default();
         let stargate = StargateKeeper {};
+        let app_builder = AppBuilder::new();
         let app = app_builder.with_stargate(stargate).build(no_init);
         OmniflixApp(app)
     }

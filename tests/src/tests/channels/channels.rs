@@ -55,8 +55,8 @@ fn create_channel() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::PaymentError {
@@ -79,8 +79,8 @@ fn create_channel() {
             &[coin(1000001, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::PaymentError {
@@ -103,8 +103,8 @@ fn create_channel() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::InvalidUserName {});
 
     // Too long description
@@ -122,8 +122,8 @@ fn create_channel() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::InvalidDescription {});
 
     // Happy path
@@ -249,8 +249,8 @@ fn same_user_name() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::UserNameAlreadyTaken {});
 
     // Set block params to simulate a different block
@@ -275,8 +275,8 @@ fn same_user_name() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::UserNameAlreadyTaken {});
 }
 

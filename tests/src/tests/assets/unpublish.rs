@@ -117,8 +117,8 @@ fn channel_not_owned() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {
@@ -194,8 +194,8 @@ fn asset_not_pubished() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Asset(asset_manager::error::AssetError::AssetNotFound {})

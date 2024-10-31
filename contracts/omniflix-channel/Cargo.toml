@@ -20,9 +20,6 @@ panic = 'abort'
 incremental = false
 overflow-checks = true
 
-[features]
-# for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 
@@ -36,8 +33,6 @@ cw-controllers       = { workspace = true }
 cw2                  = { workspace = true }
 cw4                  = { workspace = true }
 cw4-group            = { workspace = true }
-cw721                = { workspace = true }
-cw721-base           = { workspace = true }
 cw-storage-plus      = { workspace = true }
 cw-utils             = { workspace = true }
 thiserror            = { workspace = true }

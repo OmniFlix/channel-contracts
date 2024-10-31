@@ -53,8 +53,8 @@ fn missing_creation_fee() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::PaymentError {
@@ -119,8 +119,8 @@ fn paused() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Pause(pauser::PauseError::Paused {})
@@ -136,6 +136,20 @@ fn failed_validations() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
+
+    let creator_flix_balance = app
+        .wrap()
+        .query_balance(creator.clone(), "uflix")
+        .unwrap()
+        .amount;
+    println!("Creator Flix Balance: {:?}", creator_flix_balance);
+
+    let admin_flix_balance = app
+        .wrap()
+        .query_balance(admin.clone(), "uflix")
+        .unwrap()
+        .amount;
+    println!("Admin Flix Balance: {:?}", admin_flix_balance);
 
     let instantiate_msg = InstantiateMsg {
         admin: setup_response.test_accounts.admin.clone(),
@@ -172,8 +186,8 @@ fn failed_validations() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Channel(ChannelError::InvalidUserName {})
@@ -194,8 +208,8 @@ fn failed_validations() {
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Channel(ChannelError::InvalidDescription {})
@@ -251,7 +265,7 @@ fn happy_path() {
     let amount = get_event_attribute(res.clone(), "transfer", "amount");
     assert_eq!(amount, "1000000uflix");
     let recipient = get_event_attribute(res.clone(), "transfer", "recipient");
-    assert_eq!(recipient, admin);
+    assert_eq!(recipient, admin.to_string());
 
     // Get onftid from events
     let onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");

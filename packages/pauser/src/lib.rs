@@ -17,12 +17,12 @@ pub enum PauseError {
     Unauthorized { sender: Addr },
 }
 
-pub struct PauseState<'a> {
-    pub paused: Item<'a, bool>,
-    pub pausers: Item<'a, Vec<Addr>>,
+pub struct PauseState {
+    pub paused: Item<bool>,
+    pub pausers: Item<Vec<Addr>>,
 }
 
-impl<'a> PauseState<'a> {
+impl PauseState {
     /// Creates a new pause orchestrator using the provided storage
     /// keys.
     pub fn new() -> Result<Self, PauseError> {
