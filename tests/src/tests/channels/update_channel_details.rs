@@ -49,8 +49,8 @@ fn missing_channel_id() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Channel(channel_manager::error::ChannelError::ChannelIdNotFound {})
@@ -127,8 +127,8 @@ fn missing_description() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Channel(ChannelError::InvalidDescription {})
@@ -178,8 +178,8 @@ fn invalid_channel() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Channel(ChannelError::ChannelIdNotFound {})
@@ -217,6 +217,13 @@ fn unauthorized() {
             None,
         )
         .unwrap();
+
+    let creator_flix_balance = app
+        .wrap()
+        .query_balance(creator.clone(), "uflix")
+        .unwrap()
+        .amount;
+    println!("Creator Flix Balance: {:?}", creator_flix_balance);
 
     // Create a channel
     let _res = app
@@ -259,8 +266,8 @@ fn unauthorized() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {

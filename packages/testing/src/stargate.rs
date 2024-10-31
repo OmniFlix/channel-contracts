@@ -129,8 +129,8 @@ impl Stargate for StargateKeeper {
         _storage: &mut dyn Storage,
         _router: &dyn CosmosRouter<ExecC = ExecC, QueryC = QueryC>,
         _block: &BlockInfo,
-        sender: Addr,
-        msg: cosmwasm_std::AnyMsg,
+        _sender: Addr,
+        _msg: cosmwasm_std::AnyMsg,
     ) -> AnyResult<AppResponse>
     where
         ExecC: cosmwasm_std::CustomMsg + serde::de::DeserializeOwned + 'static,
@@ -145,7 +145,7 @@ impl Stargate for StargateKeeper {
         _storage: &dyn Storage,
         _querier: &dyn Querier,
         _block: &BlockInfo,
-        request: cosmwasm_std::GrpcQuery,
+        _request: cosmwasm_std::GrpcQuery,
     ) -> AnyResult<Binary> {
         bail!("query_grpc not implemented")
     }

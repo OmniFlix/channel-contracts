@@ -26,7 +26,6 @@ library = []
 [dependencies]
 cosmwasm-schema = { workspace = true }
 cosmwasm-std    = { workspace = true }
-cw721-base      = { workspace = true, features = ["library"] }
 cw-utils        = { workspace = true }
 thiserror       = { workspace = true }
 serde           = { workspace = true }

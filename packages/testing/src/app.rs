@@ -15,7 +15,7 @@ pub struct OmniflixApp(
         FailingModule<Empty, Empty, Empty>,
         FailingModule<Empty, Empty, Empty>,
         FailingModule<IbcMsg, IbcQuery, Empty>,
-        FailingModule<Empty, Empty, Empty>,
+        FailingModule<GovMsg, Empty, Empty>,
         StargateKeeper,
     >,
 );
@@ -30,7 +30,7 @@ impl Deref for OmniflixApp {
         FailingModule<Empty, Empty, Empty>,
         FailingModule<Empty, Empty, Empty>,
         FailingModule<IbcMsg, IbcQuery, Empty>,
-        FailingModule<Empty, Empty, Empty>,
+        FailingModule<GovMsg, Empty, Empty>,
         StargateKeeper,
     >;
 

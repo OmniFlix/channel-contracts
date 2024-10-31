@@ -32,6 +32,20 @@ fn asset_does_not_exist() {
         channels_collection_symbol: "CH".to_string(),
     };
 
+    let creator_flix_balance = app
+        .wrap()
+        .query_balance(creator.clone(), "uflix")
+        .unwrap()
+        .amount;
+    println!("Creator Flix Balance: {:?}", creator_flix_balance);
+
+    let admin_flix_balance = app
+        .wrap()
+        .query_balance(admin.clone(), "uflix")
+        .unwrap()
+        .amount;
+    println!("Admin Flix Balance: {:?}", admin_flix_balance);
+
     let channel_contract_addr = app
         .instantiate_contract(
             setup_response.channel_contract_code_id,
@@ -80,8 +94,8 @@ fn asset_does_not_exist() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotFound {
@@ -289,8 +303,7 @@ fn channel_not_owned() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {
@@ -389,8 +402,7 @@ fn playlist_does_not_exist() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Playlist(PlaylistError::PlaylistNotFound {})
@@ -607,8 +619,7 @@ fn asset_not_owned() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {

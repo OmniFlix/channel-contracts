@@ -104,8 +104,8 @@ fn asset_not_in_playlist() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Playlist(PlaylistError::AssetNotInPlaylist {})
@@ -178,8 +178,8 @@ fn playlist_does_not_exist() {
             &[],
         )
         .unwrap_err();
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Playlist(PlaylistError::PlaylistNotFound {})
@@ -234,8 +234,8 @@ fn playlist_does_not_exist() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::Playlist(PlaylistError::AssetNotInPlaylist {})
@@ -404,8 +404,8 @@ fn not_owned() {
         )
         .unwrap_err();
 
-    let err = res.source().unwrap();
-    let typed_err = err.downcast_ref::<ContractError>().unwrap();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
         &ContractError::OnftNotOwned {

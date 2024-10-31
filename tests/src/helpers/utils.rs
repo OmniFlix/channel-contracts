@@ -1,5 +1,5 @@
-use cosmwasm_std::{from_json, Coin, CosmosMsg, MemoryStorage, Storage};
-use cw_multi_test::{AppResponse, BankSudo, SudoMsg};
+use cosmwasm_std::{from_json, Addr, Coin, CosmosMsg, MemoryStorage, Storage};
+use cw_multi_test::AppResponse;
 use omniflix_std::types::omniflix::onft::v1beta1::{Collection, MsgCreateDenom, MsgMintOnft};
 use testing::app::OmniflixApp;
 
@@ -23,8 +23,21 @@ pub fn query_onft_collection(storage: &MemoryStorage, minter_address: String) ->
     collection_details
 }
 pub fn mint_to_address(app: &mut OmniflixApp, to_address: String, amount: Vec<Coin>) {
-    app.sudo(SudoMsg::Bank(BankSudo::Mint { to_address, amount }))
-        .unwrap();
+    app.init_modules(|router, _, storage| {
+        router
+            .bank
+            .init_balance(
+                storage,
+                &Addr::unchecked(to_address.clone()),
+                amount.clone(),
+            )
+            .unwrap()
+    });
+    // validate the balance
+    let balance = app
+        .wrap()
+        .query_balance(to_address.clone(), amount[0].denom.clone());
+    println!("Balance of {}: {:?}", to_address, balance);
 }
 pub fn get_event_attribute(res: AppResponse, event_type: &str, attribute_key: &str) -> String {
     res.events
