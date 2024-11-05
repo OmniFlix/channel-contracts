@@ -26,13 +26,11 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    //Initialize the pause state and set the initial pausers
+    // Validate the admin address provided in the instantiation message
     let admin = deps.api.addr_validate(&msg.clone().admin.into_string())?;
-    //let admin = Addr::unchecked(msg.admin.clone());
+    //Initialize the pause state and set the initial pausers
     let pause_state = PauseState::new()?;
     pause_state.set_pausers(deps.storage, info.sender.clone(), vec![admin.clone()])?;
-
-    // Validate the admin address provided in the instantiation message
 
     // Validate the fee collector address, or default to the admin address if validation fails
     let fee_collector = deps

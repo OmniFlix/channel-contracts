@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, coins, Addr, BlockInfo, Timestamp};
+use cosmwasm_std::{coin, Addr, BlockInfo, Timestamp};
 use cw_multi_test::{ContractWrapper, MockApiBech32};
 
 use super::utils::mint_to_address;
