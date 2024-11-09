@@ -77,7 +77,7 @@ export type ExecuteMsg = {
   };
 } | {
   channel_create: {
-    collabarators?: string[] | null;
+    collaborators?: string[] | null;
     description: string;
     salt: Binary;
     user_name: string;
@@ -152,7 +152,7 @@ export interface Asset {
 export type ArrayOfAsset = Asset[];
 export interface ChannelDetails {
   channel_id: string;
-  collabarators: Addr[];
+  collaborators: Addr[];
   description: string;
   onft_id: string;
   user_name: string;

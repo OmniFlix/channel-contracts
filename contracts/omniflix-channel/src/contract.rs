@@ -133,8 +133,8 @@ pub fn execute(
             user_name,
             salt,
             description,
-            collabarators,
-        } => create_channel(deps, env, info, salt, description, user_name, collabarators),
+            collaborators,
+        } => create_channel(deps, env, info, salt, description, user_name, collaborators),
         ExecuteMsg::ChannelUpdateDetails {
             channel_id,
             description,
@@ -182,7 +182,7 @@ fn create_channel(
     salt: Binary,
     description: String,
     user_name: String,
-    collabarators: Option<Vec<String>>,
+    collaborators: Option<Vec<String>>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -200,9 +200,9 @@ fn create_channel(
 
     let channels_manager = ChannelsManager::new();
 
-    // Validate the collabarators addresses
-    // If no collabarators are provided, the vector will be empty
-    let addr_collaborators: Vec<Addr> = collabarators
+    // Validate the collaborators addresses
+    // If no collaborators are provided, the vector will be empty
+    let addr_collaborators: Vec<Addr> = collaborators
         .clone()
         .unwrap_or_default()
         .iter()
@@ -330,7 +330,7 @@ fn publish(
     let channel_onft_id = channel_details.onft_id;
     // Check if the sender is a collaborator
     // Else check if the sender is the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -399,7 +399,7 @@ fn unpublish(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
     // Check if the sender is a collaborator or the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -435,7 +435,7 @@ fn refresh_playlist(
     let channel_onft_id = channel_details.onft_id;
 
     // Check if the sender is a collaborator or the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -632,7 +632,7 @@ fn add_asset_to_playlist(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
 
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),

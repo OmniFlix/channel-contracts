@@ -129,7 +129,7 @@ pub enum ExecuteMsg {
         /// A description of the channel.
         description: String,
         /// (Optional) A list of collaborator addresses for the channel.
-        collabarators: Option<Vec<String>>,
+        collaborators: Option<Vec<String>>,
     },
 
     /// Deletes an existing channel. The channel ID and related details will be removed
