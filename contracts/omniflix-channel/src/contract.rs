@@ -450,17 +450,16 @@ fn refresh_playlist(
         channel_id.clone(),
         playlist_name.clone(),
     )?;
-    let attributes: Vec<Attribute> = assets_removed
+    let vec_string_assets_removed: Vec<String> = assets_removed
         .iter()
-        // Improve attributes
-        .map(|asset| Attribute::new("publish_id_of_removed", asset.publish_id.clone()))
+        .map(|asset| asset.publish_id.clone())
         .collect();
 
     let response = Response::new()
         .add_attribute("action", "refresh_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
-        .add_attributes(attributes);
+        .add_attribute("assets_removed", vec_string_assets_removed.join(", "));
 
     Ok(response)
 }
