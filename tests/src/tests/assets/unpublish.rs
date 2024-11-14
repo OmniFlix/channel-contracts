@@ -46,7 +46,7 @@ fn channel_not_owned() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -164,7 +164,7 @@ fn asset_not_pubished() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -238,7 +238,7 @@ fn happy_path() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app

@@ -28,20 +28,33 @@ const manageAssetsInPlaylist = async () => {
     // Create a asset
     await onftHelper.mintOnft(context, "creator", "creator", collectionId, assetId);
 
+    // Create another asset
+    let assetId2 = "AssetTest" + Math.floor(Math.random() * 1000);
+    await onftHelper.mintOnft(context, "creator", "creator", collectionId, assetId2);
+
     // Creating a playlist
     await channelHelper.CreatePlaylist(context, "creator", channelId, playlistName);
 
     // Publish the asset
     let publishId = await channelHelper.PublishAsset(context, "creator", channelId, collectionId, assetId, true);
 
+    // Publish the asset
+    let publishId2 = await channelHelper.PublishAsset(context, "creator", channelId, collectionId, assetId2, true);
+
     // Add the asset to the playlist
     await channelHelper.AddAssetToPlaylist(context, "creator", channelId, channelId, playlistName, publishId);
+
+    // Add the asset to the playlist
+    await channelHelper.AddAssetToPlaylist(context, "creator", channelId, channelId, playlistName, publishId2);
 
     // Query the playlist
     await channelHelper.QueryPlaylist(context, "creator", channelId, playlistName);
 
     // Update the asset in the playlist
     await channelHelper.UpdateAsset(context, "creator", channelId, publishId, false);
+
+    // Update the asset in the playlist
+    await channelHelper.UpdateAsset(context, "creator", channelId, publishId2, false);
 
     // Refresh the playlist
     await channelHelper.RefreshPlaylist(context, "creator", channelId, playlistName);

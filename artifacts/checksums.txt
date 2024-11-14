@@ -1,1 +1,1 @@
-5f93cfc5ba188a47d258b5a21cdd309506ce0da00be7b34bbbab452086f187b8  omniflix_channel.wasm
+fe67fe164683c342e49e608bebdeeb528642fcc4f0277503ad57af130c7b582b  omniflix_channel.wasm

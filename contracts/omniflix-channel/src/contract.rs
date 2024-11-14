@@ -26,13 +26,11 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    //Initialize the pause state and set the initial pausers
+    // Validate the admin address provided in the instantiation message
     let admin = deps.api.addr_validate(&msg.clone().admin.into_string())?;
-    //let admin = Addr::unchecked(msg.admin.clone());
+    //Initialize the pause state and set the initial pausers
     let pause_state = PauseState::new()?;
     pause_state.set_pausers(deps.storage, info.sender.clone(), vec![admin.clone()])?;
-
-    // Validate the admin address provided in the instantiation message
 
     // Validate the fee collector address, or default to the admin address if validation fails
     let fee_collector = deps
@@ -135,8 +133,8 @@ pub fn execute(
             user_name,
             salt,
             description,
-            collabarators,
-        } => create_channel(deps, env, info, salt, description, user_name, collabarators),
+            collaborators,
+        } => create_channel(deps, env, info, salt, description, user_name, collaborators),
         ExecuteMsg::ChannelUpdateDetails {
             channel_id,
             description,
@@ -184,7 +182,7 @@ fn create_channel(
     salt: Binary,
     description: String,
     user_name: String,
-    collabarators: Option<Vec<String>>,
+    collaborators: Option<Vec<String>>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -202,9 +200,9 @@ fn create_channel(
 
     let channels_manager = ChannelsManager::new();
 
-    // Validate the collabarators addresses
-    // If no collabarators are provided, the vector will be empty
-    let addr_collaborators: Vec<Addr> = collabarators
+    // Validate the collaborators addresses
+    // If no collaborators are provided, the vector will be empty
+    let addr_collaborators: Vec<Addr> = collaborators
         .clone()
         .unwrap_or_default()
         .iter()
@@ -332,7 +330,7 @@ fn publish(
     let channel_onft_id = channel_details.onft_id;
     // Check if the sender is a collaborator
     // Else check if the sender is the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -401,7 +399,7 @@ fn unpublish(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
     // Check if the sender is a collaborator or the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -437,7 +435,7 @@ fn refresh_playlist(
     let channel_onft_id = channel_details.onft_id;
 
     // Check if the sender is a collaborator or the owner
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),
@@ -452,17 +450,16 @@ fn refresh_playlist(
         channel_id.clone(),
         playlist_name.clone(),
     )?;
-    let attributes: Vec<Attribute> = assets_removed
+    let vec_string_assets_removed: Vec<String> = assets_removed
         .iter()
-        // Improve attributes
-        .map(|asset| Attribute::new("publish_id_of_removed", asset.publish_id.clone()))
+        .map(|asset| asset.publish_id.clone())
         .collect();
 
     let response = Response::new()
         .add_attribute("action", "refresh_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
-        .add_attributes(attributes);
+        .add_attribute("assets_removed", vec_string_assets_removed.join(", "));
 
     Ok(response)
 }
@@ -634,7 +631,7 @@ fn add_asset_to_playlist(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
 
-    if !channel_details.collabarators.contains(&info.sender) {
+    if !channel_details.collaborators.contains(&info.sender) {
         let _channel_onft = get_onft_with_owner(
             deps.as_ref(),
             config.channels_collection_id.clone(),

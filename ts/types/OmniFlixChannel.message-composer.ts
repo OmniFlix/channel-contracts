@@ -91,12 +91,12 @@ export interface OmniFlixChannelMsg {
     playlistName: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   channelCreate: ({
-    collabarators,
+    collaborators,
     description,
     salt,
     userName
   }: {
-    collabarators?: string[];
+    collaborators?: string[];
     description: string;
     salt: Binary;
     userName: string;
@@ -393,12 +393,12 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     };
   };
   channelCreate = ({
-    collabarators,
+    collaborators,
     description,
     salt,
     userName
   }: {
-    collabarators?: string[];
+    collaborators?: string[];
     description: string;
     salt: Binary;
     userName: string;
@@ -410,7 +410,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           channel_create: {
-            collabarators,
+            collaborators,
             description,
             salt,
             user_name: userName

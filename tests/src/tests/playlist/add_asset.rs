@@ -44,7 +44,7 @@ fn asset_not_visible() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -170,7 +170,7 @@ fn asset_from_diffirent_channel() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "Creator 1".to_string(),
         description: "Creator 1 Description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -193,7 +193,7 @@ fn asset_from_diffirent_channel() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "Creator 2".to_string(),
         description: "Creator 2 description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app

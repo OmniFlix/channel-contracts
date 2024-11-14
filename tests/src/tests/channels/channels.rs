@@ -50,7 +50,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[],
         )
@@ -74,7 +74,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000001, "uflix")],
         )
@@ -98,7 +98,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -117,7 +117,7 @@ fn create_channel() {
                 user_name: "creator".to_string(),
                 // Generate a sting with 257 characters
                 description: "a".repeat(257),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -135,7 +135,7 @@ fn create_channel() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -227,7 +227,7 @@ fn same_user_name() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -244,7 +244,7 @@ fn same_user_name() {
                 salt: Binary::from("salt".as_bytes()),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -270,7 +270,7 @@ fn same_user_name() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )

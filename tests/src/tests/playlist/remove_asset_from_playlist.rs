@@ -44,7 +44,7 @@ fn asset_not_in_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -148,7 +148,7 @@ fn playlist_does_not_exist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -279,7 +279,7 @@ fn not_owned() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
