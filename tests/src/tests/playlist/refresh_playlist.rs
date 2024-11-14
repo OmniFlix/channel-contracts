@@ -44,7 +44,7 @@ fn empty_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -148,7 +148,7 @@ fn playlist_with_assets() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -355,7 +355,7 @@ fn playlist_with_assets_and_removed_assets() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -580,7 +580,7 @@ fn not_owned() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app

@@ -48,7 +48,7 @@ fn missing_creation_fee() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[],
         )
@@ -114,7 +114,7 @@ fn paused() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[],
         )
@@ -181,7 +181,7 @@ fn failed_validations() {
                 salt: Binary::default(),
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -203,7 +203,7 @@ fn failed_validations() {
                 user_name: "creator".to_string(),
                 // Generate a sting with 257 characters
                 description: "a".repeat(257),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -256,7 +256,7 @@ fn happy_path() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )

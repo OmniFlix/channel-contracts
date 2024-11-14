@@ -12,7 +12,7 @@ pub struct ChannelDetails {
     pub user_name: String,
     pub description: String,
     pub onft_id: String,
-    pub collabarators: Vec<Addr>,
+    pub collaborators: Vec<Addr>,
 }
 
 impl ChannelDetails {
@@ -21,14 +21,14 @@ impl ChannelDetails {
         user_name: String,
         description: String,
         onft_id: String,
-        collabarators: Vec<Addr>,
+        collaborators: Vec<Addr>,
     ) -> Self {
         Self {
             channel_id,
             user_name,
             description,
             onft_id,
-            collabarators,
+            collaborators,
         }
     }
 

@@ -92,14 +92,14 @@ export default class ChannelHelper {
         return res;
     }
 
-    CreateChannel = async (context: Context, account_name: string, user_name: string, collabarators?: []) => {
+    CreateChannel = async (context: Context, account_name: string, user_name: string, collaborators?: []) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.channelCreate({
             userName: user_name,
             description: "OmniFlix Channel Testing",
             salt: context.generateRandomSalt(5),
-            collabarators: collabarators,
+            collaborators: collaborators,
         }, "auto", "", [
             {
                 amount: deploymentConfig.channel_creation_fee,

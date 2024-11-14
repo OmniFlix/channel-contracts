@@ -283,12 +283,12 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     playlistName: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   channelCreate: ({
-    collabarators,
+    collaborators,
     description,
     salt,
     userName
   }: {
-    collabarators?: string[];
+    collaborators?: string[];
     description: string;
     salt: Binary;
     userName: string;
@@ -500,19 +500,19 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     }, fee, memo, _funds);
   };
   channelCreate = async ({
-    collabarators,
+    collaborators,
     description,
     salt,
     userName
   }: {
-    collabarators?: string[];
+    collaborators?: string[];
     description: string;
     salt: Binary;
     userName: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       channel_create: {
-        collabarators,
+        collaborators,
         description,
         salt,
         user_name: userName

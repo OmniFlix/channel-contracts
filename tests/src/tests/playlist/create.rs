@@ -45,7 +45,7 @@ fn already_exists() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -149,7 +149,7 @@ fn not_owned() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -225,7 +225,7 @@ fn happy_path() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -306,7 +306,7 @@ fn try_creating_same_playlist() {
         salt: Binary::from("salt".as_bytes()),
         user_name: "user_name".to_string(),
         description: "description".to_string(),
-        collabarators: None,
+        collaborators: None,
     };
 
     let res = app
@@ -364,7 +364,6 @@ fn try_creating_same_playlist() {
             &[],
         )
         .unwrap_err();
-
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(

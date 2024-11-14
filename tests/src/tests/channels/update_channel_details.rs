@@ -96,7 +96,7 @@ fn missing_description() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -234,7 +234,7 @@ fn unauthorized() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -317,7 +317,7 @@ fn happy_path() {
                 salt: Binary::default(),
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
-                collabarators: None,
+                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
