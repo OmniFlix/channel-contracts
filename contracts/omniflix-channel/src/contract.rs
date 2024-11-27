@@ -6,15 +6,15 @@ use crate::helpers::{
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
-use asset_manager::types::{Asset, Playlist};
+use asset_manager::types::{Asset, AssetType, Playlist};
 use channel_manager::channel::ChannelsManager;
 use channel_manager::types::{ChannelDetails, ChannelOnftData};
 use channel_types::config::ChannelConractConfig;
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, Attribute, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Response, StdResult,
+    to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult,
 };
 use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
@@ -100,8 +100,7 @@ pub fn execute(
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
         ExecuteMsg::Publish {
-            asset_onft_collection_id,
-            asset_onft_id,
+            asset_type,
             salt,
             channel_id,
             playlist_name,
@@ -110,8 +109,7 @@ pub fn execute(
             deps,
             env,
             info,
-            asset_onft_collection_id,
-            asset_onft_id,
+            asset_type,
             salt,
             channel_id,
             playlist_name,
@@ -311,8 +309,7 @@ fn publish(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    asset_onft_collection_id: String,
-    asset_onft_id: String,
+    asset_type: AssetType,
     salt: Binary,
     channel_id: String,
     playlist_name: Option<String>,
@@ -339,23 +336,33 @@ fn publish(
         )?;
     };
 
-    // Find and validate the asset being published
-    let _asset_onft = get_onft_with_owner(
-        deps.as_ref(),
-        asset_onft_collection_id.clone(),
-        asset_onft_id.clone(),
-        info.sender.clone().to_string(),
-    )?;
-
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
+    // Validate the asset type
+    asset_type.clone().validate()?;
+    // Check if the asset is an NFT and the sender is the owner
+    match asset_type.clone() {
+        AssetType::NFT {
+            collection_id,
+            onft_id,
+        } => {
+            let _asset_onft = get_onft_with_owner(
+                deps.as_ref(),
+                collection_id.clone(),
+                onft_id.clone(),
+                info.sender.clone().to_string(),
+            )?;
+        }
+        _ => {}
+    }
+
     // Define the asset to be published
     let asset = Asset {
         channel_id: channel_id.clone(),
         publish_id: publish_id.clone(),
-        collection_id: asset_onft_collection_id.clone(),
-        onft_id: asset_onft_id.clone(),
+        asset_type: asset_type.clone(),
         is_visible: is_visible,
     };
+
     // Add asset to the channel's asset list
     let assets = Assets::new();
     assets.add_asset(deps.storage, channel_id.clone(), asset.clone())?;
@@ -375,8 +382,7 @@ fn publish(
         .add_attribute("action", "publish")
         .add_attribute("publish_id", publish_id)
         .add_attribute("channel_id", channel_id)
-        .add_attribute("asset_onft_collection_id", asset_onft_collection_id)
-        .add_attribute("asset_onft_id", asset_onft_id);
+        .add_attribute("asset_type", asset_type.to_string());
 
     if let Some(playlist_name) = playlist_name {
         response = response.add_attribute("playlist_name", playlist_name);

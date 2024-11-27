@@ -1,4 +1,4 @@
-use asset_manager::types::{Asset, Playlist};
+use asset_manager::types::{Asset, AssetType, Playlist};
 use channel_manager::types::ChannelDetails;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
@@ -33,10 +33,7 @@ pub enum ExecuteMsg {
     /// Publishes an asset to a channel. The contract will generate and store a publish ID.
     /// Only callable by the channel owner or a collaborator.
     Publish {
-        /// The ONFT collection ID of the asset.
-        asset_onft_collection_id: String,
-        /// The ONFT ID of the asset.
-        asset_onft_id: String,
+        asset_type: AssetType,
         /// A salt value used for unique identification.
         salt: Binary,
         /// The ID of the channel where the asset is published.
