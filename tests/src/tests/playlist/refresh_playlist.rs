@@ -191,8 +191,10 @@ fn playlist_with_assets() {
 
     // Publish the assets
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -210,8 +212,10 @@ fn playlist_with_assets() {
     let publish_id = get_event_attribute(res.clone(), "wasm", "publish_id");
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: "asset_id2".to_string(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        },
         salt: Binary::from("salt2".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -288,8 +292,20 @@ fn playlist_with_assets() {
         .unwrap();
 
     assert_eq!(playlist.assets.len(), 2);
-    assert_eq!(playlist.assets[0].onft_id, asset_id.clone());
-    assert_eq!(playlist.assets[1].onft_id, "asset_id2".to_string());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        }
+    );
+    assert_eq!(
+        playlist.assets[1].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        }
+    );
 
     // Refresh the playlist
     let refresh_playlist_msg = ExecuteMsg::PlaylistRefresh {
@@ -314,8 +330,20 @@ fn playlist_with_assets() {
 
     // Playlist should have the same assets
     assert_eq!(playlist.assets.len(), 2);
-    assert_eq!(playlist.assets[0].onft_id, asset_id.clone());
-    assert_eq!(playlist.assets[1].onft_id, "asset_id2".to_string());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        }
+    );
+    assert_eq!(
+        playlist.assets[1].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        }
+    );
 }
 
 #[test]
@@ -399,8 +427,10 @@ fn playlist_with_assets_and_removed_assets() {
 
     // Publish the assets
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -419,8 +449,10 @@ fn playlist_with_assets_and_removed_assets() {
     let publish_id = get_event_attribute(res.clone(), "wasm", "publish_id");
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: "asset_id2".to_string(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        },
         salt: Binary::from("salt2".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -499,8 +531,20 @@ fn playlist_with_assets_and_removed_assets() {
         .unwrap();
 
     assert_eq!(playlist.assets.len(), 2);
-    assert_eq!(playlist.assets[0].onft_id, asset_id.clone());
-    assert_eq!(playlist.assets[1].onft_id, "asset_id2".to_string());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        }
+    );
+    assert_eq!(
+        playlist.assets[1].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        }
+    );
 
     // Unpublish the first asset
     let unpublish_msg = ExecuteMsg::Unpublish {
@@ -540,7 +584,13 @@ fn playlist_with_assets_and_removed_assets() {
 
     // Playlist should have the second asset only
     assert_eq!(playlist.assets.len(), 1);
-    assert_eq!(playlist.assets[0].onft_id, "asset_id2".to_string());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: "asset_id2".to_string(),
+        }
+    );
 }
 
 #[test]

@@ -78,8 +78,10 @@ fn asset_not_visible() {
 
     // Publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -227,8 +229,10 @@ fn asset_from_diffirent_channel() {
 
     // Publish the asset under creator 1's channel
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: creator1_channel_id.clone(),
         playlist_name: None,
@@ -288,5 +292,11 @@ fn asset_from_diffirent_channel() {
         .unwrap();
 
     assert_eq!(playlist.assets.len(), 1);
-    assert_eq!(playlist.assets[0].onft_id, asset_id.clone());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        }
+    );
 }

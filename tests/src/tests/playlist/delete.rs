@@ -244,8 +244,10 @@ fn happy_path() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -291,7 +293,13 @@ fn happy_path() {
         .unwrap();
 
     assert_eq!(playlist.assets.len(), 1);
-    assert_eq!(playlist.assets[0].onft_id, asset_id.clone());
+    assert_eq!(
+        playlist.assets[0].asset_type,
+        asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        }
+    );
 
     // Delete the playlist
     let delete_playlist_msg = ExecuteMsg::PlaylistDelete {

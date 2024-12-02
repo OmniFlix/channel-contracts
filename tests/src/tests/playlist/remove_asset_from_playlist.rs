@@ -104,7 +104,6 @@ fn asset_not_in_playlist() {
         )
         .unwrap_err();
 
-
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
@@ -234,7 +233,6 @@ fn playlist_does_not_exist() {
         )
         .unwrap_err();
 
-
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
@@ -340,8 +338,10 @@ fn not_owned() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: asset_manager::types::AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -403,7 +403,6 @@ fn not_owned() {
             &[],
         )
         .unwrap_err();
-
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
