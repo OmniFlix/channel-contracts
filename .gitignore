@@ -16,3 +16,5 @@
 .idea
 
 /ts/node_modules
+
+/artifacts

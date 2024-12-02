@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Addr, Uint128, InstantiateMsg, Coin, ExecuteMsg, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ExecuteMsg, AssetType, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;
@@ -19,15 +19,13 @@ export interface OmniFlixChannelMsg {
     pausers: string[];
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   publish: ({
-    assetOnftCollectionId,
-    assetOnftId,
+    assetType,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetOnftCollectionId: string;
-    assetOnftId: string;
+    assetType: AssetType;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -193,15 +191,13 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     };
   };
   publish = ({
-    assetOnftCollectionId,
-    assetOnftId,
+    assetType,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetOnftCollectionId: string;
-    assetOnftId: string;
+    assetType: AssetType;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -214,8 +210,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           publish: {
-            asset_onft_collection_id: assetOnftCollectionId,
-            asset_onft_id: assetOnftId,
+            asset_type: assetType,
             channel_id: channelId,
             is_visible: isVisible,
             playlist_name: playlistName,

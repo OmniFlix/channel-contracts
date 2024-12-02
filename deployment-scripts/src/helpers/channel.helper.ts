@@ -29,7 +29,7 @@ export default class ChannelHelper {
                 amount: deploymentConfig.channel_creation_fee,
                 denom: chainConfig.denom,
             }],
-            channels_collection_id: deploymentConfig.channels_collection_id + random(1000).toString(),
+            channels_collection_id: deploymentConfig.channels_collection_id + random(10000000).toString(),
             channels_collection_name: deploymentConfig.channels_collection_name,
             channels_collection_symbol: deploymentConfig.channels_collection_symbol,
         }
@@ -116,8 +116,33 @@ export default class ChannelHelper {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.publish({
-            assetOnftCollectionId: asset_onft_collection_id,
-            assetOnftId: asset_onft_id,
+            assetType: {
+                nft: {
+                    collection_id: asset_onft_collection_id,
+                    onft_id: asset_onft_id,
+                }
+            },
+            channelId: channel_id,
+            isVisible: is_visible,
+            salt: context.generateRandomSalt(5),
+            playlistName: playlist_name,
+        });
+        let publishId = context.getEventAttribute(res, undefined, 'publish_id');
+        logger.log(1, `Asset published with id: ${publishId}`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        return publishId;
+    }
+    PublishOffchainAsset = async (context: Context, account_name: string, channel_id: string, asset_url: string, asset_name: string, asset_description: string, is_visible: boolean, playlist_name?: string) => {
+        let { client, address: senderAddress } = context.getTestUser(account_name);
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.publish({
+            assetType: {
+                off_chain: {
+                    ipfs_link: asset_url,
+                    name: asset_name,
+                    description: asset_description,
+                }
+            },
             channelId: channel_id,
             isVisible: is_visible,
             salt: context.generateRandomSalt(5),
