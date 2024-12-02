@@ -341,7 +341,7 @@ fn publish(
     asset_type.clone().validate()?;
     // Check if the asset is an NFT and the sender is the owner
     match asset_type.clone() {
-        AssetType::NFT {
+        AssetType::Nft {
             collection_id,
             onft_id,
         } => {

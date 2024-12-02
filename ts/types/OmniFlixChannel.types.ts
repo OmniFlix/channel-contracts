@@ -17,7 +17,6 @@ export interface InstantiateMsg {
 export interface Coin {
   amount: Uint128;
   denom: string;
-  [k: string]: unknown;
 }
 export type ExecuteMsg = {
   pause: {};
@@ -29,8 +28,7 @@ export type ExecuteMsg = {
   };
 } | {
   publish: {
-    asset_onft_collection_id: string;
-    asset_onft_id: string;
+    asset_type: AssetType;
     channel_id: string;
     is_visible: boolean;
     playlist_name?: string | null;
@@ -98,6 +96,18 @@ export type ExecuteMsg = {
     fee_collector?: string | null;
   };
 };
+export type AssetType = {
+  nft: {
+    collection_id: string;
+    onft_id: string;
+  };
+} | {
+  off_chain: {
+    description: string;
+    ipfs_link: string;
+    name: string;
+  };
+};
 export type Binary = string;
 export type QueryMsg = {
   is_paused: {};
@@ -143,10 +153,9 @@ export type QueryMsg = {
   };
 };
 export interface Asset {
+  asset_type: AssetType;
   channel_id: string;
-  collection_id: string;
   is_visible: boolean;
-  onft_id: string;
   publish_id: string;
 }
 export type ArrayOfAsset = Asset[];

@@ -1,4 +1,4 @@
-use asset_manager::types::Asset;
+use asset_manager::types::{Asset, AssetType};
 use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
@@ -83,8 +83,10 @@ fn channel_not_owned() {
 
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,
@@ -275,8 +277,10 @@ fn happy_path() {
 
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_onft_collection_id: asset_collection_id.clone(),
-        asset_onft_id: asset_id.clone(),
+        asset_type: AssetType::Nft {
+            collection_id: asset_collection_id.clone(),
+            onft_id: asset_id.clone(),
+        },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
         playlist_name: None,

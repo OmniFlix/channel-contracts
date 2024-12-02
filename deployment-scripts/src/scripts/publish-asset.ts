@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 import OnftHelper from '../helpers/onft.helper';
 
 
-const publishAsset = async () => {
+const publishNftAsset = async () => {
     let context = new Context;
     await context.initialize();
     let channelHelper = new ChannelHelper;
@@ -39,9 +39,35 @@ const publishAsset = async () => {
     logger.log(1, `Assets for channel with id: ${channelId}: ${JSON.stringify(assets)}`);
 }
 
-publishAsset().then(() => {
-    logger.log(1, 'Asset published successfully');
-}).catch((error) => {
-    logger.error(`Error publishing asset: ${error}`);
-});
+const publishOffChainAsset = async () => {
+    let context = new Context;
+    await context.initialize();
+    let channelHelper = new ChannelHelper;
+    let onftHelper = new OnftHelper;
+    // Instantiate new channel contract
+    await channelHelper.InstantiateChannelContract(context);
+
+    // Create new channel
+    let channelId = await channelHelper.CreateChannel(context, "creator", "TestChannel");
+
+    // Publish the asset to the channel
+    logger.log(1, `Publishing off-chain asset to channel with id: ${channelId}`);
+    let assetName = "OmniflixTestingAsset" + Math.floor(Math.random() * 10000);
+    let assetDescription = "This is a test asset";
+    let assetIpfsLink = "https://ipfs.io/OmniFlixTestingAsset";
+    await channelHelper.PublishOffchainAsset(context, "creator", channelId, assetIpfsLink, assetName, assetDescription, false);
+
+    // Query Assets 
+    logger.log(1, `Querying assets for channel with id: ${channelId}`);
+    let assets = await channelHelper.QueryAssets(context, channelId);
+    logger.log(1, `Assets for channel with id: ${channelId}: ${JSON.stringify(assets)}`);
+}
+
+
+publishNftAsset().then(() => {
+    publishOffChainAsset().then(() => {
+        logger.log(1, `Asset publishing completed successfully`);
+    });
+}
+);
 

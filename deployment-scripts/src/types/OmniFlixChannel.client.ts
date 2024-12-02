@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, InstantiateMsg, Coin, ExecuteMsg, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ExecuteMsg, AssetType, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -211,15 +211,13 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     pausers: string[];
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   publish: ({
-    assetOnftCollectionId,
-    assetOnftId,
+    assetType,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetOnftCollectionId: string;
-    assetOnftId: string;
+    assetType: AssetType;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -364,15 +362,13 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     }, fee, memo, _funds);
   };
   publish = async ({
-    assetOnftCollectionId,
-    assetOnftId,
+    assetType,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetOnftCollectionId: string;
-    assetOnftId: string;
+    assetType: AssetType;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -380,8 +376,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       publish: {
-        asset_onft_collection_id: assetOnftCollectionId,
-        asset_onft_id: assetOnftId,
+        asset_type: assetType,
         channel_id: channelId,
         is_visible: isVisible,
         playlist_name: playlistName,

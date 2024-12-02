@@ -10,7 +10,7 @@ pub struct Playlist {
 
 #[cw_serde]
 pub enum AssetType {
-    NFT {
+    Nft {
         collection_id: String,
         onft_id: String,
     },
@@ -25,7 +25,7 @@ pub enum AssetType {
 impl std::fmt::Display for AssetType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            AssetType::NFT {
+            AssetType::Nft {
                 collection_id,
                 onft_id,
             } => write!(f, "NFT: {} {}", collection_id, onft_id),
@@ -42,7 +42,7 @@ impl std::fmt::Display for AssetType {
 impl AssetType {
     pub fn validate(&self) -> Result<(), AssetError> {
         match self {
-            AssetType::NFT {
+            AssetType::Nft {
                 collection_id,
                 onft_id,
             } => {
