@@ -73,8 +73,6 @@ pub fn instantiate(
     let response = Response::new()
         .add_message(onft_creation_message)
         .add_attribute("action", "instantiate")
-        // .add_attribute("admin", admin.clone().to_string())
-        // .add_attribute("fee_collector", fee_collector.clone().to_string())
         .add_attribute("channels_collection_id", msg.channels_collection_id.clone())
         .add_attribute(
             "channels_collection_name",
@@ -337,8 +335,7 @@ fn publish(
     };
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
-    // Validate the asset type
-    asset_type.clone().validate()?;
+
     // Check if the asset is an NFT and the sender is the owner
     match asset_type.clone() {
         AssetType::Nft {
@@ -352,7 +349,9 @@ fn publish(
                 info.sender.clone().to_string(),
             )?;
         }
-        _ => {}
+        _ => {
+            asset_type.clone().validate()?;
+        }
     }
 
     // Define the asset to be published

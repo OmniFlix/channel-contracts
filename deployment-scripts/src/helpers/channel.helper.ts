@@ -138,7 +138,7 @@ export default class ChannelHelper {
         let res = await channel_client.publish({
             assetType: {
                 off_chain: {
-                    ipfs_link: asset_url,
+                    media_uri: asset_url,
                     name: asset_name,
                     description: asset_description,
                 }

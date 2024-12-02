@@ -29,8 +29,8 @@ pub enum AssetError {
     #[error("Error saving asset")]
     SaveAssetError {},
 
-    #[error("Ipfs link cannot be empty")]
-    IpfsLinkCannotBeEmpty {},
+    #[error("Media URL cannot be empty")]
+    MediaUriCannotBeEmpty {},
 
     #[error("Name cannot be empty")]
     NameCannotBeEmpty {},
@@ -44,8 +44,8 @@ pub enum AssetError {
     #[error("Description cannot be longer than 512 characters")]
     DescriptionTooLong {},
 
-    #[error("Ipfs link cannot be longer than 256 characters")]
-    IpfsLinkTooLong {},
+    #[error("Media url cannot be longer than 256 characters")]
+    MediaUriTooLong {},
 
     #[error("Collection ID cannot be empty")]
     CollectionIdCannotBeEmpty {},

@@ -15,7 +15,7 @@ pub enum AssetType {
         onft_id: String,
     },
     OffChain {
-        ipfs_link: String,
+        media_uri: String,
         name: String,
         description: String,
     },
@@ -30,10 +30,10 @@ impl std::fmt::Display for AssetType {
                 onft_id,
             } => write!(f, "NFT: {} {}", collection_id, onft_id),
             AssetType::OffChain {
-                ipfs_link,
+                media_uri,
                 name,
                 description,
-            } => write!(f, "OffChain: {} {} {}", ipfs_link, name, description),
+            } => write!(f, "OffChain: {} {} {}", media_uri, name, description),
         }
     }
 }
@@ -54,16 +54,17 @@ impl AssetType {
                 }
             }
             AssetType::OffChain {
-                ipfs_link,
+                media_uri,
                 name,
                 description,
             } => {
-                if ipfs_link.is_empty() {
-                    return Err(AssetError::IpfsLinkCannotBeEmpty {});
+                if media_uri.is_empty() {
+                    return Err(AssetError::MediaUriCannotBeEmpty {});
                 }
-                if ipfs_link.len() > 256 {
-                    return Err(AssetError::IpfsLinkTooLong {});
-                }
+
+                if media_uri.len() > 255 {
+                    return Err(AssetError::MediaUriTooLong {});
+                };
                 if name.is_empty() {}
                 if description.is_empty() {
                     return Err(AssetError::DescriptionCannotBeEmpty {});

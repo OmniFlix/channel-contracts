@@ -54,8 +54,8 @@ const publishOffChainAsset = async () => {
     logger.log(1, `Publishing off-chain asset to channel with id: ${channelId}`);
     let assetName = "OmniflixTestingAsset" + Math.floor(Math.random() * 10000);
     let assetDescription = "This is a test asset";
-    let assetIpfsLink = "https://ipfs.io/OmniFlixTestingAsset";
-    await channelHelper.PublishOffchainAsset(context, "creator", channelId, assetIpfsLink, assetName, assetDescription, false);
+    let assetMediaUri = "https://ipfs.io/OmniFlixTestingAsset";
+    await channelHelper.PublishOffchainAsset(context, "creator", channelId, assetMediaUri, assetName, assetDescription, false);
 
     // Query Assets 
     logger.log(1, `Querying assets for channel with id: ${channelId}`);

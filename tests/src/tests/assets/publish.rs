@@ -569,7 +569,7 @@ fn publish_off_chain_asset() {
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
         asset_type: AssetType::OffChain {
-            ipfs_link: "ipfs_link".to_string(),
+            media_uri: "media_uri".to_string(),
             name: "name".to_string(),
             description: "description".to_string(),
         },
@@ -605,7 +605,7 @@ fn publish_off_chain_asset() {
     assert_eq!(
         asset.asset_type,
         AssetType::OffChain {
-            ipfs_link: "ipfs_link".to_string(),
+            media_uri: "media_uri".to_string(),
             name: "name".to_string(),
             description: "description".to_string(),
         }
@@ -613,9 +613,7 @@ fn publish_off_chain_asset() {
 }
 
 #[test]
-fn failed_validations_off_chain_asset() {
-    
-}
+fn failed_validations_off_chain_asset() {}
 
 #[test]
 fn happy_path() {

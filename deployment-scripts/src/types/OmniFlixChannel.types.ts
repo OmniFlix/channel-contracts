@@ -104,7 +104,7 @@ export type AssetType = {
 } | {
   off_chain: {
     description: string;
-    ipfs_link: string;
+    media_uri: string;
     name: string;
   };
 };
