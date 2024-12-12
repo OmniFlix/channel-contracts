@@ -1,10 +1,11 @@
 use asset_manager::types::{Asset, AssetType};
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
 use crate::helpers::{
+    msg_wrapper::get_channel_instantiate_msg,
     setup::setup,
     utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
 };
@@ -21,14 +22,7 @@ fn channel_not_owned() {
     let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -141,14 +135,7 @@ fn asset_not_pubished() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -215,14 +202,7 @@ fn happy_path() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(

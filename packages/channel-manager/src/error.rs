@@ -14,12 +14,9 @@ pub enum ChannelError {
     #[error("User name already taken")]
     UserNameAlreadyTaken {},
 
-    #[error("Invalid user name")]
-    InvalidUserName {},
-
-    #[error("Invalid description")]
-    InvalidDescription {},
-
     #[error("Saving channel details failed")]
     SaveChannelDetailsFailed {},
+
+    #[error("Saving reserved usernames failed")]
+    SaveReservedUsernamesFailed {},
 }

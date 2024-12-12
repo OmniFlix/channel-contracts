@@ -1,10 +1,10 @@
-use channel_manager::error::ChannelError;
 use channel_manager::types::ChannelDetails;
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
+use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
 use crate::helpers::setup::setup;
 use crate::helpers::utils::get_event_attribute;
 
@@ -18,14 +18,8 @@ fn missing_creation_fee() {
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
 
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![coin(1000000, "uflix")],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
 
     // Instantiate the contract
     let channel_contract_addr = app
@@ -74,14 +68,8 @@ fn paused() {
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
 
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![coin(1000000, "uflix")],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
 
     // Instantiate the contract
     let channel_contract_addr = app
@@ -151,14 +139,8 @@ fn failed_validations() {
         .amount;
     println!("Admin Flix Balance: {:?}", admin_flix_balance);
 
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![coin(1000000, "uflix")],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
 
     // Instantiate the contract
     let channel_contract_addr = app
@@ -188,10 +170,7 @@ fn failed_validations() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Channel(ChannelError::InvalidUserName {})
-    );
+    assert_eq!(typed_err, &ContractError::InvalidUserName {});
 
     // Too long description
     let res = app
@@ -210,10 +189,7 @@ fn failed_validations() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Channel(ChannelError::InvalidDescription {})
-    );
+    assert_eq!(typed_err, &ContractError::InvalidDescription {});
 }
 
 #[test]
@@ -226,15 +202,8 @@ fn happy_path() {
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
 
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![coin(1000000, "uflix")],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
-
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
     // Instantiate the contract
     let channel_contract_addr = app
         .instantiate_contract(

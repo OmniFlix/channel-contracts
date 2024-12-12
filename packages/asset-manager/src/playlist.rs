@@ -2,10 +2,11 @@ use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use crate::{
-    assets::Assets,
+    assets::{AssetKey, Assets},
     error::PlaylistError,
-    types::{Asset, Playlist},
+    types::Playlist,
 };
+
 type ChannelId = String;
 type PlaylistName = String;
 
@@ -21,6 +22,7 @@ impl PlaylistsManager {
             playlists: Map::new(PLAYLISTS_STORAGE_KEY),
         }
     }
+
     // Add a new playlist to a channel
     pub fn add_new_playlist(
         &self,
@@ -28,11 +30,6 @@ impl PlaylistsManager {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
     ) -> Result<(), PlaylistError> {
-        let playlist = Playlist {
-            assets: vec![],
-            playlist_name: playlist_name.clone(),
-        };
-
         if self
             .playlists
             .has(store, (channel_id.clone(), playlist_name.clone()))
@@ -40,9 +37,14 @@ impl PlaylistsManager {
             return Err(PlaylistError::PlaylistAlreadyExists {});
         }
 
+        let playlist = Playlist {
+            assets: Vec::new(),
+            playlist_name: playlist_name.clone(),
+        };
+
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)
-            .map_err(|_| PlaylistError::PlaylistAlreadyExists {})?;
+            .map_err(|_| PlaylistError::SavePlaylistError {})?;
 
         Ok(())
     }
@@ -53,18 +55,18 @@ impl PlaylistsManager {
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-        asset: Asset,
+        asset_key: AssetKey,
     ) -> Result<(), PlaylistError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
-        if playlist.assets.contains(&asset) {
+        if playlist.assets.contains(&asset_key) {
             return Err(PlaylistError::AssetAlreadyExistsInPlaylist {});
         }
 
-        playlist.assets.push(asset);
+        playlist.assets.push(asset_key);
 
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)
@@ -74,30 +76,30 @@ impl PlaylistsManager {
     }
 
     // Remove an asset from a playlist
-    pub fn remove_asset_from_playlist(
+    pub fn remove_assets_from_playlist(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-        publish_id: String,
+        asset_keys: Vec<AssetKey>,
     ) -> Result<(), PlaylistError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
-        let asset_index = playlist
-            .assets
-            .iter()
-            .position(|asset| asset.publish_id == publish_id)
-            .ok_or(PlaylistError::AssetNotInPlaylist {})?;
-
-        playlist.assets.remove(asset_index);
+        for asset_key in asset_keys.iter() {
+            if let Some(index) = playlist.assets.iter().position(|x| x == asset_key) {
+                playlist.assets.remove(index);
+            } else {
+                // Asset not found in the playlist
+                return Err(PlaylistError::AssetNotInPlaylist {});
+            }
+        }
 
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)
             .map_err(|_| PlaylistError::SavePlaylistError {})?;
-
         Ok(())
     }
 
@@ -124,15 +126,12 @@ impl PlaylistsManager {
         let limit = limit.unwrap_or(25) as usize;
         let start = start_after.map(Bound::exclusive);
 
-        let playlists = self
-            .playlists
+        self.playlists
             .prefix(channel_id)
             .range(store, start, None, Order::Ascending)
             .take(limit)
             .map(|item| item.map(|(_, playlist)| playlist))
-            .collect::<StdResult<Vec<Playlist>>>()?;
-
-        Ok(playlists)
+            .collect()
     }
 
     // Delete a playlist
@@ -142,10 +141,9 @@ impl PlaylistsManager {
         channel_id: ChannelId,
         playlist_name: PlaylistName,
     ) -> Result<(), PlaylistError> {
-        if self
+        if !self
             .playlists
-            .load(store, (channel_id.clone(), playlist_name.clone()))
-            .is_err()
+            .has(store, (channel_id.clone(), playlist_name.clone()))
         {
             return Err(PlaylistError::PlaylistNotFound {});
         }
@@ -155,47 +153,35 @@ impl PlaylistsManager {
     }
 
     // Refresh the playlist
-    // We iterate through all the playlists and remove any assets that are not found in the asset manager or are not visible
     pub fn refresh_playlist(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
         playlist_name: PlaylistName,
-    ) -> Result<Vec<Asset>, PlaylistError> {
-        // Load the playlist
+    ) -> Result<Vec<AssetKey>, PlaylistError> {
         let mut playlist = self
             .playlists
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
-        let assets_in_playlist = playlist.assets.clone();
         let asset_manager = Assets::new();
+        let mut removed_asset_keys = Vec::with_capacity(playlist.assets.len());
 
-        // Filter and collect visible assets
-        let new_assets: Vec<Asset> = assets_in_playlist
-            .iter()
-            .filter_map(|asset| {
-                asset_manager
-                    .get_asset(store, channel_id.clone(), asset.publish_id.clone())
-                    .ok()
-                    .filter(|asset_details| asset_details.is_visible)
-                    .map(|_| asset.clone()) // If asset is visible, clone it for new playlist
-            })
-            .collect();
+        playlist.assets.retain(|asset_key| {
+            if let Ok(asset) = asset_manager.get_asset(store, asset_key.clone()) {
+                if asset.is_visible {
+                    return true; // Keep visible asset
+                }
+            }
+            removed_asset_keys.push(asset_key.clone()); // Add to removed if not found or not visible
+            false // Remove asset
+        });
 
-        // Update the playlist with filtered assets
-        playlist.assets = new_assets.clone();
-
-        // Save the updated playlist back to storage
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)
             .map_err(|_| PlaylistError::SavePlaylistError {})?;
 
-        // Return the removed assets (those that were not added to the new_assets)
-        Ok(assets_in_playlist
-            .into_iter()
-            .filter(|asset| !new_assets.contains(asset))
-            .collect())
+        Ok(removed_asset_keys)
     }
 
     // Delete all playlists for a channel
@@ -239,6 +225,170 @@ mod tests {
             .get_all_playlists(&storage, channel_id.clone(), None, None)
             .unwrap();
         assert_eq!(all_playlists.len(), 0);
+
+        // Check if the playlist is deleted
+        let playlist =
+            playlists_manager.get_playlist(&storage, channel_id.clone(), playlist_name.clone());
+        assert!(playlist.is_err());
+    }
+
+    #[test]
+    fn test_add_new_playlist() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+
+        // Add a new playlist
+        playlists_manager
+            .add_new_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+
+        // Check if the playlist is added
+        let playlist =
+            playlists_manager.get_playlist(&storage, channel_id.clone(), playlist_name.clone());
+        assert!(playlist.is_ok());
+    }
+
+    #[test]
+    fn test_add_asset_to_playlist() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+        let asset_key: AssetKey = ("asset_channel_id".to_string(), "publish_id".to_string());
+
+        // Add a new playlist
+        playlists_manager
+            .add_new_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+
+        // Add an asset to the playlist
+        playlists_manager
+            .add_asset_to_playlist(
+                &mut storage,
+                channel_id.clone(),
+                playlist_name.clone(),
+                asset_key.clone(),
+            )
+            .unwrap();
+
+        // Check if the asset is added to the playlist
+        let playlist = playlists_manager
+            .get_playlist(&storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+        assert_eq!(playlist.assets.len(), 1);
+        assert_eq!(playlist.assets[0], asset_key);
+    }
+
+    #[test]
+    fn test_remove_assets_from_playlist() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+        let asset_key: AssetKey = ("asset_channel_id".to_string(), "publish_id".to_string());
+
+        // Add a new playlist
+        playlists_manager
+            .add_new_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+
+        // Add an asset to the playlist
+        playlists_manager
+            .add_asset_to_playlist(
+                &mut storage,
+                channel_id.clone(),
+                playlist_name.clone(),
+                asset_key.clone(),
+            )
+            .unwrap();
+
+        // Remove the asset from the playlist
+        playlists_manager
+            .remove_assets_from_playlist(
+                &mut storage,
+                channel_id.clone(),
+                playlist_name.clone(),
+                vec![asset_key.clone()],
+            )
+            .unwrap();
+
+        // Check if the asset is removed from the playlist
+        let playlist = playlists_manager
+            .get_playlist(&storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+        assert_eq!(playlist.assets.len(), 0);
+    }
+
+    #[test]
+    fn test_get_playlist() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+
+        // Add a new playlist
+        playlists_manager
+            .add_new_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+
+        // Get the playlist
+        let playlist = playlists_manager
+            .get_playlist(&storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+        assert_eq!(playlist.playlist_name, playlist_name);
+    }
+
+    #[test]
+    fn test_get_all_playlists_with_start_after() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+
+        // Add 100 playlists
+        for i in 0..100 {
+            let playlist_name = format!("playlist_{}", i);
+            playlists_manager
+                .add_new_playlist(&mut storage, channel_id.clone(), playlist_name)
+                .unwrap();
+        }
+
+        // Get 25 playlists starting after the 25th playlist
+        let all_playlists = playlists_manager
+            .get_all_playlists(
+                &storage,
+                channel_id.clone(),
+                Some("playlist_24".to_string()),
+                Some(25),
+            )
+            .unwrap();
+        assert_eq!(all_playlists.len(), 25);
+        assert_eq!(all_playlists[0].playlist_name, "playlist_25");
+    }
+
+    #[test]
+    fn test_delete_playlist() {
+        let mut storage = MockStorage::new();
+        let playlists_manager = PlaylistsManager::new();
+
+        let channel_id = "channel_id".to_string();
+        let playlist_name = "playlist_name".to_string();
+
+        // Add a new playlist
+        playlists_manager
+            .add_new_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
+
+        // Delete the playlist
+        playlists_manager
+            .delete_playlist(&mut storage, channel_id.clone(), playlist_name.clone())
+            .unwrap();
 
         // Check if the playlist is deleted
         let playlist =

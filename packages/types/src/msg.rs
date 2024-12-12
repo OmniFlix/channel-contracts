@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
     pub channel_creation_fee: Vec<Coin>,
+    pub reserved_usernames: Vec<String>,
 }
 
 #[cw_serde]
@@ -153,6 +154,13 @@ pub enum ExecuteMsg {
         admin: Option<String>,
         /// (Optional) The new fee collector address.
         fee_collector: Option<String>,
+    },
+
+    /// Adds a reserved usernames to the contract. Reserved usernames cannot be used
+    /// as channel names. Only callable by the protocol admin.
+    AddReservedUsernames {
+        /// A list of usernames to be added to the reserved list.
+        usernames: Vec<String>,
     },
 }
 

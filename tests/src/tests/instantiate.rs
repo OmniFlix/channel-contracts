@@ -1,12 +1,12 @@
 use channel_types::{
     config::ChannelConractConfig,
-    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    msg::{ExecuteMsg, QueryMsg},
 };
 use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
-use crate::helpers::setup::setup;
+use crate::helpers::{msg_wrapper::get_channel_instantiate_msg, setup::setup};
 
 #[test]
 fn instantiate_channel_contract() {
@@ -17,14 +17,7 @@ fn instantiate_channel_contract() {
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
 
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     // Missed Onft collection creation fee. This variable is set to 1000000 uflix
     let res = app
@@ -103,14 +96,7 @@ fn set_config() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate the contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
     let channel_contract_addr = app
         .instantiate_contract(
             setup_response.channel_contract_code_id,
