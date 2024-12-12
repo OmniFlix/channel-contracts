@@ -1,8 +1,5 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
-
-use crate::error::ChannelError;
-
 pub type ChannelId = String;
 pub type UserName = String;
 
@@ -31,19 +28,10 @@ impl ChannelDetails {
             collaborators,
         }
     }
-
-    pub fn validate(&self) -> Result<(), ChannelError> {
-        if self.user_name.len() < 3 || self.user_name.len() > 32 {
-            return Err(ChannelError::InvalidUserName {});
-        }
-        if self.description.len() < 3 || self.description.len() > 256 {
-            return Err(ChannelError::InvalidDescription {});
-        }
-        Ok(())
-    }
 }
 
 #[cw_serde]
+// This is a struct that used for each onft's additional data field.
 pub struct ChannelOnftData {
     pub onft_id: String,
     pub channel_id: String,

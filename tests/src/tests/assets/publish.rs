@@ -2,12 +2,13 @@ use asset_manager::{
     error::PlaylistError,
     types::{Asset, AssetType, Playlist},
 };
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
 use crate::helpers::{
+    msg_wrapper::get_channel_instantiate_msg,
     setup::setup,
     utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
 };
@@ -23,14 +24,7 @@ fn asset_does_not_exist() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -104,14 +98,7 @@ fn channel_not_owned() {
     let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -205,14 +192,7 @@ fn playlist_does_not_exist() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -303,14 +283,7 @@ fn with_playlist() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -412,7 +385,7 @@ fn with_playlist() {
         .unwrap();
 
     assert_eq!(playlist.assets.len(), 1);
-    assert_eq!(playlist.assets[0].publish_id, publish_id);
+    assert_eq!(playlist.assets[0].1, publish_id);
 }
 
 #[test]
@@ -427,14 +400,7 @@ fn asset_not_owned() {
     let collector = setup_response.test_accounts.collector.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -527,14 +493,7 @@ fn publish_off_chain_asset() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(
@@ -626,14 +585,7 @@ fn happy_path() {
     let creator = setup_response.test_accounts.creator.clone();
 
     // Instantiate Channel Contract
-    let instantiate_msg = InstantiateMsg {
-        admin: setup_response.test_accounts.admin.clone(),
-        channel_creation_fee: vec![],
-        fee_collector: setup_response.test_accounts.admin,
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
-    };
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
 
     let channel_contract_addr = app
         .instantiate_contract(

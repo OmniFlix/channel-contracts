@@ -1,11 +1,10 @@
+use crate::{assets::AssetKey, error::AssetError};
 use cosmwasm_schema::cw_serde;
-
-use crate::error::AssetError;
 
 #[cw_serde]
 pub struct Playlist {
     pub playlist_name: String,
-    pub assets: Vec<Asset>,
+    pub assets: Vec<AssetKey>,
 }
 
 #[cw_serde]

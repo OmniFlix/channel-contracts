@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    bank_msg_wrapper, check_payment, generate_random_id_with_prefix, get_collection_creation_fee,
-    get_onft_with_owner,
+    bank_msg_wrapper, check_payment, filter_assets_to_remove, generate_random_id_with_prefix,
+    get_collection_creation_fee, get_onft_with_owner, validate_description, validate_username,
 };
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
@@ -57,6 +57,9 @@ pub fn instantiate(
         [collection_creation_fee.clone()].to_vec(),
         info.funds.clone(),
     )?;
+
+    let channel_manager = ChannelsManager::new();
+    channel_manager.add_reserved_usernames(deps.storage, msg.reserved_usernames.clone())?;
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =
@@ -168,6 +171,9 @@ pub fn execute(
             is_visible,
         } => update_asset_details(deps, info, publish_id, channel_id, is_visible),
         ExecuteMsg::ChannelDelete { channel_id } => delete_channel(deps, info, channel_id),
+        ExecuteMsg::AddReservedUsernames { usernames } => {
+            add_reserved_usernames(deps, info, usernames)
+        }
     }
 }
 
@@ -212,7 +218,15 @@ fn create_channel(
         onft_id.clone(),
         addr_collaborators,
     );
-    channel_details.clone().validate()?;
+    validate_username(&channel_details.clone().user_name)?;
+    validate_description(&channel_details.clone().description)?;
+
+    let is_reserved = channels_manager
+        .check_if_username_reserved(deps.storage, channel_details.clone().user_name.clone())?;
+
+    if is_reserved {
+        return Err(ContractError::UserNameReserved {});
+    }
 
     // Add the new channel to the collection
     // Checks for uniqueness of the channel ID and username
@@ -364,7 +378,9 @@ fn publish(
 
     // Add asset to the channel's asset list
     let assets = Assets::new();
-    assets.add_asset(deps.storage, channel_id.clone(), asset.clone())?;
+    let asset_key = (channel_id.clone(), publish_id.clone());
+    assets.add_asset(deps.storage, asset_key.clone(), asset.clone())?;
+
     if let Some(playlist_name) = playlist_name.clone() {
         if is_visible {
             let playlist_manager = PlaylistsManager::new();
@@ -372,7 +388,7 @@ fn publish(
                 deps.storage,
                 channel_id.clone(),
                 playlist_name.clone(),
-                asset.clone(),
+                asset_key,
             )?;
         }
     }
@@ -414,7 +430,8 @@ fn unpublish(
     };
 
     let assets = Assets::new();
-    assets.delete_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
+    let asset_key = (channel_id.clone(), publish_id.clone());
+    assets.delete_asset(deps.storage, asset_key.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "unpublish")
@@ -450,21 +467,27 @@ fn refresh_playlist(
     };
 
     let playlist_manager = PlaylistsManager::new();
-    let assets_removed = playlist_manager.refresh_playlist(
+    let playlist_asset_keys = playlist_manager
+        .get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?
+        .assets;
+    let asset_keys_to_remove = filter_assets_to_remove(deps.storage, playlist_asset_keys.clone());
+
+    playlist_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
         playlist_name.clone(),
+        asset_keys_to_remove.clone(),
     )?;
-    let vec_string_assets_removed: Vec<String> = assets_removed
+    let removed_publish_ids: Vec<String> = asset_keys_to_remove
         .iter()
-        .map(|asset| asset.publish_id.clone())
+        .map(|asset_key| asset_key.1.clone())
         .collect();
 
     let response = Response::new()
         .add_attribute("action", "refresh_playlist")
         .add_attribute("channel_id", channel_id)
         .add_attribute("playlist_name", playlist_name)
-        .add_attribute("assets_removed", vec_string_assets_removed.join(", "));
+        .add_attribute("removed_publish_ids", removed_publish_ids.join(", "));
 
     Ok(response)
 }
@@ -485,13 +508,15 @@ fn create_playlist(
     let channel_manager = ChannelsManager::new();
     let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
-
-    let _channel_onft = get_onft_with_owner(
-        deps.as_ref(),
-        config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
-    )?;
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collaborators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
 
     let playlist_manager = PlaylistsManager::new();
     playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
@@ -570,8 +595,8 @@ fn update_channel_details(
         info.sender.to_string(),
     )?;
 
+    validate_description(&description.clone())?;
     channel_details.description = description.clone();
-    channel_details.validate()?;
 
     channels_manager.update_channel_details(
         deps.storage,
@@ -602,12 +627,15 @@ fn delete_playlist(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
 
-    let _channel_onft = get_onft_with_owner(
-        deps.as_ref(),
-        config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
-    )?;
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collaborators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
 
     let playlist_manager = PlaylistsManager::new();
     playlist_manager.delete_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
@@ -649,18 +677,20 @@ fn add_asset_to_playlist(
 
     // Load the asset
     let assets = Assets::new();
-    let asset = assets.get_asset(deps.storage, asset_channel_id.clone(), publish_id.clone())?;
+    let asset_key = (asset_channel_id.clone(), publish_id.clone());
+    let asset = assets.get_asset(deps.storage, asset_key.clone())?;
 
     // Verify that the asset is visible
     if asset.is_visible == false {
         return Err(ContractError::AssetNotVisible {});
     }
+
     // Add asset to playlist
     playlist_manager.add_asset_to_playlist(
         deps.storage,
         channel_id.clone(),
         playlist_name.clone(),
-        asset.clone(),
+        asset_key.clone(),
     )?;
 
     let response = Response::new()
@@ -687,20 +717,24 @@ fn remove_asset_from_playlist(
     let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.onft_id;
 
-    let _channel_onft = get_onft_with_owner(
-        deps.as_ref(),
-        config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
-    )?;
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collaborators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            config.channels_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
 
     let playlist_manager = PlaylistsManager::new();
+    let asset_key = (channel_id.clone(), publish_id.clone());
     // Remove the asset from the playlist
-    playlist_manager.remove_asset_from_playlist(
+    playlist_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
         playlist_name.clone(),
-        publish_id.clone(),
+        [asset_key.clone()].to_vec(),
     )?;
 
     let response = Response::new()
@@ -737,15 +771,11 @@ fn update_asset_details(
     )?;
 
     let assets = Assets::new();
-    let mut asset = assets.get_asset(deps.storage, channel_id.clone(), publish_id.clone())?;
+    let asset_key = (channel_id.clone(), publish_id.clone());
+    let mut asset = assets.get_asset(deps.storage, asset_key.clone())?;
     asset.is_visible = is_visible;
 
-    assets.update_asset(
-        deps.storage,
-        channel_id.clone(),
-        publish_id.clone(),
-        asset.clone(),
-    )?;
+    assets.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "update_asset_details")
@@ -789,6 +819,28 @@ fn set_config(
         .add_attribute("action", "set_config")
         .add_attribute("admin", config.admin.to_string())
         .add_attribute("fee_collector", config.fee_collector.to_string());
+
+    Ok(response)
+}
+
+fn add_reserved_usernames(
+    deps: DepsMut,
+    info: MessageInfo,
+    usernames: Vec<String>,
+) -> Result<Response, ContractError> {
+    // No pause state check required for this operation
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.admin {
+        return Err(ContractError::Unauthorized {});
+    }
+    let channels = ChannelsManager::new();
+    channels.add_reserved_usernames(deps.storage, usernames.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "add_reserved_usernames")
+        .add_attribute("admin", config.admin.to_string())
+        .add_attribute("usernames", usernames.join(", "));
 
     Ok(response)
 }
@@ -911,7 +963,8 @@ fn query_assets(
 
 fn query_asset(deps: Deps, channel_id: String, publish_id: String) -> Result<Asset, ContractError> {
     let assets = Assets::new();
-    let asset = assets.get_asset(deps.storage, channel_id, publish_id)?;
+    let asset_key = (channel_id.clone(), publish_id.clone());
+    let asset = assets.get_asset(deps.storage, asset_key)?;
     Ok(asset)
 }
 

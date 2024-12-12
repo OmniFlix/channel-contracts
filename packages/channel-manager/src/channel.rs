@@ -9,11 +9,13 @@ use crate::{
 const CHANNEL_DETAILS_STORAGE_KEY: &str = "channel_details";
 const USERNAME_TO_CHANNEL_ID_STORAGE_KEY: &str = "username_to_channel_id";
 const CHANNEL_ID_TO_USERNAME_STORAGE_KEY: &str = "channel_id_to_username";
+const RESERVED_USERNAMES_STORAGE_KEY: &str = "reserved_usernames";
 
 pub struct ChannelsManager {
     pub channel_details: Map<ChannelId, ChannelDetails>,
     pub username_to_channel_id: Map<UserName, ChannelId>,
     pub channel_id_to_username: Map<ChannelId, UserName>,
+    pub reserved_usernames: Map<UserName, bool>,
 }
 
 impl ChannelsManager {
@@ -22,7 +24,21 @@ impl ChannelsManager {
             channel_details: Map::new(CHANNEL_DETAILS_STORAGE_KEY),
             username_to_channel_id: Map::new(USERNAME_TO_CHANNEL_ID_STORAGE_KEY),
             channel_id_to_username: Map::new(CHANNEL_ID_TO_USERNAME_STORAGE_KEY),
+            reserved_usernames: Map::new(RESERVED_USERNAMES_STORAGE_KEY),
         }
+    }
+
+    pub fn add_reserved_usernames(
+        &self,
+        store: &mut dyn Storage,
+        usernames: Vec<UserName>,
+    ) -> Result<(), ChannelError> {
+        for username in usernames {
+            self.reserved_usernames
+                .save(store, username.clone(), &true)
+                .map_err(|_| ChannelError::SaveReservedUsernamesFailed {})?;
+        }
+        Ok(())
     }
 
     // Query methods
@@ -147,5 +163,17 @@ impl ChannelsManager {
         self.channel_id_to_username
             .load(store, channel_id)
             .map_err(|_| ChannelError::ChannelIdNotFound {})
+    }
+
+    pub fn check_if_username_reserved(
+        &self,
+        store: &dyn Storage,
+        user_name: UserName,
+    ) -> Result<bool, ChannelError> {
+        match self.reserved_usernames.may_load(store, user_name) {
+            Ok(Some(_value)) => Ok(true),
+            Ok(None) => Ok(false),
+            Err(_) => Err(ChannelError::UserNameNotFound {}),
+        }
     }
 }

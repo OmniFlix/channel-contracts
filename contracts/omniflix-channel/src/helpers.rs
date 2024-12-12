@@ -1,6 +1,7 @@
 use crate::ContractError;
-use cosmwasm_std::CosmosMsg;
+use asset_manager::assets::{AssetKey, Assets};
 use cosmwasm_std::{Binary, Coin, Deps, Env, Uint128};
+use cosmwasm_std::{CosmosMsg, Storage};
 use cw_utils::NativeBalance;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
@@ -123,4 +124,40 @@ pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> 
         amount: final_amount.0,
     });
     vec![bank_msg]
+}
+
+/// Purpose: This function will filter out assets that do not exist in storage or are not visible
+pub fn filter_assets_to_remove(storage: &dyn Storage, asset_keys: Vec<AssetKey>) -> Vec<AssetKey> {
+    let mut asset_keys_to_remove = Vec::new();
+
+    for asset_key in asset_keys {
+        // Try loading the asset from storage
+        // If the asset does not exist, add it to the list of assets to remove
+        let asset_manager = Assets::new();
+        let asset = asset_manager.get_asset(storage, asset_key.clone());
+        if asset.is_err() {
+            asset_keys_to_remove.push(asset_key);
+            continue;
+        }
+        if asset.unwrap().is_visible == false {
+            asset_keys_to_remove.push(asset_key);
+            continue;
+        }
+    }
+
+    asset_keys_to_remove
+}
+
+pub fn validate_username(username: &str) -> Result<(), ContractError> {
+    if username.len() < 3 || username.len() > 32 {
+        return Err(ContractError::InvalidUserName {});
+    }
+    Ok(())
+}
+
+pub fn validate_description(description: &str) -> Result<(), ContractError> {
+    if description.len() < 3 || description.len() > 256 {
+        return Err(ContractError::InvalidDescription {});
+    }
+    Ok(())
 }

@@ -81,6 +81,15 @@ pub enum ContractError {
 
     #[error("Asset is not visible")]
     AssetNotVisible {},
+
+    #[error("Invalid user name")]
+    InvalidUserName {},
+
+    #[error("Invalid description")]
+    InvalidDescription {},
+
+    #[error("Username reserved")]
+    UserNameReserved {},
 }
 
 impl From<ContractError> for StdError {
