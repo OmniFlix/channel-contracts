@@ -1,11 +1,11 @@
 use asset_manager::error::PlaylistError;
 use asset_manager::types::Playlist;
 use channel_types::msg::{ExecuteMsg, QueryMsg};
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
-use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
+use crate::helpers::msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::get_event_attribute;
 
@@ -35,12 +35,7 @@ fn already_exists() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -132,12 +127,7 @@ fn not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -201,12 +191,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -275,12 +260,7 @@ fn try_creating_same_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(

@@ -8,7 +8,7 @@ use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
 use crate::helpers::{
-    msg_wrapper::get_channel_instantiate_msg,
+    msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg},
     setup::setup,
     utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
 };
@@ -38,12 +38,7 @@ fn asset_does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -112,12 +107,7 @@ fn channel_not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -206,12 +196,7 @@ fn playlist_does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -297,12 +282,7 @@ fn with_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -414,12 +394,7 @@ fn asset_not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -507,12 +482,7 @@ fn publish_off_chain_asset() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -599,12 +569,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(

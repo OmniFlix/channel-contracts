@@ -1,4 +1,4 @@
-use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
+use crate::helpers::msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 use asset_manager::error::PlaylistError;
@@ -33,12 +33,7 @@ fn does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -101,12 +96,7 @@ fn not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(
@@ -171,12 +161,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "user_name".to_string(),
-        description: "description".to_string(),
-        collaborators: None,
-    };
+    let create_channel_msg = get_channel_create_msg("username".to_string());
 
     let res = app
         .execute_contract(

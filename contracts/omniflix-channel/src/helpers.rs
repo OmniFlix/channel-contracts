@@ -152,6 +152,10 @@ pub fn validate_username(username: &str) -> Result<(), ContractError> {
     if username.len() < 3 || username.len() > 32 {
         return Err(ContractError::InvalidUserName {});
     }
+    // Username must only contain lowercase alphabetic characters
+    if !username.chars().all(|c| c.is_ascii_lowercase()) {
+        return Err(ContractError::InvalidUserName {});
+    }
     Ok(())
 }
 
@@ -160,4 +164,46 @@ pub fn validate_description(description: &str) -> Result<(), ContractError> {
         return Err(ContractError::InvalidDescription {});
     }
     Ok(())
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_username() {
+        // Test username too short
+        let username = "ab";
+        let res = validate_username(username);
+        assert_eq!(res, Err(ContractError::InvalidUserName {}));
+
+        // Test username too long
+        let username = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+        let res = validate_username(username);
+        assert_eq!(res, Err(ContractError::InvalidUserName {}));
+
+        // Test username with numbers
+        let username = "abc123";
+        let res = validate_username(username);
+        assert_eq!(res, Err(ContractError::InvalidUserName {}));
+
+        // Test username with uppercase letters
+        let username = "Abcdefg";
+        let res = validate_username(username);
+        assert_eq!(res, Err(ContractError::InvalidUserName {}));
+
+        // Test username with special characters
+        let username = "abc-def";
+        let res = validate_username(username);
+        assert_eq!(res, Err(ContractError::InvalidUserName {}));
+
+        // Test valid username with lowercase alphabet only
+        let username = "channel";
+        let res = validate_username(username);
+        assert_eq!(res, Ok(()));
+
+        // Test another valid username
+        let username = "mintusername";
+        let res = validate_username(username);
+        assert_eq!(res, Ok(()));
+    }
 }

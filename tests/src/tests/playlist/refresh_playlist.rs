@@ -42,7 +42,7 @@
 //     // Create a channel
 //     let create_channel_msg = ExecuteMsg::ChannelCreate {
 //         salt: Binary::from("salt".as_bytes()),
-//         user_name: "user_name".to_string(),
+//         user_name: "username".to_string(),
 //         description: "description".to_string(),
 //         collaborators: None,
 //     };
@@ -146,7 +146,7 @@
 //     // Create a channel
 //     let create_channel_msg = ExecuteMsg::ChannelCreate {
 //         salt: Binary::from("salt".as_bytes()),
-//         user_name: "user_name".to_string(),
+//         user_name: "username".to_string(),
 //         description: "description".to_string(),
 //         collaborators: None,
 //     };
@@ -381,7 +381,7 @@
 //     // Create a channel
 //     let create_channel_msg = ExecuteMsg::ChannelCreate {
 //         salt: Binary::from("salt".as_bytes()),
-//         user_name: "user_name".to_string(),
+//         user_name: "username".to_string(),
 //         description: "description".to_string(),
 //         collaborators: None,
 //     };
@@ -622,7 +622,7 @@
 //     // Create a channel
 //     let create_channel_msg = ExecuteMsg::ChannelCreate {
 //         salt: Binary::from("salt".as_bytes()),
-//         user_name: "user_name".to_string(),
+//         user_name: "username".to_string(),
 //         description: "description".to_string(),
 //         collaborators: None,
 //     };
