@@ -1,6 +1,7 @@
 import Context from '../helpers/context';
 import ChannelHelper from '../helpers/channel.helper';
 import { logger } from '../utils/logger';
+import { log } from 'console';
 
 
 const adminCreateChannel = async () => {
@@ -9,14 +10,19 @@ const adminCreateChannel = async () => {
     let channel_helper = new ChannelHelper;
     // Instantiate new channel contract
     await channel_helper.InstantiateChannelContract(context);
+    logger.log(1, 'Channel contract has only one reserved username: ["reserved"]');
 
     // Default reserved username is 'reserved'
     // User can not use this username
+    logger.log(1, 'Try to create channel with reserved username');
+    logger.log(1, 'Only admin can create channel with reserved username');
     await channel_helper.CreateChannel(context, "creator", "reserved").catch((error) => {
+
         logger.log(1, 'Error creating reserved channel as expected');
     });
 
     // admin can create reserved channel
+    logger.log(1, 'Admin create channel with reserved username');
     await channel_helper.AdminCreateChannel(context, "reserved", "creator");
 }
 

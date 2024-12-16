@@ -223,4 +223,9 @@ pub enum QueryMsg {
         channel_id: String,
         publish_id: String,
     },
+    #[returns(Vec<String>)]
+    ReservedUsernames {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }

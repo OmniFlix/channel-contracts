@@ -176,4 +176,19 @@ impl ChannelsManager {
             Err(_) => Err(ChannelError::UserNameNotFound {}),
         }
     }
+    pub fn get_reserved_usernames(
+        &self,
+        store: &dyn Storage,
+        start_after: Option<UserName>,
+        limit: Option<u32>,
+    ) -> StdResult<Vec<UserName>> {
+        let limit = limit.unwrap_or(25).min(25) as usize;
+        let start = start_after.map(Bound::exclusive);
+
+        self.reserved_usernames
+            .range(store, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(|(key, _value)| key))
+            .collect()
+    }
 }

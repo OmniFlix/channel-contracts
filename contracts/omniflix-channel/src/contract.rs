@@ -989,6 +989,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             channel_id,
             publish_id,
         } => to_json_binary(&query_asset(deps, channel_id, publish_id)?),
+        QueryMsg::ReservedUsernames { start_after, limit } => {
+            to_json_binary(&query_reserved_usernames(deps, start_after, limit)?)
+        }
     }
 }
 
@@ -1077,6 +1080,15 @@ fn query_asset(deps: Deps, channel_id: String, publish_id: String) -> Result<Ass
     let asset_key = (channel_id.clone(), publish_id.clone());
     let asset = assets.get_asset(deps.storage, asset_key)?;
     Ok(asset)
+}
+fn query_reserved_usernames(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<String>, ContractError> {
+    let channels = ChannelsManager::new();
+    let reserved_usernames = channels.get_reserved_usernames(deps.storage, start_after, limit)?;
+    Ok(reserved_usernames)
 }
 
 #[cfg(test)]
