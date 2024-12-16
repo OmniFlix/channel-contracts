@@ -164,6 +164,11 @@ export type QueryMsg = {
     channel_id: string;
     publish_id: string;
   };
+} | {
+  reserved_usernames: {
+    limit?: number | null;
+    start_after?: string | null;
+  };
 };
 export interface Asset {
   asset_type: AssetType;

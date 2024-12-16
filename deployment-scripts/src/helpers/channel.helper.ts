@@ -263,6 +263,17 @@ export default class ChannelHelper {
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
     }
 
+    AddReservedUsernames = async (context: Context, reserved_usernames: string[]) => {
+        let { client, address: senderAddress } = context.getTestUser('admin');
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+
+        let res = await channel_client.addReservedUsernames({
+            usernames: reserved_usernames,
+        });
+        logger.log(1, `Reserved usernames added: ${JSON.stringify(reserved_usernames)}`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+    }
+
     GetChannelDetails = async (context: Context, account_name: string, channel_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
@@ -319,4 +330,15 @@ export default class ChannelHelper {
         logger.log(1, `Channel config: ${JSON.stringify(res)}`)
         return res;
     }
+    QueryReservedUsernames = async (context: Context, start_after?: string, limit?: number) => {
+        let { client, address: senderAddress } = context.getTestUser("admin");
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.reservedUsernames({
+            startAfter: start_after,
+            limit: limit,
+        });
+        logger.log(1, `Reserved usernames: ${JSON.stringify(res)}`)
+        return res;
+    }
+
 }

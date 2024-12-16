@@ -63,6 +63,13 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId: string;
     publishId: string;
   }) => Promise<Asset>;
+  reservedUsernames: ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: string;
+  }) => Promise<ArrayOfString>;
 }
 export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterface {
   client: CosmWasmClient;
@@ -81,6 +88,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     this.config = this.config.bind(this);
     this.assets = this.assets.bind(this);
     this.asset = this.asset.bind(this);
+    this.reservedUsernames = this.reservedUsernames.bind(this);
   }
 
   isPaused = async (): Promise<Boolean> => {
@@ -196,6 +204,20 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
       asset: {
         channel_id: channelId,
         publish_id: publishId
+      }
+    });
+  };
+  reservedUsernames = async ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: string;
+  }): Promise<ArrayOfString> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      reserved_usernames: {
+        limit,
+        start_after: startAfter
       }
     });
   };
