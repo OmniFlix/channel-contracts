@@ -312,6 +312,24 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelCreationFee?: Coin[];
     feeCollector?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  addReservedUsernames: ({
+    usernames
+  }: {
+    usernames: string[];
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  adminChannelCreate: ({
+    collaborators,
+    description,
+    recipient,
+    salt,
+    userName
+  }: {
+    collaborators?: string[];
+    description: string;
+    recipient: string;
+    salt: Binary;
+    userName: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements OmniFlixChannelInterface {
   client: SigningCosmWasmClient;
@@ -338,6 +356,8 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.channelDelete = this.channelDelete.bind(this);
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
+    this.addReservedUsernames = this.addReservedUsernames.bind(this);
+    this.adminChannelCreate = this.adminChannelCreate.bind(this);
   }
 
   pause = async (fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
@@ -553,6 +573,40 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
         admin,
         channel_creation_fee: channelCreationFee,
         fee_collector: feeCollector
+      }
+    }, fee, memo, _funds);
+  };
+  addReservedUsernames = async ({
+    usernames
+  }: {
+    usernames: string[];
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      add_reserved_usernames: {
+        usernames
+      }
+    }, fee, memo, _funds);
+  };
+  adminChannelCreate = async ({
+    collaborators,
+    description,
+    recipient,
+    salt,
+    userName
+  }: {
+    collaborators?: string[];
+    description: string;
+    recipient: string;
+    salt: Binary;
+    userName: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      admin_channel_create: {
+        collaborators,
+        description,
+        recipient,
+        salt,
+        user_name: userName
       }
     }, fee, memo, _funds);
   };

@@ -13,6 +13,7 @@ export interface InstantiateMsg {
   channels_collection_name: string;
   channels_collection_symbol: string;
   fee_collector: Addr;
+  reserved_usernames: string[];
 }
 export interface Coin {
   amount: Uint128;
@@ -94,6 +95,18 @@ export type ExecuteMsg = {
     admin?: string | null;
     channel_creation_fee?: Coin[] | null;
     fee_collector?: string | null;
+  };
+} | {
+  add_reserved_usernames: {
+    usernames: string[];
+  };
+} | {
+  admin_channel_create: {
+    collaborators?: string[] | null;
+    description: string;
+    recipient: string;
+    salt: Binary;
+    user_name: string;
   };
 };
 export type AssetType = {
@@ -179,7 +192,7 @@ export interface ChannelConractConfig {
 export type Boolean = boolean;
 export type ArrayOfString = string[];
 export interface Playlist {
-  assets: Asset[];
+  assets: [string, string][];
   playlist_name: string;
 }
 export type ArrayOfPlaylist = Playlist[];
