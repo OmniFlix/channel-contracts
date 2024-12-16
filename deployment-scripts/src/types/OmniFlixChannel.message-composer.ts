@@ -120,6 +120,24 @@ export interface OmniFlixChannelMsg {
     channelCreationFee?: Coin[];
     feeCollector?: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  addReservedUsernames: ({
+    usernames
+  }: {
+    usernames: string[];
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  adminChannelCreate: ({
+    collaborators,
+    description,
+    recipient,
+    salt,
+    userName
+  }: {
+    collaborators?: string[];
+    description: string;
+    recipient: string;
+    salt: Binary;
+    userName: string;
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   sender: string;
@@ -143,6 +161,8 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     this.channelDelete = this.channelDelete.bind(this);
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
+    this.addReservedUsernames = this.addReservedUsernames.bind(this);
+    this.adminChannelCreate = this.adminChannelCreate.bind(this);
   }
 
   pause = (_funds?: Coin[]): MsgExecuteContractEncodeObject => {
@@ -475,6 +495,56 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
             admin,
             channel_creation_fee: channelCreationFee,
             fee_collector: feeCollector
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  addReservedUsernames = ({
+    usernames
+  }: {
+    usernames: string[];
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          add_reserved_usernames: {
+            usernames
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  adminChannelCreate = ({
+    collaborators,
+    description,
+    recipient,
+    salt,
+    userName
+  }: {
+    collaborators?: string[];
+    description: string;
+    recipient: string;
+    salt: Binary;
+    userName: string;
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          admin_channel_create: {
+            collaborators,
+            description,
+            recipient,
+            salt,
+            user_name: userName
           }
         })),
         funds: _funds

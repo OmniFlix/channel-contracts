@@ -4,7 +4,7 @@ codegen({
   contracts: [
     { name: "OmniFlixChannel", dir: "../contracts/omniflix-channel/schema" },
   ],
-  outPath: "./types/",
+  outPath: "../deployment-scripts/src/types",
   options: {
     bundle: {
       bundleFile: "index.ts",

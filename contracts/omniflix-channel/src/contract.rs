@@ -866,8 +866,8 @@ fn admin_create_channel(
     env: Env,
     info: MessageInfo,
     salt: Binary,
-    description: String,
     user_name: String,
+    description: String,
     collaborators: Option<Vec<String>>,
     recipient: String,
 ) -> Result<Response, ContractError> {
@@ -880,16 +880,8 @@ fn admin_create_channel(
 
     deps.api.addr_validate(&recipient)?;
 
-    let config = CONFIG.load(deps.storage)?;
-
-    // Generate a random channel onft ID
-    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
-
-    // Generate a random channel ID
-    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
-
-    let channels_manager = ChannelsManager::new();
-
+    validate_username(&user_name.clone())?;
+    validate_description(&description.clone())?;
     // Validate the collaborators addresses
     // If no collaborators are provided, the vector will be empty
     let addr_collaborators: Vec<Addr> = collaborators
@@ -899,6 +891,15 @@ fn admin_create_channel(
         .map(|collaborator| deps.api.addr_validate(collaborator))
         .collect::<Result<Vec<Addr>, _>>()?;
 
+    let config = CONFIG.load(deps.storage)?;
+    // Generate a random channel onft ID
+    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
+
+    // Generate a random channel ID
+    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
+
+    let channels_manager = ChannelsManager::new();
+
     let channel_details = ChannelDetails::new(
         channel_id.clone(),
         user_name.clone(),
@@ -906,8 +907,6 @@ fn admin_create_channel(
         onft_id.clone(),
         addr_collaborators,
     );
-    validate_username(&channel_details.clone().user_name)?;
-    validate_description(&channel_details.clone().description)?;
 
     // Add the new channel to the collection
     // Checks for uniqueness of the channel ID and username

@@ -21,7 +21,8 @@
     "set-channel-config": "ts-node src/scripts/set-channel-config.ts",
     "remove-asset-from-playlist": "ts-node src/scripts/remove-asset-from-playlist.ts",
     "delete-channel": "ts-node src/scripts/delete-channel.ts",
-    "authz-ops": "ts-node src/scripts/authz-operations.ts"
+    "authz-ops": "ts-node src/scripts/authz-operations.ts",
+    "admin-create-channel": "ts-node src/scripts/admin-create-channel.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.32.3",

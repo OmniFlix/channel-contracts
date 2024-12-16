@@ -205,5 +205,9 @@ mod tests {
         let username = "mintusername";
         let res = validate_username(username);
         assert_eq!(res, Ok(()));
+
+        let username = "reserved";
+        let res = validate_username(username);
+        assert_eq!(res, Ok(()));
     }
 }

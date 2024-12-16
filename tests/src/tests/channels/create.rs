@@ -256,3 +256,66 @@ fn happy_path() {
     // Validate the onft_id
     assert_eq!(channels[0].onft_id, onft_id);
 }
+
+#[test]
+
+fn admin_create_channel() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
+    // Instantiate the contract
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Default reserved usename is "reserved"
+
+    // Try creating a channel with the reserved username
+    let res = app
+        .execute_contract(
+            admin.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::ChannelCreate {
+                salt: Binary::default(),
+                user_name: "reserved".to_string(),
+                description: "reserved".to_string(),
+                collaborators: None,
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(typed_err, &ContractError::UserNameReserved {});
+
+    // Create with admin
+    let admin_create_msg = ExecuteMsg::AdminChannelCreate {
+        salt: Binary::default(),
+        user_name: "reserved".to_string(),
+        description: "Description".to_string(),
+        collaborators: None,
+        recipient: setup_response.test_accounts.creator.clone().into_string(),
+    };
+
+    let _res = app
+        .execute_contract(
+            admin.clone(),
+            channel_contract_addr.clone(),
+            &admin_create_msg,
+            &[],
+        )
+        .unwrap();
+}

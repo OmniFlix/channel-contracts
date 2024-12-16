@@ -32,6 +32,7 @@ export default class ChannelHelper {
             channels_collection_id: deploymentConfig.channels_collection_id + random(10000000).toString(),
             channels_collection_name: deploymentConfig.channels_collection_name,
             channels_collection_symbol: deploymentConfig.channels_collection_symbol,
+            reserved_usernames: ["reserved"]
         }
 
         let instantiateResult = await client.instantiate(
@@ -111,6 +112,24 @@ export default class ChannelHelper {
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
         return channel_id;
     }
+    AdminCreateChannel = async (context: Context, user_name: string, recipient: string, collaborators?: []) => {
+        let { client, address: senderAddress } = context.getTestUser('admin');
+        let { client: recipientClient, address: recipientAddress } = context.getTestUser(recipient);
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.adminChannelCreate({
+            userName: user_name,
+            recipient: recipientAddress,
+            description: "OmniFlix Channel Testing",
+            salt: context.generateRandomSalt(5),
+            collaborators: collaborators,
+        }
+        );
+        let channel_id = context.getEventAttribute(res, undefined, 'channel_id');
+        logger.log(1, `Channel created with id: ${channel_id}`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        return channel_id;
+    }
+
 
     PublishAsset = async (context: Context, account_name: string, channel_id: string, asset_onft_collection_id: string, asset_onft_id: string, is_visible: boolean, playlist_name?: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
