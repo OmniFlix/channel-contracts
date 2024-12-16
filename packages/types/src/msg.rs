@@ -162,6 +162,22 @@ pub enum ExecuteMsg {
         /// A list of usernames to be added to the reserved list.
         usernames: Vec<String>,
     },
+    /// Method for admin to create a new channel for a user
+    /// Only callable by the protocol admin.
+    AdminChannelCreate {
+        /// A salt value used for unique identification.
+        salt: Binary,
+        /// The user name of the channel owner.
+        user_name: String,
+        /// A description of the channel.
+        description: String,
+        /// (Optional) A list of collaborator addresses for the channel.
+        collaborators: Option<Vec<String>>,
+        /// The address of the user to create the channel for
+        /// This is the address that will receive the NFT
+        /// and be the owner of the channel
+        recipient: String,
+    },
 }
 
 #[cw_serde]

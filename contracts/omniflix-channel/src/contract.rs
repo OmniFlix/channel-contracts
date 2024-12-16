@@ -174,6 +174,22 @@ pub fn execute(
         ExecuteMsg::AddReservedUsernames { usernames } => {
             add_reserved_usernames(deps, info, usernames)
         }
+        ExecuteMsg::AdminChannelCreate {
+            salt,
+            user_name,
+            description,
+            collaborators,
+            recipient,
+        } => admin_create_channel(
+            deps,
+            env,
+            info,
+            salt,
+            user_name,
+            description,
+            collaborators,
+            recipient,
+        ),
     }
 }
 
@@ -221,8 +237,8 @@ fn create_channel(
     validate_username(&channel_details.clone().user_name)?;
     validate_description(&channel_details.clone().description)?;
 
-    let is_reserved = channels_manager
-        .check_if_username_reserved(deps.storage, channel_details.clone().user_name.clone())?;
+    let is_reserved =
+        channels_manager.check_if_username_reserved(deps.storage, user_name.clone())?;
 
     if is_reserved {
         return Err(ContractError::UserNameReserved {});
@@ -842,6 +858,102 @@ fn add_reserved_usernames(
         .add_attribute("admin", config.admin.to_string())
         .add_attribute("usernames", usernames.join(", "));
 
+    Ok(response)
+}
+
+fn admin_create_channel(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    salt: Binary,
+    description: String,
+    user_name: String,
+    collaborators: Option<Vec<String>>,
+    recipient: String,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    if info.sender != CONFIG.load(deps.storage)?.admin {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    deps.api.addr_validate(&recipient)?;
+
+    let config = CONFIG.load(deps.storage)?;
+
+    // Generate a random channel onft ID
+    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
+
+    // Generate a random channel ID
+    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
+
+    let channels_manager = ChannelsManager::new();
+
+    // Validate the collaborators addresses
+    // If no collaborators are provided, the vector will be empty
+    let addr_collaborators: Vec<Addr> = collaborators
+        .clone()
+        .unwrap_or_default()
+        .iter()
+        .map(|collaborator| deps.api.addr_validate(collaborator))
+        .collect::<Result<Vec<Addr>, _>>()?;
+
+    let channel_details = ChannelDetails::new(
+        channel_id.clone(),
+        user_name.clone(),
+        description.clone(),
+        onft_id.clone(),
+        addr_collaborators,
+    );
+    validate_username(&channel_details.clone().user_name)?;
+    validate_description(&channel_details.clone().description)?;
+
+    // Add the new channel to the collection
+    // Checks for uniqueness of the channel ID and username
+    channels_manager.add_channel(
+        deps.storage,
+        channel_id.clone(),
+        user_name.clone(),
+        channel_details.clone(),
+    )?;
+
+    // Create the onft data for the channel. This data will be stored in the onft's data field
+    let onft_data = ChannelOnftData {
+        channel_id: channel_id.clone(),
+        user_name: user_name.clone(),
+        onft_id: onft_id.clone(),
+    };
+
+    let string_onft_data =
+        serde_json::to_string(&onft_data).map_err(|_| ContractError::InvalidOnftData {})?;
+
+    let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
+        id: onft_id.clone(),
+        denom_id: config.channels_collection_id.clone(),
+        sender: env.contract.address.clone().to_string(),
+        recipient: recipient.clone(),
+        data: string_onft_data,
+        metadata: Some(Metadata {
+            media_uri: "mediauri.com".to_string(),
+            name: user_name.clone(),
+            description: description.clone(),
+            preview_uri: "previewuri.com".to_string(),
+            uri_hash: "urihash".to_string(),
+        }),
+        nsfw: false,
+        extensible: false,
+        royalty_share: "1000000".to_string(),
+        transferable: true,
+    }
+    .into();
+
+    let response = Response::new()
+        .add_message(mint_onft_msg)
+        .add_attribute("action", "admin_create_channel")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("user_name", user_name)
+        .add_attribute("onft_id", onft_id);
     Ok(response)
 }
 
