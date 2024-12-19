@@ -9,7 +9,7 @@ pub fn get_channel_instantiate_msg(admin: Addr) -> InstantiateMsg {
         channels_collection_id: "Channels".to_string(),
         channels_collection_name: "Channels".to_string(),
         channels_collection_symbol: "CH".to_string(),
-        reserved_usernames: vec!["reserved".to_string()],
+        reserved_usernames: vec![("reserved".to_string(), Addr::unchecked(""))],
     }
 }
 

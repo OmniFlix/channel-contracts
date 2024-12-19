@@ -33,11 +33,6 @@ pub fn mint_to_address(app: &mut OmniflixApp, to_address: String, amount: Vec<Co
             )
             .unwrap()
     });
-    // validate the balance
-    let balance = app
-        .wrap()
-        .query_balance(to_address.clone(), amount[0].denom.clone());
-    println!("Balance of {}: {:?}", to_address, balance);
 }
 pub fn get_event_attribute(res: AppResponse, event_type: &str, attribute_key: &str) -> String {
     res.events
