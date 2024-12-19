@@ -19,4 +19,7 @@ pub enum ChannelError {
 
     #[error("Saving reserved usernames failed")]
     SaveReservedUsernamesFailed {},
+
+    #[error("Reserved username not found")]
+    UsernameNotReserved {},
 }

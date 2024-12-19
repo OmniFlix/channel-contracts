@@ -1,4 +1,4 @@
-use cosmwasm_std::{Order, StdResult, Storage};
+use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use crate::{
@@ -15,7 +15,7 @@ pub struct ChannelsManager {
     pub channel_details: Map<ChannelId, ChannelDetails>,
     pub username_to_channel_id: Map<UserName, ChannelId>,
     pub channel_id_to_username: Map<ChannelId, UserName>,
-    pub reserved_usernames: Map<UserName, bool>,
+    pub reserved_usernames: Map<UserName, Addr>,
 }
 
 impl ChannelsManager {
@@ -31,12 +31,26 @@ impl ChannelsManager {
     pub fn add_reserved_usernames(
         &self,
         store: &mut dyn Storage,
-        usernames: Vec<UserName>,
+        usernames: Vec<(UserName, Addr)>,
     ) -> Result<(), ChannelError> {
         for username in usernames {
             self.reserved_usernames
-                .save(store, username.clone(), &true)
+                .save(store, username.0.clone(), &username.1)
                 .map_err(|_| ChannelError::SaveReservedUsernamesFailed {})?;
+        }
+        Ok(())
+    }
+    pub fn remove_reserved_usernames(
+        &self,
+        store: &mut dyn Storage,
+        usernames: Vec<UserName>,
+    ) -> Result<(), ChannelError> {
+        for username in usernames {
+            // return error if username does not exist
+            if !self.reserved_usernames.has(store, username.clone()) {
+                return Err(ChannelError::UsernameNotReserved {});
+            }
+            self.reserved_usernames.remove(store, username.clone());
         }
         Ok(())
     }
@@ -164,31 +178,29 @@ impl ChannelsManager {
             .load(store, channel_id)
             .map_err(|_| ChannelError::ChannelIdNotFound {})
     }
-
-    pub fn check_if_username_reserved(
-        &self,
-        store: &dyn Storage,
-        user_name: UserName,
-    ) -> Result<bool, ChannelError> {
-        match self.reserved_usernames.may_load(store, user_name) {
-            Ok(Some(_value)) => Ok(true),
-            Ok(None) => Ok(false),
-            Err(_) => Err(ChannelError::UserNameNotFound {}),
-        }
-    }
     pub fn get_reserved_usernames(
         &self,
         store: &dyn Storage,
         start_after: Option<UserName>,
         limit: Option<u32>,
-    ) -> StdResult<Vec<UserName>> {
+    ) -> StdResult<Vec<(UserName, Addr)>> {
         let limit = limit.unwrap_or(25).min(25) as usize;
         let start = start_after.map(Bound::exclusive);
 
         self.reserved_usernames
             .range(store, start, None, Order::Ascending)
             .take(limit)
-            .map(|item| item.map(|(key, _value)| key))
             .collect()
+    }
+    pub fn get_reserved_status(
+        &self,
+        store: &dyn Storage,
+        username: UserName,
+    ) -> StdResult<Option<Addr>> {
+        let reserved_address = self.reserved_usernames.load(store, username);
+        if reserved_address.is_err() {
+            return Ok(None);
+        }
+        Ok(Some(reserved_address.unwrap()))
     }
 }

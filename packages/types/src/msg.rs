@@ -13,7 +13,7 @@ pub struct InstantiateMsg {
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
     pub channel_creation_fee: Vec<Coin>,
-    pub reserved_usernames: Vec<String>,
+    pub reserved_usernames: Vec<(String, Addr)>,
 }
 
 #[cw_serde]
@@ -155,28 +155,16 @@ pub enum ExecuteMsg {
         /// (Optional) The new fee collector address.
         fee_collector: Option<String>,
     },
-
-    /// Adds a reserved usernames to the contract. Reserved usernames cannot be used
-    /// as channel names. Only callable by the protocol admin.
-    AddReservedUsernames {
-        /// A list of usernames to be added to the reserved list.
-        usernames: Vec<String>,
-    },
-    /// Method for admin to create a new channel for a user
+    /// Manages reserved usernames.
     /// Only callable by the protocol admin.
-    AdminChannelCreate {
-        /// A salt value used for unique identification.
-        salt: Binary,
-        /// The user name of the channel owner.
-        user_name: String,
-        /// A description of the channel.
-        description: String,
-        /// (Optional) A list of collaborator addresses for the channel.
-        collaborators: Option<Vec<String>>,
-        /// The address of the user to create the channel for
-        /// This is the address that will receive the NFT
-        /// and be the owner of the channel
-        recipient: String,
+    /// Can set an address as a reserved username
+    /// Can remove reserved usernames
+    /// Can add reserved usernames
+    ManageReservedUsernames {
+        /// (Optional) A list of addresses to be set as reserved usernames.
+        add_usernames: Option<Vec<(String, Addr)>>,
+        /// (Optional) A list of addresses to be removed from reserved usernames.
+        remove_usernames: Option<Vec<String>>,
     },
 }
 
@@ -223,7 +211,7 @@ pub enum QueryMsg {
         channel_id: String,
         publish_id: String,
     },
-    #[returns(Vec<String>)]
+    #[returns(Vec<(String,Addr)>)]
     ReservedUsernames {
         start_after: Option<String>,
         limit: Option<u32>,

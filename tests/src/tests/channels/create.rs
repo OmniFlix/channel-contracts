@@ -1,6 +1,6 @@
 use channel_manager::types::ChannelDetails;
 use channel_types::msg::{ExecuteMsg, QueryMsg};
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::{coin, Addr, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 
@@ -125,20 +125,6 @@ fn failed_validations() {
     let admin = setup_response.test_accounts.admin.clone();
     let creator = setup_response.test_accounts.creator.clone();
 
-    let creator_flix_balance = app
-        .wrap()
-        .query_balance(creator.clone(), "uflix")
-        .unwrap()
-        .amount;
-    println!("Creator Flix Balance: {:?}", creator_flix_balance);
-
-    let admin_flix_balance = app
-        .wrap()
-        .query_balance(admin.clone(), "uflix")
-        .unwrap()
-        .amount;
-    println!("Admin Flix Balance: {:?}", admin_flix_balance);
-
     let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
     instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
 
@@ -258,17 +244,23 @@ fn happy_path() {
 }
 
 #[test]
-
-fn admin_create_channel() {
+fn create_reserved_channel() {
     // Setup testing environment
     let setup_response = setup();
     let mut app = setup_response.app;
 
     // Actors
     let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
 
     let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
     instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
+    // Username "admin" is reserved for the actor admin
+    instantiate_msg.reserved_usernames = vec![
+        ("admin".to_string(), admin.clone()),
+        ("reserved".to_string(), Addr::unchecked("")),
+    ];
+
     // Instantiate the contract
     let channel_contract_addr = app
         .instantiate_contract(
@@ -281,17 +273,15 @@ fn admin_create_channel() {
         )
         .unwrap();
 
-    // Default reserved usename is "reserved"
-
-    // Try creating a channel with the reserved username
+    // Creator can not use the reserved username "admin"
     let res = app
         .execute_contract(
-            admin.clone(),
+            creator.clone(),
             channel_contract_addr.clone(),
             &ExecuteMsg::ChannelCreate {
                 salt: Binary::default(),
-                user_name: "reserved".to_string(),
-                description: "reserved".to_string(),
+                user_name: "admin".to_string(),
+                description: "creator".to_string(),
                 collaborators: None,
             },
             &[coin(1000000, "uflix")],
@@ -300,22 +290,57 @@ fn admin_create_channel() {
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::UserNameReserved {});
-
-    // Create with admin
-    let admin_create_msg = ExecuteMsg::AdminChannelCreate {
-        salt: Binary::default(),
-        user_name: "reserved".to_string(),
-        description: "Description".to_string(),
-        collaborators: None,
-        recipient: setup_response.test_accounts.creator.clone().into_string(),
-    };
-
+    // No one can use the reserved username "reserved"
+    let _res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::ChannelCreate {
+                salt: Binary::default(),
+                user_name: "reserved".to_string(),
+                description: "creator".to_string(),
+                collaborators: None,
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
     let _res = app
         .execute_contract(
             admin.clone(),
             channel_contract_addr.clone(),
-            &admin_create_msg,
-            &[],
+            &ExecuteMsg::ChannelCreate {
+                salt: Binary::default(),
+                user_name: "reserved".to_string(),
+                description: "creator".to_string(),
+                collaborators: None,
+            },
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
+
+    // Admin can use the reserved username "admin"
+    let _res = app
+        .execute_contract(
+            admin.clone(),
+            channel_contract_addr.clone(),
+            &ExecuteMsg::ChannelCreate {
+                salt: Binary::default(),
+                user_name: "admin".to_string(),
+                description: "creator".to_string(),
+                collaborators: None,
+            },
+            &[coin(1000000, "uflix")],
         )
         .unwrap();
+    // Whenever a reserved username is used, remove it from the reserved list
+    let query_msg = QueryMsg::ReservedUsernames {
+        limit: None,
+        start_after: None,
+    };
+    let res: Vec<(String, Addr)> = app
+        .wrap()
+        .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
+        .unwrap();
+    assert_eq!(res.len(), 1);
+    assert_eq!(res[0].0, "reserved");
 }
