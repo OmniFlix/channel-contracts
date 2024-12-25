@@ -273,20 +273,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "channel-types"
-version = "0.0.1-beta"
-dependencies = [
- "asset-manager",
- "channel-manager",
- "cosmwasm-schema",
- "cosmwasm-std 2.1.4",
- "cw-storage-plus",
- "cw-utils",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -931,7 +917,6 @@ dependencies = [
  "asset-manager",
  "bech32 0.9.1",
  "channel-manager",
- "channel-types",
  "cosmwasm-schema",
  "cosmwasm-std 2.1.4",
  "cosmwasm-storage",
@@ -943,6 +928,7 @@ dependencies = [
  "derivative",
  "itertools 0.12.1",
  "omniflix-channel",
+ "omniflix-channel-types",
  "omniflix-std",
  "pauser",
  "prost 0.12.6",
@@ -1046,7 +1032,6 @@ dependencies = [
  "anyhow",
  "asset-manager",
  "channel-manager",
- "channel-types",
  "cosmwasm-schema",
  "cosmwasm-std 2.1.4",
  "cosmwasm-storage",
@@ -1058,6 +1043,7 @@ dependencies = [
  "cw4",
  "cw4-group",
  "hex",
+ "omniflix-channel-types",
  "omniflix-std",
  "pauser",
  "prost 0.12.6",
@@ -1068,6 +1054,20 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.8",
+ "thiserror",
+]
+
+[[package]]
+name = "omniflix-channel-types"
+version = "0.0.1-beta"
+dependencies = [
+ "asset-manager",
+ "channel-manager",
+ "cosmwasm-schema",
+ "cosmwasm-std 2.1.4",
+ "cw-storage-plus",
+ "cw-utils",
+ "serde",
  "thiserror",
 ]
 

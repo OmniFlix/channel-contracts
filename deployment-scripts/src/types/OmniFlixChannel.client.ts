@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, InstantiateMsg, Coin, ExecuteMsg, AssetType, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetType, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -18,6 +18,11 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId?: string;
     userName?: string;
   }) => Promise<ChannelDetails>;
+  channelMetadata: ({
+    channelId
+  }: {
+    channelId: string;
+  }) => Promise<ChannelMetadata>;
   channels: ({
     limit,
     startAfter
@@ -69,7 +74,7 @@ export interface OmniFlixChannelReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: string;
-  }) => Promise<ArrayOfString>;
+  }) => Promise<ArrayOfReservedUsername>;
 }
 export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterface {
   client: CosmWasmClient;
@@ -81,6 +86,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     this.isPaused = this.isPaused.bind(this);
     this.pausers = this.pausers.bind(this);
     this.channelDetails = this.channelDetails.bind(this);
+    this.channelMetadata = this.channelMetadata.bind(this);
     this.channels = this.channels.bind(this);
     this.channelId = this.channelId.bind(this);
     this.playlist = this.playlist.bind(this);
@@ -112,6 +118,17 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
       channel_details: {
         channel_id: channelId,
         user_name: userName
+      }
+    });
+  };
+  channelMetadata = async ({
+    channelId
+  }: {
+    channelId: string;
+  }): Promise<ChannelMetadata> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      channel_metadata: {
+        channel_id: channelId
       }
     });
   };
@@ -213,7 +230,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   }: {
     limit?: number;
     startAfter?: string;
-  }): Promise<ArrayOfString> => {
+  }): Promise<ArrayOfReservedUsername> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reserved_usernames: {
         limit,
@@ -303,13 +320,19 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     playlistName: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   channelCreate: ({
+    bannerPicture,
+    channelName,
     collaborators,
     description,
+    profilePicture,
     salt,
     userName
   }: {
+    bannerPicture?: string;
+    channelName: string;
     collaborators?: string[];
     description: string;
+    profilePicture?: string;
     salt: Binary;
     userName: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
@@ -319,11 +342,19 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   channelUpdateDetails: ({
+    bannerPicture,
     channelId,
-    description
+    channelName,
+    collaborators,
+    description,
+    profilePicture
   }: {
+    bannerPicture?: string;
     channelId: string;
-    description: string;
+    channelName?: string;
+    collaborators?: string[];
+    description?: string;
+    profilePicture?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   setConfig: ({
     admin,
@@ -334,23 +365,12 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelCreationFee?: Coin[];
     feeCollector?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  addReservedUsernames: ({
-    usernames
+  manageReservedUsernames: ({
+    addUsernames,
+    removeUsernames
   }: {
-    usernames: string[];
-  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  adminChannelCreate: ({
-    collaborators,
-    description,
-    recipient,
-    salt,
-    userName
-  }: {
-    collaborators?: string[];
-    description: string;
-    recipient: string;
-    salt: Binary;
-    userName: string;
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements OmniFlixChannelInterface {
@@ -378,8 +398,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.channelDelete = this.channelDelete.bind(this);
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
-    this.addReservedUsernames = this.addReservedUsernames.bind(this);
-    this.adminChannelCreate = this.adminChannelCreate.bind(this);
+    this.manageReservedUsernames = this.manageReservedUsernames.bind(this);
   }
 
   pause = async (fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
@@ -537,20 +556,29 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     }, fee, memo, _funds);
   };
   channelCreate = async ({
+    bannerPicture,
+    channelName,
     collaborators,
     description,
+    profilePicture,
     salt,
     userName
   }: {
+    bannerPicture?: string;
+    channelName: string;
     collaborators?: string[];
     description: string;
+    profilePicture?: string;
     salt: Binary;
     userName: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       channel_create: {
+        banner_picture: bannerPicture,
+        channel_name: channelName,
         collaborators,
         description,
+        profile_picture: profilePicture,
         salt,
         user_name: userName
       }
@@ -568,16 +596,28 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     }, fee, memo, _funds);
   };
   channelUpdateDetails = async ({
+    bannerPicture,
     channelId,
-    description
+    channelName,
+    collaborators,
+    description,
+    profilePicture
   }: {
+    bannerPicture?: string;
     channelId: string;
-    description: string;
+    channelName?: string;
+    collaborators?: string[];
+    description?: string;
+    profilePicture?: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       channel_update_details: {
+        banner_picture: bannerPicture,
         channel_id: channelId,
-        description
+        channel_name: channelName,
+        collaborators,
+        description,
+        profile_picture: profilePicture
       }
     }, fee, memo, _funds);
   };
@@ -598,37 +638,17 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  addReservedUsernames = async ({
-    usernames
+  manageReservedUsernames = async ({
+    addUsernames,
+    removeUsernames
   }: {
-    usernames: string[];
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      add_reserved_usernames: {
-        usernames
-      }
-    }, fee, memo, _funds);
-  };
-  adminChannelCreate = async ({
-    collaborators,
-    description,
-    recipient,
-    salt,
-    userName
-  }: {
-    collaborators?: string[];
-    description: string;
-    recipient: string;
-    salt: Binary;
-    userName: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      admin_channel_create: {
-        collaborators,
-        description,
-        recipient,
-        salt,
-        user_name: userName
+      manage_reserved_usernames: {
+        add_usernames: addUsernames,
+        remove_usernames: removeUsernames
       }
     }, fee, memo, _funds);
   };

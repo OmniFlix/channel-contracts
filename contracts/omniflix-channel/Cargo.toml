@@ -51,4 +51,4 @@ anyhow = { workspace = true }
 pauser = { workspace = true }
 channel-manager = { workspace = true }
 asset-manager = { workspace = true }
-channel-types = { workspace = true }
+omniflix-channel-types = { workspace = true }

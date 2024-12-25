@@ -1,9 +1,9 @@
 use asset_manager::error::PlaylistError;
 use asset_manager::types::Playlist;
-use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg};
 use crate::helpers::setup::setup;

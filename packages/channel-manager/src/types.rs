@@ -7,27 +7,16 @@ pub type UserName = String;
 pub struct ChannelDetails {
     pub channel_id: String,
     pub user_name: String,
-    pub description: String,
     pub onft_id: String,
     pub collaborators: Vec<Addr>,
 }
 
-impl ChannelDetails {
-    pub fn new(
-        channel_id: String,
-        user_name: String,
-        description: String,
-        onft_id: String,
-        collaborators: Vec<Addr>,
-    ) -> Self {
-        Self {
-            channel_id,
-            user_name,
-            description,
-            onft_id,
-            collaborators,
-        }
-    }
+#[cw_serde]
+pub struct ChannelMetadata {
+    pub channel_name: String,
+    pub description: Option<String>,
+    pub profile_picture: Option<String>,
+    pub banner_picture: Option<String>,
 }
 
 #[cw_serde]

@@ -3,16 +3,18 @@ use cw_storage_plus::{Bound, Map};
 
 use crate::{
     error::ChannelError,
-    types::{ChannelDetails, ChannelId, UserName},
+    types::{ChannelDetails, ChannelId, ChannelMetadata, UserName},
 };
 
 const CHANNEL_DETAILS_STORAGE_KEY: &str = "channel_details";
+const CHANNEL_METADATA_STORAGE_KEY: &str = "channel_metadata";
 const USERNAME_TO_CHANNEL_ID_STORAGE_KEY: &str = "username_to_channel_id";
 const CHANNEL_ID_TO_USERNAME_STORAGE_KEY: &str = "channel_id_to_username";
 const RESERVED_USERNAMES_STORAGE_KEY: &str = "reserved_usernames";
 
 pub struct ChannelsManager {
     pub channel_details: Map<ChannelId, ChannelDetails>,
+    pub channel_metadata: Map<ChannelId, ChannelMetadata>,
     pub username_to_channel_id: Map<UserName, ChannelId>,
     pub channel_id_to_username: Map<ChannelId, UserName>,
     pub reserved_usernames: Map<UserName, Addr>,
@@ -25,6 +27,7 @@ impl ChannelsManager {
             username_to_channel_id: Map::new(USERNAME_TO_CHANNEL_ID_STORAGE_KEY),
             channel_id_to_username: Map::new(CHANNEL_ID_TO_USERNAME_STORAGE_KEY),
             reserved_usernames: Map::new(RESERVED_USERNAMES_STORAGE_KEY),
+            channel_metadata: Map::new(CHANNEL_METADATA_STORAGE_KEY),
         }
     }
 
@@ -66,6 +69,25 @@ impl ChannelsManager {
             .map_err(|_| ChannelError::ChannelIdNotFound {})
     }
 
+    pub fn update_collaborators(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        collaborators: Vec<Addr>,
+    ) -> Result<(), ChannelError> {
+        let mut channel_details = self
+            .channel_details
+            .load(store, channel_id.clone())
+            .map_err(|_| ChannelError::ChannelIdNotFound {})?;
+
+        channel_details.collaborators = collaborators;
+        self.channel_details
+            .save(store, channel_id, &channel_details)
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+
+        Ok(())
+    }
+
     pub fn get_channels_list(
         &self,
         store: &dyn Storage,
@@ -99,6 +121,7 @@ impl ChannelsManager {
         channel_id: ChannelId,
         user_name: UserName,
         channel_details: ChannelDetails,
+        channel_metadata: ChannelMetadata,
     ) -> Result<(), ChannelError> {
         // Check if the channel ID or username already exists
         if self.channel_details.has(store, channel_id.clone()) {
@@ -116,24 +139,37 @@ impl ChannelsManager {
             .save(store, user_name.clone(), &channel_id)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
         self.channel_id_to_username
-            .save(store, channel_id, &user_name)
+            .save(store, channel_id.clone(), &user_name)
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+        self.channel_metadata
+            .save(store, channel_id, &channel_metadata)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
 
         Ok(())
     }
-
-    pub fn update_channel_details(
+    pub fn get_channel_metadata(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+    ) -> Result<ChannelMetadata, ChannelError> {
+        self.channel_metadata
+            .load(store, channel_id)
+            .map_err(|_| ChannelError::ChannelIdNotFound {})
+    }
+    pub fn update_channel_metadata(
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
-        updated_details: ChannelDetails,
+        channel_metadata: ChannelMetadata,
     ) -> Result<(), ChannelError> {
-        if !self.channel_details.has(store, channel_id.clone()) {
+        if !self.channel_metadata.has(store, channel_id.clone()) {
             return Err(ChannelError::ChannelIdNotFound {});
         }
-        self.channel_details
-            .save(store, channel_id, &updated_details)
+
+        self.channel_metadata
+            .save(store, channel_id, &channel_metadata)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+
         Ok(())
     }
 
@@ -202,5 +238,21 @@ impl ChannelsManager {
             return Ok(None);
         }
         Ok(Some(reserved_address.unwrap()))
+    }
+    pub fn update_channel_details(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        channel_details: ChannelDetails,
+    ) -> Result<(), ChannelError> {
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+
+        self.channel_details
+            .save(store, channel_id, &channel_details)
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+
+        Ok(())
     }
 }

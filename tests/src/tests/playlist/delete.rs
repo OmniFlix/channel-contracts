@@ -3,10 +3,10 @@ use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 use asset_manager::error::PlaylistError;
 use asset_manager::types::Playlist;
-use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 #[test]
 fn does_not_exist() {

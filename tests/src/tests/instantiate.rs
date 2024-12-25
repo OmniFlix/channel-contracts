@@ -1,10 +1,10 @@
-use channel_types::{
-    config::ChannelConractConfig,
-    msg::{ExecuteMsg, QueryMsg},
-};
 use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::{
+    config::ChannelConractConfig,
+    msg::{ExecuteMsg, QueryMsg},
+};
 
 use crate::helpers::{msg_wrapper::get_channel_instantiate_msg, setup::setup};
 

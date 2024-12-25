@@ -1,8 +1,8 @@
 [package]
-authors     = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
+authors = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
 name = "integration-tests"
 edition = { workspace = true }
-version     = { workspace = true }
+version = { workspace = true }
 homepage = { workspace = true }
 repository = { workspace = true }
 license = { workspace = true }
@@ -15,11 +15,11 @@ library = []
 
 [dependencies]
 cosmwasm-storage = { workspace = true }
-omniflix-std = { workspace=true }
-cosmwasm-schema      = { workspace = true }
+omniflix-std = { workspace = true }
+cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
-cw-controllers       = { workspace = true }
-cw2                  = { workspace = true }
+cw-controllers = { workspace = true }
+cw2 = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 schemars = { workspace = true }
@@ -31,17 +31,9 @@ derivative = "2.2.0"
 itertools = "0.12.0"
 serde = "1.0.195"
 thiserror = "1.0.56"
-testing = { workspace=true }
-omniflix-channel = { workspace=true }
-pauser = { workspace=true }
-channel-manager = { workspace=true }
-asset-manager = { workspace=true }
-channel-types = { workspace=true }
-
-
-
-
-
-
-
-
+testing = { workspace = true }
+omniflix-channel = { workspace = true }
+pauser = { workspace = true }
+channel-manager = { workspace = true }
+asset-manager = { workspace = true }
+omniflix-channel-types = { workspace = true }

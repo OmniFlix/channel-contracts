@@ -1,7 +1,7 @@
-use channel_types::config::ChannelConractConfig;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 use cw_storage_plus::Item;
+use omniflix_channel_types::config::ChannelConractConfig;
 
 pub type ChannelsCollectionId = String;
 

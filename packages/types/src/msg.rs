@@ -1,5 +1,5 @@
 use asset_manager::types::{Asset, AssetType, Playlist};
-use channel_manager::types::ChannelDetails;
+use channel_manager::types::{ChannelDetails, ChannelMetadata};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
@@ -13,7 +13,13 @@ pub struct InstantiateMsg {
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
     pub channel_creation_fee: Vec<Coin>,
-    pub reserved_usernames: Vec<(String, Addr)>,
+    pub reserved_usernames: Vec<ReservedUsername>,
+}
+
+#[cw_serde]
+pub struct ReservedUsername {
+    pub username: String,
+    pub address: Option<String>,
 }
 
 #[cw_serde]
@@ -124,10 +130,16 @@ pub enum ExecuteMsg {
         salt: Binary,
         /// The user name of the channel owner.
         user_name: String,
+        /// Name of the channel
+        channel_name: String,
         /// A description of the channel.
         description: String,
         /// (Optional) A list of collaborator addresses for the channel.
         collaborators: Option<Vec<String>>,
+        /// (Optional) Profile image of the channel
+        profile_picture: Option<String>,
+        /// (Optional) Banner image of the channel
+        banner_picture: Option<String>,
     },
 
     /// Deletes an existing channel. The channel ID and related details will be removed
@@ -141,8 +153,17 @@ pub enum ExecuteMsg {
     ChannelUpdateDetails {
         /// The ID of the channel to be updated.
         channel_id: String,
-        /// The new description for the channel.
-        description: String,
+        /// The new description of the channel.
+        /// (Optional) The new description of the channel.
+        description: Option<String>,
+        /// (Optional) The new name of the channel.
+        channel_name: Option<String>,
+        /// (Optional) The new profile image of the channel.
+        profile_picture: Option<String>,
+        /// (Optional) The new banner image of the channel.
+        banner_picture: Option<String>,
+        /// (Optional) A list of collaborator addresses for the channel.
+        collaborators: Option<Vec<String>>,
     },
 
     /// Updates the configuration of the contract, including the channel creation fee,
@@ -162,7 +183,7 @@ pub enum ExecuteMsg {
     /// Can add reserved usernames
     ManageReservedUsernames {
         /// (Optional) A list of addresses to be set as reserved usernames.
-        add_usernames: Option<Vec<(String, Addr)>>,
+        add_usernames: Option<Vec<ReservedUsername>>,
         /// (Optional) A list of addresses to be removed from reserved usernames.
         remove_usernames: Option<Vec<String>>,
     },
@@ -180,6 +201,8 @@ pub enum QueryMsg {
         channel_id: Option<String>,
         user_name: Option<String>,
     },
+    #[returns(ChannelMetadata)]
+    ChannelMetadata { channel_id: String },
     #[returns(Vec<ChannelDetails>)]
     Channels {
         start_after: Option<String>,
@@ -211,7 +234,7 @@ pub enum QueryMsg {
         channel_id: String,
         publish_id: String,
     },
-    #[returns(Vec<(String,Addr)>)]
+    #[returns(Vec<ReservedUsername>)]
     ReservedUsernames {
         start_after: Option<String>,
         limit: Option<u32>,
