@@ -13,11 +13,15 @@ export interface InstantiateMsg {
   channels_collection_name: string;
   channels_collection_symbol: string;
   fee_collector: Addr;
-  reserved_usernames: string[];
+  reserved_usernames: ReservedUsername[];
 }
 export interface Coin {
   amount: Uint128;
   denom: string;
+}
+export interface ReservedUsername {
+  address?: string | null;
+  username: string;
 }
 export type ExecuteMsg = {
   pause: {};
@@ -76,8 +80,11 @@ export type ExecuteMsg = {
   };
 } | {
   channel_create: {
+    banner_picture?: string | null;
+    channel_name: string;
     collaborators?: string[] | null;
     description: string;
+    profile_picture?: string | null;
     salt: Binary;
     user_name: string;
   };
@@ -87,8 +94,12 @@ export type ExecuteMsg = {
   };
 } | {
   channel_update_details: {
+    banner_picture?: string | null;
     channel_id: string;
-    description: string;
+    channel_name?: string | null;
+    collaborators?: string[] | null;
+    description?: string | null;
+    profile_picture?: string | null;
   };
 } | {
   set_config: {
@@ -97,16 +108,9 @@ export type ExecuteMsg = {
     fee_collector?: string | null;
   };
 } | {
-  add_reserved_usernames: {
-    usernames: string[];
-  };
-} | {
-  admin_channel_create: {
-    collaborators?: string[] | null;
-    description: string;
-    recipient: string;
-    salt: Binary;
-    user_name: string;
+  manage_reserved_usernames: {
+    add_usernames?: ReservedUsername[] | null;
+    remove_usernames?: string[] | null;
   };
 };
 export type AssetType = {
@@ -130,6 +134,10 @@ export type QueryMsg = {
   channel_details: {
     channel_id?: string | null;
     user_name?: string | null;
+  };
+} | {
+  channel_metadata: {
+    channel_id: string;
   };
 } | {
   channels: {
@@ -180,11 +188,16 @@ export type ArrayOfAsset = Asset[];
 export interface ChannelDetails {
   channel_id: string;
   collaborators: Addr[];
-  description: string;
   onft_id: string;
   user_name: string;
 }
 export type String = string;
+export interface ChannelMetadata {
+  banner_picture?: string | null;
+  channel_name: string;
+  description?: string | null;
+  profile_picture?: string | null;
+}
 export type ArrayOfChannelDetails = ChannelDetails[];
 export interface ChannelConractConfig {
   admin: Addr;
@@ -201,3 +214,4 @@ export interface Playlist {
   playlist_name: string;
 }
 export type ArrayOfPlaylist = Playlist[];
+export type ArrayOfReservedUsername = ReservedUsername[];

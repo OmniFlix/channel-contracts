@@ -1,7 +1,7 @@
-use channel_types::msg::{ExecuteMsg, QueryMsg};
 use cosmwasm_std::{coin, Addr};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
 
 use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
 use crate::helpers::setup::setup;
@@ -36,7 +36,7 @@ fn add_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
@@ -44,7 +44,11 @@ fn add_reserved_usernames() {
 
     // Add a reserved username but dont set an address
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("admin".to_string(), Addr::unchecked(""))].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "admin".to_string(),
+            address: None,
+        }])
+        .into(),
         remove_usernames: None,
     };
 
@@ -57,7 +61,7 @@ fn add_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
@@ -65,7 +69,10 @@ fn add_reserved_usernames() {
 
     // Add invalid reserved username
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("Admin".to_string(), Addr::unchecked(""))].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "Admin".to_string(),
+            address: None,
+        }]),
         remove_usernames: None,
     };
 
@@ -77,16 +84,22 @@ fn add_reserved_usernames() {
     assert_eq!(typed_err, &ContractError::InvalidUserName {});
     // Add valid reserved username with invalid address
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("admin".to_string(), Addr::unchecked("invalid"))].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "Admin".to_string(),
+            address: Some(Addr::unchecked("").to_string()),
+        }]),
         remove_usernames: None,
     };
 
     let _res = app
         .execute_contract(admin.clone(), channel_contract_addr.clone(), &msg, &[])
         .unwrap_err();
-    // username admin is already added but we want to sent an valid address
+    // Username admin is already added but we want to sent an valid address
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("admin".to_string(), creator.clone())].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "admin".to_string(),
+            address: Some(creator.to_string()),
+        }]),
         remove_usernames: None,
     };
 
@@ -99,17 +112,20 @@ fn add_reserved_usernames() {
         start_after: None,
     };
 
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
     assert_eq!(res.len(), 2);
-    assert_eq!(res[0].1, creator.clone());
+    assert_eq!(res[0].address, Some(creator.clone().to_string()));
 
     // Remove designated address from reserved username
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("admin".to_string(), Addr::unchecked(""))].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "admin".to_string(),
+            address: None,
+        }]),
         remove_usernames: None,
     };
 
@@ -122,12 +138,12 @@ fn add_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
     assert_eq!(res.len(), 2);
-    assert_eq!(res[0].1, Addr::unchecked(""));
+    assert_eq!(res[0].address, Some(Addr::unchecked("").to_string()));
 }
 
 #[test]
@@ -160,7 +176,7 @@ fn remove_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
@@ -197,7 +213,7 @@ fn remove_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
@@ -205,7 +221,10 @@ fn remove_reserved_usernames() {
 
     // Remove usernames while adding
     let msg = ExecuteMsg::ManageReservedUsernames {
-        add_usernames: vec![("admin".to_string(), Addr::unchecked(""))].into(),
+        add_usernames: Some(vec![ReservedUsername {
+            username: "admin".to_string(),
+            address: None,
+        }]),
         remove_usernames: vec!["admin".to_string()].into(),
     };
 
@@ -218,7 +237,7 @@ fn remove_reserved_usernames() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();

@@ -1,8 +1,10 @@
 use crate::ContractError;
 use asset_manager::assets::{AssetKey, Assets};
-use cosmwasm_std::{Binary, Coin, Deps, Env, Uint128};
+use channel_manager::types::{ChannelDetails, ChannelMetadata};
+use cosmwasm_std::{Addr, Api, Binary, Coin, Deps, Env, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
 use cw_utils::NativeBalance;
+use omniflix_channel_types::msg::ReservedUsername;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
 use rand_core::{RngCore, SeedableRng};
@@ -126,44 +128,108 @@ pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> 
     vec![bank_msg]
 }
 
-/// Purpose: This function will filter out assets that do not exist in storage or are not visible
+/// Purpose: Filters out assets that do not exist in storage or are not visible
 pub fn filter_assets_to_remove(storage: &dyn Storage, asset_keys: Vec<AssetKey>) -> Vec<AssetKey> {
-    let mut asset_keys_to_remove = Vec::new();
+    let asset_manager = Assets::new();
 
-    for asset_key in asset_keys {
-        // Try loading the asset from storage
-        // If the asset does not exist, add it to the list of assets to remove
-        let asset_manager = Assets::new();
-        let asset = asset_manager.get_asset(storage, asset_key.clone());
-        if asset.is_err() {
-            asset_keys_to_remove.push(asset_key);
-            continue;
-        }
-        if asset.unwrap().is_visible == false {
-            asset_keys_to_remove.push(asset_key);
-            continue;
-        }
-    }
-
-    asset_keys_to_remove
+    asset_keys
+        .into_iter()
+        .filter(
+            |asset_key| match asset_manager.get_asset(storage, asset_key.clone()) {
+                Ok(asset) => !asset.is_visible,
+                Err(_) => true,
+            },
+        )
+        .collect()
 }
 
+/// Validates a username to ensure it meets length and character requirements
 pub fn validate_username(username: &str) -> Result<(), ContractError> {
-    if username.len() < 3 || username.len() > 32 {
+    if !(3..=32).contains(&username.len()) {
         return Err(ContractError::InvalidUserName {});
     }
-    // Username must only contain lowercase alphabetic characters
     if !username.chars().all(|c| c.is_ascii_lowercase()) {
         return Err(ContractError::InvalidUserName {});
     }
     Ok(())
 }
 
+/// Validates a description to ensure it meets length requirements
 pub fn validate_description(description: &str) -> Result<(), ContractError> {
-    if description.len() < 3 || description.len() > 256 {
+    if !(3..=256).contains(&description.len()) {
         return Err(ContractError::InvalidDescription {});
     }
     Ok(())
+}
+
+/// Validates a link to ensure it meets length requirements
+pub fn validate_link(link: &str) -> Result<(), ContractError> {
+    if !(3..=256).contains(&link.len()) {
+        return Err(ContractError::InvalidLink {});
+    }
+    Ok(())
+}
+
+/// Validates a channel name to ensure it meets length and character requirements
+pub fn validate_channel_name(channel_name: &str) -> Result<(), ContractError> {
+    if !(3..=32).contains(&channel_name.len()) {
+        return Err(ContractError::InvalidChannelName {});
+    }
+    if !channel_name.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(ContractError::InvalidChannelName {});
+    }
+    Ok(())
+}
+
+/// Validates the channel details by checking the username
+pub fn validate_channel_details(details: ChannelDetails) -> Result<(), ContractError> {
+    validate_username(&details.user_name)
+}
+
+/// Validates the channel metadata, including optional fields
+pub fn validate_channel_metadata(metadata: ChannelMetadata) -> Result<(), ContractError> {
+    validate_channel_name(&metadata.channel_name)?;
+
+    if let Some(description) = &metadata.description {
+        validate_description(description)?;
+    }
+    if let Some(profile_picture) = &metadata.profile_picture {
+        validate_link(profile_picture)?;
+    }
+    if let Some(banner_picture) = &metadata.banner_picture {
+        validate_link(banner_picture)?;
+    }
+
+    Ok(())
+}
+
+pub fn validate_optional_addr_list(
+    addrs: Option<Vec<String>>,
+    api: &dyn Api,
+) -> Result<Vec<Addr>, ContractError> {
+    addrs
+        .unwrap_or_default()
+        .into_iter()
+        .map(|addr| api.addr_validate(&addr).map_err(ContractError::Std)) // Map StdError to ContractError
+        .collect()
+}
+
+/// Validates reserved usernames with their associated addresses
+pub fn validate_reserved_usernames(
+    reserved_usernames: Vec<ReservedUsername>,
+    api: &dyn Api,
+) -> Result<Vec<(String, Addr)>, ContractError> {
+    reserved_usernames
+        .into_iter()
+        .map(|reserved_username| {
+            validate_username(&reserved_username.username)?;
+            let addr = match reserved_username.address {
+                Some(address) => api.addr_validate(&address)?,
+                None => Addr::unchecked(""),
+            };
+            Ok((reserved_username.username, addr))
+        })
+        .collect()
 }
 #[cfg(test)]
 mod tests {

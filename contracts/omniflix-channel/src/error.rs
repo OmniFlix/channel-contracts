@@ -90,6 +90,12 @@ pub enum ContractError {
 
     #[error("Username reserved")]
     UserNameReserved {},
+
+    #[error("Invalid link")]
+    InvalidLink {},
+
+    #[error("Invalid channel name")]
+    InvalidChannelName {},
 }
 
 impl From<ContractError> for StdError {

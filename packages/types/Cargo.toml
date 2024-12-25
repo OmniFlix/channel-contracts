@@ -1,12 +1,12 @@
 [package]
-name        = "channel-types"
-authors     = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
+name = "omniflix-channel-types"
+authors = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
 description = "Types for the channel contract"
-version     = { workspace = true }
-edition     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-license     = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -25,10 +25,10 @@ library = []
 
 [dependencies]
 cosmwasm-schema = { workspace = true }
-cosmwasm-std    = { workspace = true }
-cw-utils        = { workspace = true }
-thiserror       = { workspace = true }
-serde           = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-utils = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
 cw-storage-plus = { workspace = true }
 channel-manager = { workspace = true }
 asset-manager = { workspace = true }

@@ -1,8 +1,8 @@
 use channel_manager::types::ChannelDetails;
-use channel_types::msg::{ExecuteMsg, QueryMsg};
-use cosmwasm_std::{coin, Addr, Binary};
+use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
 
 use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
 use crate::helpers::setup::setup;
@@ -43,6 +43,9 @@ fn missing_creation_fee() {
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[],
         )
@@ -103,6 +106,9 @@ fn paused() {
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[],
         )
@@ -150,6 +156,9 @@ fn failed_validations() {
                 user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -169,6 +178,9 @@ fn failed_validations() {
                 // Generate a sting with 257 characters
                 description: "a".repeat(257),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -212,6 +224,9 @@ fn happy_path() {
                 user_name: "creator".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -238,7 +253,6 @@ fn happy_path() {
         .unwrap();
     assert_eq!(channels.len(), 1);
     assert_eq!(channels[0].user_name, "creator");
-    assert_eq!(channels[0].description, "creator");
     // Validate the onft_id
     assert_eq!(channels[0].onft_id, onft_id);
 }
@@ -257,8 +271,14 @@ fn create_reserved_channel() {
     instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
     // Username "admin" is reserved for the actor admin
     instantiate_msg.reserved_usernames = vec![
-        ("admin".to_string(), admin.clone()),
-        ("reserved".to_string(), Addr::unchecked("")),
+        ReservedUsername {
+            username: "admin".to_string(),
+            address: Some(admin.clone().to_string()),
+        },
+        ReservedUsername {
+            username: "reserved".to_string(),
+            address: None,
+        },
     ];
 
     // Instantiate the contract
@@ -283,6 +303,9 @@ fn create_reserved_channel() {
                 user_name: "admin".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -300,6 +323,9 @@ fn create_reserved_channel() {
                 user_name: "reserved".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -313,6 +339,9 @@ fn create_reserved_channel() {
                 user_name: "reserved".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -328,6 +357,9 @@ fn create_reserved_channel() {
                 user_name: "admin".to_string(),
                 description: "creator".to_string(),
                 collaborators: None,
+                banner_picture: None,
+                profile_picture: None,
+                channel_name: "creator".to_string(),
             },
             &[coin(1000000, "uflix")],
         )
@@ -337,10 +369,10 @@ fn create_reserved_channel() {
         limit: None,
         start_after: None,
     };
-    let res: Vec<(String, Addr)> = app
+    let res: Vec<ReservedUsername> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
     assert_eq!(res.len(), 1);
-    assert_eq!(res[0].0, "reserved");
+    assert_eq!(res[0].username, "reserved");
 }

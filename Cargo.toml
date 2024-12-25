@@ -1,46 +1,48 @@
 [workspace]
-members = [
-    "contracts/*",
-    "tests",
-    "packages/*"
-]
+members = ["contracts/*", "tests", "packages/*"]
 
 resolver = "2"
 
 
 [workspace.package]
-version    = "0.0.1-beta"
-edition    = "2021"
-homepage   = ""
+version = "0.0.1-beta"
+edition = "2021"
+homepage = ""
 repository = ""
-license    = "Apache-2.0"
+license = "Apache-2.0"
 
 [workspace.dependencies]
 cosmwasm-schema = "2.0.0"
-cosmwasm-std    = { version = "2.0.0", features = ["iterator", "staking", "stargate"] }
-omniflix-std         = "1.0.2-beta"
-cw-controllers       = "2.0.0"
-cw2                  = "2.0.0"
-cw4                  = "2.0.0"
-cw4-group            = "2.0.0"
-cw-storage-plus      = "2.0.0"
-cw-utils             = "2.0.0"
-schemars             = "0.8.11"
-thiserror            = "1.0.31"
-semver               = "1"
-cw-ownable           = "2.0.0"
-cosmwasm-storage     = "1.5.0"
-serde                = { version = "1.0.145", default-features = false, features = ["derive"] }
+cosmwasm-std = { version = "2.0.0", features = [
+    "iterator",
+    "staking",
+    "stargate",
+] }
+omniflix-std = "1.0.2-beta"
+cw-controllers = "2.0.0"
+cw2 = "2.0.0"
+cw4 = "2.0.0"
+cw4-group = "2.0.0"
+cw-storage-plus = "2.0.0"
+cw-utils = "2.0.0"
+schemars = "0.8.11"
+thiserror = "1.0.31"
+semver = "1"
+cw-ownable = "2.0.0"
+cosmwasm-storage = "1.5.0"
+serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10.8"
 hex = "0.4.3"
-rand_core       = { version = "0.6.4", default-features = false }
-rand_xoshiro    = { version = "0.6.0", default-features = false }
-prost = {version = "0.12.3", default-features = false, features = ["prost-derive"]}
+rand_core = { version = "0.6.4", default-features = false }
+rand_xoshiro = { version = "0.6.0", default-features = false }
+prost = { version = "0.12.3", default-features = false, features = [
+    "prost-derive",
+] }
 anyhow = "1.0.79"
 testing = { path = "packages/testing" }
 omniflix-channel = { path = "contracts/omniflix-channel" }
 pauser = { path = "packages/pauser" }
 channel-manager = { path = "packages/channel-manager" }
 asset-manager = { path = "packages/asset-manager" }
-channel-types = { path = "packages/types" }
+omniflix-channel-types = { path = "packages/types" }

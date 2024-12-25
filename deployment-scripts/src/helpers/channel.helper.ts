@@ -6,7 +6,7 @@ import _, { random } from 'lodash'
 import assert from 'assert'
 import { CONTRACT_MAP } from './context.ts'
 import { logger } from '../utils/logger.ts'
-import { InstantiateMsg, Coin } from '../types/OmniFlixChannel.types.ts'
+import { InstantiateMsg, Coin, ReservedUsername } from '../types/OmniFlixChannel.types.ts'
 import { OmniFlixChannelClient } from '../types/OmniFlixChannel.client.ts'
 
 
@@ -32,7 +32,20 @@ export default class ChannelHelper {
             channels_collection_id: deploymentConfig.channels_collection_id + random(10000000).toString(),
             channels_collection_name: deploymentConfig.channels_collection_name,
             channels_collection_symbol: deploymentConfig.channels_collection_symbol,
-            reserved_usernames: ["reserved"]
+            reserved_usernames: [
+                // Set admin as reserved username but set address as empty string
+                {
+                    username: "admin",
+                },
+                // Set fee_collector as reserved username
+                {
+                    username: "feecollector",
+                    address: fee_collector_address,
+                },
+                {
+                    username: "reserved",
+                },
+            ],
         }
 
         let instantiateResult = await client.instantiate(
@@ -101,29 +114,15 @@ export default class ChannelHelper {
             description: "OmniFlix Channel Testing",
             salt: context.generateRandomSalt(5),
             collaborators: collaborators,
+            channelName: user_name,
+            bannerPicture: "link.com",
+            profilePicture: "link.com",
         }, "auto", "", [
             {
                 amount: deploymentConfig.channel_creation_fee,
                 denom: chainConfig.denom,
             },
         ]);
-        let channel_id = context.getEventAttribute(res, undefined, 'channel_id');
-        logger.log(1, `Channel created with id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
-        return channel_id;
-    }
-    AdminCreateChannel = async (context: Context, user_name: string, recipient: string, collaborators?: []) => {
-        let { client, address: senderAddress } = context.getTestUser('admin');
-        let { client: recipientClient, address: recipientAddress } = context.getTestUser(recipient);
-        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
-        let res = await channel_client.adminChannelCreate({
-            userName: user_name,
-            recipient: recipientAddress,
-            description: "OmniFlix Channel Testing",
-            salt: context.generateRandomSalt(5),
-            collaborators: collaborators,
-        }
-        );
         let channel_id = context.getEventAttribute(res, undefined, 'channel_id');
         logger.log(1, `Channel created with id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
@@ -242,12 +241,16 @@ export default class ChannelHelper {
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
     }
 
-    UpdateChannelDetails = async (context: Context, account_name: string, channel_id: string, description: string) => {
+    UpdateChannelDetails = async (context: Context, account_name: string, channel_id: string, description?: string, channel_name?: string, banner_picture?: string, profile_picture?: string, collaborators?: string[]) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.channelUpdateDetails({
             channelId: channel_id,
             description: description,
+            channelName: channel_name,
+            bannerPicture: banner_picture,
+            profilePicture: profile_picture,
+            collaborators: collaborators,
         });
         logger.log(1, `Channel details updated with id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
@@ -262,25 +265,34 @@ export default class ChannelHelper {
         logger.log(1, `Channel deleted with id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
     }
-
-    AddReservedUsernames = async (context: Context, reserved_usernames: string[]) => {
+    // Reserved usernames type: [string, string][]
+    AddReservedUsernames = async (context: Context, reserved_usernames: ReservedUsername[]) => {
         let { client, address: senderAddress } = context.getTestUser('admin');
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
 
-        let res = await channel_client.addReservedUsernames({
-            usernames: reserved_usernames,
+        let res = await channel_client.manageReservedUsernames({
+            addUsernames: reserved_usernames,
         });
         logger.log(1, `Reserved usernames added: ${JSON.stringify(reserved_usernames)}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
     }
 
-    GetChannelDetails = async (context: Context, account_name: string, channel_id: string) => {
+    QueryChannelDetails = async (context: Context, account_name: string, channel_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.channelDetails({
             channelId: channel_id,
         });
         logger.log(1, `Channel details: ${JSON.stringify(res)}`)
+        return res;
+    }
+    QueryChannelMetadata = async (context: Context, account_name: string, channel_id: string) => {
+        let { client, address: senderAddress } = context.getTestUser(account_name);
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.channelMetadata({
+            channelId: channel_id,
+        });
+        logger.log(1, `Channel metadata: ${JSON.stringify(res)}`)
         return res;
     }
     UpdateAsset = async (context: Context, account_name: string, channel_id: string, publish_id: string, is_visible: boolean) => {

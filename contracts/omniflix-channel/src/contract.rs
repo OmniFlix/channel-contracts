@@ -1,21 +1,22 @@
 use crate::error::ContractError;
 use crate::helpers::{
     bank_msg_wrapper, check_payment, filter_assets_to_remove, generate_random_id_with_prefix,
-    get_collection_creation_fee, get_onft_with_owner, validate_description, validate_username,
+    get_collection_creation_fee, get_onft_with_owner, validate_channel_details,
+    validate_channel_metadata, validate_optional_addr_list, validate_reserved_usernames,
 };
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
 use asset_manager::types::{Asset, AssetType, Playlist};
 use channel_manager::channel::ChannelsManager;
-use channel_manager::types::{ChannelDetails, ChannelOnftData};
-use channel_types::config::ChannelConractConfig;
-use channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use channel_manager::types::{ChannelDetails, ChannelMetadata, ChannelOnftData};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
 };
+use omniflix_channel_types::config::ChannelConractConfig;
+use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
 use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
 
@@ -59,7 +60,9 @@ pub fn instantiate(
     )?;
 
     let channel_manager = ChannelsManager::new();
-    channel_manager.add_reserved_usernames(deps.storage, msg.reserved_usernames.clone())?;
+    let validated_reserved_usernames =
+        validate_reserved_usernames(msg.reserved_usernames.clone(), deps.api)?;
+    channel_manager.add_reserved_usernames(deps.storage, validated_reserved_usernames)?;
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =
@@ -130,14 +133,42 @@ pub fn execute(
         } => create_playlist(deps, env, info, channel_id, playlist_name),
         ExecuteMsg::ChannelCreate {
             user_name,
+            channel_name,
             salt,
             description,
             collaborators,
-        } => create_channel(deps, env, info, salt, description, user_name, collaborators),
+            profile_picture,
+            banner_picture,
+        } => create_channel(
+            deps,
+            env,
+            info,
+            salt,
+            description,
+            user_name,
+            channel_name,
+            collaborators,
+            profile_picture,
+            banner_picture,
+        ),
         ExecuteMsg::ChannelUpdateDetails {
             channel_id,
             description,
-        } => update_channel_details(deps, info, channel_id, description),
+            channel_name,
+            collaborators,
+            profile_picture,
+            banner_picture,
+        } => update_channel_details(
+            deps,
+            info,
+            channel_id,
+            description,
+            channel_name,
+            collaborators,
+            profile_picture,
+            banner_picture,
+        ),
+
         ExecuteMsg::PlaylistDelete {
             playlist_name,
             channel_id,
@@ -185,7 +216,10 @@ fn create_channel(
     salt: Binary,
     description: String,
     user_name: String,
+    channel_name: String,
     collaborators: Option<Vec<String>>,
+    profile_picture: Option<String>,
+    banner_picture: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -205,22 +239,23 @@ fn create_channel(
 
     // Validate the collaborators addresses
     // If no collaborators are provided, the vector will be empty
-    let addr_collaborators: Vec<Addr> = collaborators
-        .clone()
-        .unwrap_or_default()
-        .iter()
-        .map(|collaborator| deps.api.addr_validate(collaborator))
-        .collect::<Result<Vec<Addr>, _>>()?;
+    let addr_collaborators: Vec<Addr> = validate_optional_addr_list(collaborators, deps.api)?;
 
-    let channel_details = ChannelDetails::new(
-        channel_id.clone(),
-        user_name.clone(),
-        description.clone(),
-        onft_id.clone(),
-        addr_collaborators,
-    );
-    validate_username(&channel_details.clone().user_name)?;
-    validate_description(&channel_details.clone().description)?;
+    let channel_details = ChannelDetails {
+        channel_id: channel_id.clone(),
+        user_name: user_name.clone(),
+        onft_id: onft_id.clone(),
+        collaborators: addr_collaborators.clone(),
+    };
+    let channel_metadata = ChannelMetadata {
+        channel_name: channel_name.clone(),
+        description: Some(description.clone()),
+        profile_picture: profile_picture.clone(),
+        banner_picture: banner_picture.clone(),
+    };
+    validate_channel_details(channel_details.clone())?;
+    validate_channel_metadata(channel_metadata.clone())?;
+
     // Check if the username is reserved and if the sender is the reserver
     if let Some(reserved_addr) =
         channels_manager.get_reserved_status(deps.storage, user_name.clone())?
@@ -238,6 +273,7 @@ fn create_channel(
         channel_id.clone(),
         user_name.clone(),
         channel_details.clone(),
+        channel_metadata.clone(),
     )?;
 
     // Create the onft data for the channel. This data will be stored in the onft's data field
@@ -579,29 +615,66 @@ fn update_channel_details(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
-    description: String,
+    description: Option<String>,
+    channel_name: Option<String>,
+    collaborators: Option<Vec<String>>,
+    profile_picture: Option<String>,
+    banner_picture: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
-
     let config = CONFIG.load(deps.storage)?;
+    let channel_collection_id = config.channels_collection_id.clone();
 
-    let channels_manager = ChannelsManager::new();
+    let channel_manager = ChannelsManager::new();
     let mut channel_details =
-        channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id.clone();
+        channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.clone().onft_id;
 
-    let _channel_onft = get_onft_with_owner(
-        deps.as_ref(),
-        config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.to_string(),
+    // Check if the sender is a collaborator or the owner
+    if !channel_details.collaborators.contains(&info.sender) {
+        let _channel_onft = get_onft_with_owner(
+            deps.as_ref(),
+            channel_collection_id.clone(),
+            channel_onft_id,
+            info.sender.clone().to_string(),
+        )?;
+    };
+
+    let mut channel_metadata =
+        channel_manager.get_channel_metadata(deps.storage, channel_id.clone())?;
+
+    if let Some(description) = description.clone() {
+        channel_metadata.description = Some(description.clone());
+    }
+
+    if let Some(channel_name) = channel_name.clone() {
+        channel_metadata.channel_name = channel_name.clone();
+    }
+
+    if let Some(profile_picture) = profile_picture.clone() {
+        channel_metadata.profile_picture = Some(profile_picture.clone());
+    }
+
+    if let Some(banner_picture) = banner_picture.clone() {
+        channel_metadata.banner_picture = Some(banner_picture.clone());
+    }
+
+    if let Some(collaborators) = collaborators.clone() {
+        let addr_collaborators: Vec<Addr> =
+            validate_optional_addr_list(Some(collaborators), deps.api)?;
+        channel_details.collaborators = addr_collaborators.clone();
+    }
+
+    validate_channel_metadata(channel_metadata.clone())?;
+
+    channel_manager.update_channel_metadata(
+        deps.storage,
+        channel_id.clone(),
+        channel_metadata.clone(),
     )?;
 
-    validate_description(&description.clone())?;
-    channel_details.description = description.clone();
-
-    channels_manager.update_channel_details(
+    channel_manager.update_channel_details(
         deps.storage,
         channel_id.clone(),
         channel_details.clone(),
@@ -609,8 +682,7 @@ fn update_channel_details(
 
     let response = Response::new()
         .add_attribute("action", "update_channel_details")
-        .add_attribute("channel_id", channel_id)
-        .add_attribute("description", description);
+        .add_attribute("channel_id", channel_id);
 
     Ok(response)
 }
@@ -829,7 +901,7 @@ fn set_config(
 fn manage_reserved_usernames(
     deps: DepsMut,
     info: MessageInfo,
-    add_usernames: Option<Vec<(String, Addr)>>,
+    add_usernames: Option<Vec<ReservedUsername>>,
     remove_usernames: Option<Vec<String>>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
@@ -847,20 +919,13 @@ fn manage_reserved_usernames(
         "action".to_string(),
         "manage_reserved_usernames".to_string(),
     )];
-
     if let Some(add_usernames) = add_usernames {
-        for pair in add_usernames {
-            let (username, addr) = pair;
-            validate_username(&username)?;
-            if !addr.clone().into_string().is_empty() {
-                deps.api.addr_validate(&addr.clone().into_string())?;
-            }
-            channels
-                .add_reserved_usernames(deps.storage, vec![(username.clone(), addr.clone())])?;
-            attrs.push((username, addr.to_string()));
+        let validated_reserved_usernames = validate_reserved_usernames(add_usernames, deps.api)?;
+        channels.add_reserved_usernames(deps.storage, validated_reserved_usernames.clone())?;
+        for username in validated_reserved_usernames {
+            attrs.push(("add_username".to_string(), username.0)); // Directly push owned username
         }
     }
-
     if let Some(remove_usernames) = remove_usernames {
         for username in remove_usernames {
             channels.remove_reserved_usernames(deps.storage, vec![username.clone()])?;
@@ -910,6 +975,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_json_binary(&query_asset(deps, channel_id, publish_id)?),
         QueryMsg::ReservedUsernames { start_after, limit } => {
             to_json_binary(&query_reserved_usernames(deps, start_after, limit)?)
+        }
+        QueryMsg::ChannelMetadata { channel_id } => {
+            to_json_binary(&query_channel_metadata(deps, channel_id)?)
         }
     }
 }
@@ -1004,10 +1072,26 @@ fn query_reserved_usernames(
     deps: Deps,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> Result<Vec<(String, Addr)>, ContractError> {
+) -> Result<Vec<ReservedUsername>, ContractError> {
     let channels = ChannelsManager::new();
-    let reserved_usernames = channels.get_reserved_usernames(deps.storage, start_after, limit)?;
+    let reserved_usernames: Vec<ReservedUsername> = channels
+        .get_reserved_usernames(deps.storage, start_after, limit)?
+        .iter()
+        .map(|username| ReservedUsername {
+            username: username.clone().0,
+            address: Some(username.clone().1.to_string()),
+        })
+        .collect();
     Ok(reserved_usernames)
+}
+
+fn query_channel_metadata(
+    deps: Deps,
+    channel_id: String,
+) -> Result<ChannelMetadata, ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_metadata = channels.get_channel_metadata(deps.storage, channel_id)?;
+    Ok(channel_metadata)
 }
 
 #[cfg(test)]
