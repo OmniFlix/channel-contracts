@@ -1,14 +1,12 @@
-use asset_manager::{
-    error::PlaylistError,
-    types::{Asset, AssetType, Playlist},
-};
+use asset_manager::error::PlaylistError;
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::asset::{Asset, AssetType, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
-    msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg},
+    msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
     utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
 };
@@ -38,7 +36,7 @@ fn asset_does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -107,7 +105,7 @@ fn channel_not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -196,7 +194,7 @@ fn playlist_does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -282,7 +280,7 @@ fn with_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -394,7 +392,7 @@ fn asset_not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -482,7 +480,7 @@ fn publish_off_chain_asset() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -569,7 +567,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(

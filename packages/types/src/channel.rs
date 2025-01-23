@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Decimal};
 pub type ChannelId = String;
 pub type UserName = String;
 
@@ -9,6 +9,7 @@ pub struct ChannelDetails {
     pub user_name: String,
     pub onft_id: String,
     pub collaborators: Vec<Addr>,
+    pub payment_address: Addr,
 }
 
 #[cw_serde]
@@ -25,4 +26,16 @@ pub struct ChannelOnftData {
     pub onft_id: String,
     pub channel_id: String,
     pub user_name: String,
+}
+#[cw_serde]
+pub struct ChannelCollaborator {
+    pub role: Role,
+    pub expires_at: Option<u64>,
+    pub share: Decimal,
+}
+
+#[cw_serde]
+pub enum Role {
+    Publisher,
+    Moderator,
 }

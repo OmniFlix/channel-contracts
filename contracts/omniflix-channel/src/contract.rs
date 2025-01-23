@@ -1,19 +1,23 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    bank_msg_wrapper, check_payment, filter_assets_to_remove, generate_random_id_with_prefix,
-    get_collection_creation_fee, get_onft_with_owner, validate_channel_details,
-    validate_channel_metadata, validate_optional_addr_list, validate_reserved_usernames,
+    bank_msg_wrapper, check_payment, distribute_funds_with_shares, filter_assets_to_remove,
+    generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
+    validate_channel_details, validate_channel_metadata, validate_optional_addr_list,
+    validate_reserved_usernames,
 };
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
-use asset_manager::types::{Asset, AssetType, Playlist};
 use channel_manager::channel::ChannelsManager;
-use channel_manager::types::{ChannelDetails, ChannelMetadata, ChannelOnftData};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdResult,
+};
+use cw_utils::must_pay;
+use omniflix_channel_types::asset::{Asset, AssetType, Playlist};
+use omniflix_channel_types::channel::{
+    ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData,
 };
 use omniflix_channel_types::config::ChannelConractConfig;
 use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
@@ -42,6 +46,7 @@ pub fn instantiate(
     let channel_contract_config = ChannelConractConfig {
         admin: admin.clone(),
         fee_collector: fee_collector.clone(),
+        accepted_tip_denoms: msg.accepted_tip_denoms.clone(),
         channels_collection_id: msg.channels_collection_id.clone(),
         channels_collection_name: msg.channels_collection_name.clone(),
         channels_collection_symbol: msg.channels_collection_symbol.clone(),
@@ -139,12 +144,14 @@ pub fn execute(
             collaborators,
             profile_picture,
             banner_picture,
+            payment_address,
         } => create_channel(
             deps,
             env,
             info,
             salt,
             description,
+            payment_address,
             user_name,
             channel_name,
             collaborators,
@@ -155,7 +162,6 @@ pub fn execute(
             channel_id,
             description,
             channel_name,
-            collaborators,
             profile_picture,
             banner_picture,
         } => update_channel_details(
@@ -164,7 +170,6 @@ pub fn execute(
             channel_id,
             description,
             channel_name,
-            collaborators,
             profile_picture,
             banner_picture,
         ),
@@ -206,6 +211,24 @@ pub fn execute(
             add_usernames,
             remove_usernames,
         } => manage_reserved_usernames(deps, info, add_usernames, remove_usernames),
+        ExecuteMsg::TipCreator { channel_id, amount } => {
+            tip_creator(deps, info, channel_id, amount)
+        }
+        ExecuteMsg::ChannelAddCollaborator {
+            channel_id,
+            collaborator_address,
+            collaborator_details,
+        } => add_collaborator(
+            deps,
+            info,
+            channel_id,
+            collaborator_address,
+            collaborator_details,
+        ),
+        ExecuteMsg::ChannelRemoveCollaborator {
+            channel_id,
+            collaborator_address,
+        } => remove_collaborator(deps, info, channel_id, collaborator_address),
     }
 }
 
@@ -214,7 +237,8 @@ fn create_channel(
     env: Env,
     info: MessageInfo,
     salt: Binary,
-    description: String,
+    description: Option<String>,
+    payment_address: Addr,
     user_name: String,
     channel_name: String,
     collaborators: Option<Vec<String>>,
@@ -246,10 +270,11 @@ fn create_channel(
         user_name: user_name.clone(),
         onft_id: onft_id.clone(),
         collaborators: addr_collaborators.clone(),
+        payment_address: deps.api.addr_validate(&payment_address.into_string())?,
     };
     let channel_metadata = ChannelMetadata {
         channel_name: channel_name.clone(),
-        description: Some(description.clone()),
+        description: description.clone(),
         profile_picture: profile_picture.clone(),
         banner_picture: banner_picture.clone(),
     };
@@ -295,7 +320,7 @@ fn create_channel(
         metadata: Some(Metadata {
             media_uri: "mediauri.com".to_string(),
             name: user_name.clone(),
-            description: description.clone(),
+            description: description.unwrap_or("".to_string()),
             preview_uri: "previewuri.com".to_string(),
             uri_hash: "urihash".to_string(),
         }),
@@ -307,10 +332,7 @@ fn create_channel(
     .into();
 
     // Pay the channel creation fee to the fee collector
-    let bank_channel_fee_msg = bank_msg_wrapper(
-        config.fee_collector.into_string(),
-        config.channel_creation_fee,
-    );
+    let bank_channel_fee_msg = bank_msg_wrapper(config.fee_collector, config.channel_creation_fee);
 
     let response = Response::new()
         .add_message(mint_onft_msg)
@@ -403,7 +425,8 @@ fn publish(
             )?;
         }
         _ => {
-            asset_type.clone().validate()?;
+            // TODO: Implement asset type validation
+            //asset_type.clone().validate()?;
         }
     }
 
@@ -611,13 +634,93 @@ fn set_pausers(
     Ok(response)
 }
 
+fn add_collaborator(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    collaborator_address: String,
+    collaborator_details: ChannelCollaborator,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // First check if the channel exists and the sender is the owner
+    let channel_manager = ChannelsManager::new();
+    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    let _channel_onft = get_onft_with_owner(
+        deps.as_ref(),
+        config.channels_collection_id.clone(),
+        channel_onft_id,
+        info.sender.clone().to_string(),
+    )?;
+
+    // Validate the collaborator address
+    let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
+
+    // Add the collaborator to the channel
+    channel_manager.add_collaborator(
+        deps.storage,
+        channel_id.clone(),
+        collaborator_address.clone(),
+        collaborator_details.clone(),
+    )?;
+
+    let response = Response::new()
+        .add_attribute("action", "add_collaborator")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("collaborator_address", collaborator_address)
+        .add_attribute(
+            "expires_at",
+            collaborator_details.expires_at.unwrap_or(0).to_string(),
+        )
+        .add_attribute("share", collaborator_details.share.to_string());
+
+    Ok(response)
+}
+
+fn remove_collaborator(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    collaborator_address: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // First check if the channel exists and the sender is the owner
+    let channel_manager = ChannelsManager::new();
+    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+    let _channel_onft = get_onft_with_owner(
+        deps.as_ref(),
+        config.channels_collection_id.clone(),
+        channel_onft_id,
+        info.sender.clone().to_string(),
+    )?;
+
+    // Validate the collaborator address
+    let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
+
+    // Remove the collaborator from the channel
+    channel_manager.remove_collaborator(
+        deps.storage,
+        channel_id.clone(),
+        collaborator_address.clone(),
+    )?;
+
+    let response = Response::new()
+        .add_attribute("action", "remove_collaborator")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("collaborator_address", collaborator_address);
+
+    Ok(response)
+}
+
 fn update_channel_details(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
     description: Option<String>,
     channel_name: Option<String>,
-    collaborators: Option<Vec<String>>,
     profile_picture: Option<String>,
     banner_picture: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -627,8 +730,7 @@ fn update_channel_details(
     let channel_collection_id = config.channels_collection_id.clone();
 
     let channel_manager = ChannelsManager::new();
-    let mut channel_details =
-        channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_onft_id = channel_details.clone().onft_id;
 
     // Check if the sender is a collaborator or the owner
@@ -659,13 +761,6 @@ fn update_channel_details(
     if let Some(banner_picture) = banner_picture.clone() {
         channel_metadata.banner_picture = Some(banner_picture.clone());
     }
-
-    if let Some(collaborators) = collaborators.clone() {
-        let addr_collaborators: Vec<Addr> =
-            validate_optional_addr_list(Some(collaborators), deps.api)?;
-        channel_details.collaborators = addr_collaborators.clone();
-    }
-
     validate_channel_metadata(channel_metadata.clone())?;
 
     channel_manager.update_channel_metadata(
@@ -936,6 +1031,45 @@ fn manage_reserved_usernames(
     let response = Response::new()
         .add_attributes(attrs)
         .add_attribute("admin", config.admin.to_string());
+
+    Ok(response)
+}
+
+fn tip_creator(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+    amount: Coin,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+    let accepted_tip_denoms = config.accepted_tip_denoms.clone();
+    if !accepted_tip_denoms.contains(&amount.denom) {
+        return Err(ContractError::InvalidTipDenom {});
+    }
+
+    let sent_amount = must_pay(&info, &amount.denom)?;
+
+    if sent_amount != amount.amount {
+        return Err(ContractError::InvalidTipAmount {});
+    }
+
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_payment_address = channel_details.payment_address.clone();
+    // Calculates the shares of the collaborators
+    let collaborator_shares = channels.get_collaborator_shares(deps.storage, channel_id.clone())?;
+    // Distributes the funds to the collaborators and remaining to the channel payment address
+    let (bank_msgs, attributes) =
+        distribute_funds_with_shares(collaborator_shares, amount.clone(), channel_payment_address)?;
+
+    let response = Response::new()
+        .add_messages(bank_msgs)
+        .add_attributes(attributes)
+        .add_attribute("action", "tip_creator")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("amount", amount.to_string());
 
     Ok(response)
 }

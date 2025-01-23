@@ -9,4 +9,5 @@ pub struct ChannelConractConfig {
     pub admin: Addr,
     pub fee_collector: Addr,
     pub channel_creation_fee: Vec<Coin>,
+    pub accepted_tip_denoms: Vec<String>,
 }

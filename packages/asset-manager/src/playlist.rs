@@ -1,11 +1,10 @@
 use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
-use crate::{
-    assets::{AssetKey, Assets},
-    error::PlaylistError,
-    types::Playlist,
-};
+use omniflix_channel_types::asset::{AssetKey, Playlist};
+
+use crate::assets::Assets;
+use crate::error::PlaylistError;
 
 type ChannelId = String;
 type PlaylistName = String;

@@ -1,9 +1,10 @@
 use crate::ContractError;
-use asset_manager::assets::{AssetKey, Assets};
-use channel_manager::types::{ChannelDetails, ChannelMetadata};
-use cosmwasm_std::{Addr, Api, Binary, Coin, Deps, Env, Uint128};
+use asset_manager::assets::Assets;
+use cosmwasm_std::{Addr, Api, Attribute, Binary, Coin, Decimal, Deps, Env, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
 use cw_utils::NativeBalance;
+use omniflix_channel_types::asset::AssetKey;
+use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
 use omniflix_channel_types::msg::ReservedUsername;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
@@ -110,7 +111,7 @@ pub fn generate_random_id_with_prefix(salt: &Binary, env: &Env, prefix: &str) ->
 }
 /// Purpose: We can directy create a bank message but if the value is zero, that message will fail.
 /// This function will check if the value is zero and if it is, it will return an empty vec. If it is not, it will return the bank message.
-pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> {
+pub fn bank_msg_wrapper(recipient: Addr, amount: Vec<Coin>) -> Vec<CosmosMsg> {
     let mut final_amount = NativeBalance::default();
     for coin in amount.clone() {
         final_amount += coin;
@@ -122,10 +123,56 @@ pub fn bank_msg_wrapper(recipient: String, amount: Vec<Coin>) -> Vec<CosmosMsg> 
         return vec![];
     }
     let bank_msg: CosmosMsg = CosmosMsg::Bank(cosmwasm_std::BankMsg::Send {
-        to_address: recipient,
+        to_address: recipient.into_string(),
         amount: final_amount.0,
     });
     vec![bank_msg]
+}
+
+pub fn distribute_funds_with_shares(
+    collaborators: Vec<(Addr, Decimal)>,
+    amount: Coin,
+    channel_payment_address: Addr,
+) -> Result<(Vec<CosmosMsg>, Vec<Attribute>), ContractError> {
+    let mut bank_msgs: Vec<CosmosMsg> = vec![];
+    let mut remaining_amount = amount.clone().amount;
+    let mut attributes: Vec<Attribute> = vec![];
+
+    for (collaborator, share) in collaborators.clone() {
+        // Create a decimal from the share
+        let share_amount = Decimal::from_ratio(remaining_amount, Uint128::one()) * share;
+        let uint_share_amount = share_amount.to_uint_floor();
+        let share_amount_coin = Coin {
+            denom: amount.denom.clone(),
+            amount: uint_share_amount,
+        };
+        bank_msgs.extend(bank_msg_wrapper(
+            collaborator.clone(),
+            vec![share_amount_coin.clone()],
+        ));
+        remaining_amount = remaining_amount - uint_share_amount;
+        attributes.push(Attribute::new(
+            collaborator.to_string(),
+            share_amount_coin.to_string(),
+        ));
+    }
+
+    if !remaining_amount.is_zero() {
+        let remaining_amount_coin = Coin {
+            denom: amount.denom.clone(),
+            amount: remaining_amount,
+        };
+        bank_msgs.extend(bank_msg_wrapper(
+            channel_payment_address.clone(),
+            vec![remaining_amount_coin.clone()],
+        ));
+        attributes.push(Attribute::new(
+            channel_payment_address.to_string(),
+            remaining_amount_coin.to_string(),
+        ));
+    }
+
+    Ok((bank_msgs, attributes))
 }
 
 /// Purpose: Filters out assets that do not exist in storage or are not visible

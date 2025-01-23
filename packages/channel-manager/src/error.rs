@@ -22,4 +22,13 @@ pub enum ChannelError {
 
     #[error("Reserved username not found")]
     UsernameNotReserved {},
+
+    #[error("Collaborator already exists")]
+    CollaboratorExists {},
+
+    #[error("Invalid share percentage")]
+    InvalidSharePercentage {},
+
+    #[error("Collaborator not found")]
+    CollaboratorNotFound {},
 }

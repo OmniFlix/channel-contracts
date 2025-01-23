@@ -25,7 +25,7 @@ pub fn setup() -> SetupResponse {
         creator.to_string(),
         vec![
             coin(1_000_000_000, "uflix"),
-            coin(1_000_000_000_000, "diffirent_denom"),
+            coin(1_000_000_000_000, "different_denom"),
             coin(1_000_000_000_000, "incorrect_denom"),
         ],
     );
@@ -34,7 +34,7 @@ pub fn setup() -> SetupResponse {
         creator2.to_string(),
         vec![
             coin(1_000_000_000, "uflix"),
-            coin(1_000_000_000_000, "diffirent_denom"),
+            coin(1_000_000_000_000, "different_denom"),
             coin(1_000_000_000_000, "incorrect_denom"),
         ],
     );
@@ -43,14 +43,18 @@ pub fn setup() -> SetupResponse {
         collector.to_string(),
         vec![
             coin(1_000_000_000, "uflix"),
-            coin(1_000_000_000_000, "diffirent_denom"),
+            coin(1_000_000_000_000, "different_denom"),
             coin(1_000_000_000_000, "incorrect_denom"),
         ],
     );
     mint_to_address(
         &mut app,
         admin.to_string(),
-        vec![coin(1_000_000_000, "uflix")],
+        vec![
+            coin(1_000_000_000, "uflix"),
+            coin(1_000_000_000_000, "different_denom"),
+            coin(1_000_000_000_000, "incorrect_denom"),
+        ],
     );
 
     let channel_contract = Box::new(ContractWrapper::new(

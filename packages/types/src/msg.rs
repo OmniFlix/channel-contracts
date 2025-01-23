@@ -1,9 +1,11 @@
-use asset_manager::types::{Asset, AssetType, Playlist};
-use channel_manager::types::{ChannelDetails, ChannelMetadata};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
-use crate::config::ChannelConractConfig;
+use crate::{
+    asset::{Asset, AssetType, Playlist},
+    channel::{ChannelCollaborator, ChannelDetails, ChannelMetadata},
+    config::ChannelConractConfig,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -13,6 +15,7 @@ pub struct InstantiateMsg {
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
     pub channel_creation_fee: Vec<Coin>,
+    pub accepted_tip_denoms: Vec<String>,
     pub reserved_usernames: Vec<ReservedUsername>,
 }
 
@@ -133,7 +136,9 @@ pub enum ExecuteMsg {
         /// Name of the channel
         channel_name: String,
         /// A description of the channel.
-        description: String,
+        description: Option<String>,
+        /// The payment address of the channel owner.
+        payment_address: Addr,
         /// (Optional) A list of collaborator addresses for the channel.
         collaborators: Option<Vec<String>>,
         /// (Optional) Profile image of the channel
@@ -162,8 +167,6 @@ pub enum ExecuteMsg {
         profile_picture: Option<String>,
         /// (Optional) The new banner image of the channel.
         banner_picture: Option<String>,
-        /// (Optional) A list of collaborator addresses for the channel.
-        collaborators: Option<Vec<String>>,
     },
 
     /// Updates the configuration of the contract, including the channel creation fee,
@@ -186,6 +189,30 @@ pub enum ExecuteMsg {
         add_usernames: Option<Vec<ReservedUsername>>,
         /// (Optional) A list of addresses to be removed from reserved usernames.
         remove_usernames: Option<Vec<String>>,
+    },
+    TipCreator {
+        /// The ID of the channel to be tipped.
+        channel_id: String,
+        /// The amount of tokens to be tipped.
+        amount: Coin,
+    },
+    /// Adds a collaborator to a channel.
+    /// Only callable by the channel owner.
+    ChannelAddCollaborator {
+        /// The ID of the channel to add the collaborator to.
+        channel_id: String,
+        /// The address of the collaborator to be added.
+        collaborator_address: String,
+        /// Collaborator details
+        collaborator_details: ChannelCollaborator,
+    },
+    /// Removes a collaborator from a channel.
+    /// Only callable by the channel owner.
+    ChannelRemoveCollaborator {
+        /// The ID of the channel to remove the collaborator from.
+        channel_id: String,
+        /// The address of the collaborator to be removed.
+        collaborator_address: String,
     },
 }
 
