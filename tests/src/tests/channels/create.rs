@@ -1,12 +1,11 @@
-use channel_manager::types::ChannelDetails;
-use cosmwasm_std::{coin, Binary};
-use cw_multi_test::Executor;
-use omniflix_channel::ContractError;
-use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
-
-use crate::helpers::msg_wrapper::get_channel_instantiate_msg;
+use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::get_event_attribute;
+use cosmwasm_std::coin;
+use cw_multi_test::Executor;
+use omniflix_channel::ContractError;
+use omniflix_channel_types::channel::ChannelDetails;
+use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
 
 #[test]
 fn missing_creation_fee() {
@@ -32,21 +31,14 @@ fn missing_creation_fee() {
             None,
         )
         .unwrap();
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     // Missing creation fee creating a channel
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[],
         )
         .unwrap_err();
@@ -96,20 +88,14 @@ fn paused() {
         )
         .unwrap();
 
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
     // Create a channel
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[],
         )
         .unwrap_err();
@@ -146,20 +132,16 @@ fn failed_validations() {
         )
         .unwrap();
 
+    let channel_create_msg =
+        CreateChannelMsgBuilder::new("creatorcreatorcreatorcreatorcreator", creator.clone())
+            .build();
+
     // Too long username
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creatorcreatorcreatorcreatorcreator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
@@ -167,21 +149,16 @@ fn failed_validations() {
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::InvalidUserName {});
 
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone())
+        .description("a".repeat(257))
+        .build();
+
     // Too long description
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                // Generate a sting with 257 characters
-                description: "a".repeat(257),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
@@ -214,20 +191,14 @@ fn happy_path() {
         )
         .unwrap();
 
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
     // Happy path
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap();
@@ -293,74 +264,38 @@ fn create_reserved_channel() {
         )
         .unwrap();
 
+    let channel_create_msg = CreateChannelMsgBuilder::new("admin", creator.clone()).build();
+
     // Creator can not use the reserved username "admin"
     let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "admin".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(typed_err, &ContractError::UserNameReserved {});
+    let channel_create_msg = CreateChannelMsgBuilder::new("reserved", creator.clone()).build();
     // No one can use the reserved username "reserved"
     let _res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "reserved".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
-            &[coin(1000000, "uflix")],
-        )
-        .unwrap_err();
-    let _res = app
-        .execute_contract(
-            admin.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "reserved".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &channel_create_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap_err();
 
     // Admin can use the reserved username "admin"
+    let create_channel_msg = CreateChannelMsgBuilder::new("admin", admin.clone()).build();
     let _res = app
         .execute_contract(
             admin.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "admin".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &create_channel_msg.clone(),
             &[coin(1000000, "uflix")],
         )
         .unwrap();

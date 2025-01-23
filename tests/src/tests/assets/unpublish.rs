@@ -1,11 +1,11 @@
-use asset_manager::types::{Asset, AssetType};
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::asset::{Asset, AssetType};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
-    msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg},
+    msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
     utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
 };
@@ -36,7 +36,7 @@ fn channel_not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -144,7 +144,7 @@ fn asset_not_pubished() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -206,7 +206,7 @@ fn happy_path() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("username", creator.clone()).build();
 
     let res = app
         .execute_contract(

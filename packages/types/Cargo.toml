@@ -30,5 +30,3 @@ cw-utils = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 cw-storage-plus = { workspace = true }
-channel-manager = { workspace = true }
-asset-manager = { workspace = true }

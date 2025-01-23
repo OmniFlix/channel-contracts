@@ -1,10 +1,10 @@
-use asset_manager::types::Playlist;
 use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::asset::{AssetType, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
-use crate::helpers::msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg};
+use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 
@@ -34,7 +34,7 @@ fn asset_not_visible() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -67,7 +67,7 @@ fn asset_not_visible() {
 
     // Publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: asset_manager::types::AssetType::Nft {
+        asset_type: AssetType::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -150,15 +150,10 @@ fn asset_from_diffirent_channel() {
         .unwrap();
 
     // Creator 1 creates a channel
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "creatorone".to_string(),
-        description: "Creator 1 Description".to_string(),
-        collaborators: None,
-        banner_picture: None,
-        profile_picture: None,
-        channel_name: "Creator1".to_string(),
-    };
+    let create_channel_msg = CreateChannelMsgBuilder::new("creatorone", creator.clone())
+        .description("Creator 1 Description".to_string())
+        .channel_name("Creator1".to_string())
+        .build();
 
     let res = app
         .execute_contract(
@@ -176,15 +171,11 @@ fn asset_from_diffirent_channel() {
         height: 5_000_000,
         time: Timestamp::from_nanos(5_000_000),
     });
-    let create_channel_msg = ExecuteMsg::ChannelCreate {
-        salt: Binary::from("salt".as_bytes()),
-        user_name: "creatortwo".to_string(),
-        description: "Creator 2 description".to_string(),
-        collaborators: None,
-        banner_picture: None,
-        profile_picture: None,
-        channel_name: "Creator2".to_string(),
-    };
+
+    let create_channel_msg = CreateChannelMsgBuilder::new("creatortwo", creator2.clone())
+        .description("Creator 2 Description".to_string())
+        .channel_name("Creator2".to_string())
+        .build();
 
     let res = app
         .execute_contract(
@@ -217,7 +208,7 @@ fn asset_from_diffirent_channel() {
 
     // Publish the asset under creator 1's channel
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: asset_manager::types::AssetType::Nft {
+        asset_type: AssetType::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },

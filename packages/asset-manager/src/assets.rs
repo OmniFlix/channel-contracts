@@ -2,12 +2,10 @@ use crate::error::AssetError;
 use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
-use crate::types::Asset;
-
-pub type ChannelId = String;
-pub type PublishId = String;
-/// Define `AssetKey` as a tuple of `ChannelId` and `PublishId`.
-pub type AssetKey = (ChannelId, PublishId);
+use omniflix_channel_types::{
+    asset::{Asset, AssetKey, PublishId},
+    channel::ChannelId,
+};
 
 pub struct Assets {
     pub assets: Map<AssetKey, Asset>,
@@ -111,8 +109,8 @@ impl Assets {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Asset, AssetType};
     use cosmwasm_std::testing::MockStorage;
+    use omniflix_channel_types::asset::AssetType;
 
     #[test]
     fn test_get_all_assets_with_limit() {

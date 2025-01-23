@@ -1,9 +1,12 @@
-use crate::helpers::{msg_wrapper::get_channel_instantiate_msg, setup::setup};
+use crate::helpers::{
+    msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
+    setup::setup,
+};
 use channel_manager::error::ChannelError;
-use channel_manager::types::ChannelDetails;
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::channel::ChannelDetails;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 #[test]
@@ -42,7 +45,6 @@ fn missing_channel_id() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
-                collaborators: None,
             },
             &[],
         )
@@ -90,7 +92,6 @@ fn invalid_channel() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
-                collaborators: None,
             },
             &[],
         )
@@ -129,20 +130,14 @@ fn unauthorized() {
         )
         .unwrap();
 
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
     // Create a channel
     let _res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                channel_name: "creator".to_string(),
-                banner_picture: None,
-                profile_picture: None,
-            },
+            &create_channel_msg,
             &[coin(1000000, "uflix")],
         )
         .unwrap();
@@ -172,7 +167,6 @@ fn unauthorized() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
-                collaborators: None,
             },
             &[],
         )
@@ -213,20 +207,13 @@ fn happy_path() {
         )
         .unwrap();
 
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
     // Create a channel
     let _res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &create_channel_msg,
             &[coin(1000000, "uflix")],
         )
         .unwrap();
@@ -255,7 +242,6 @@ fn happy_path() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
-                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -288,19 +274,12 @@ fn invalid() {
         .unwrap();
 
     // Create a channel
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
     let _res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelCreate {
-                salt: Binary::default(),
-                user_name: "creator".to_string(),
-                description: "creator".to_string(),
-                collaborators: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: "creator".to_string(),
-            },
+            &create_channel_msg,
             &[coin(1000000, "uflix")],
         )
         .unwrap();
@@ -329,7 +308,6 @@ fn invalid() {
                 banner_picture: Some("i".repeat(1001)),
                 profile_picture: None,
                 channel_name: None,
-                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -346,7 +324,6 @@ fn invalid() {
                 banner_picture: None,
                 profile_picture: Some("i".repeat(1001)),
                 channel_name: None,
-                collaborators: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -364,25 +341,6 @@ fn invalid() {
                 profile_picture: None,
                 // No special characters
                 channel_name: Some("creator_1".to_string()),
-                collaborators: None,
-            },
-            &[coin(1000000, "uflix")],
-        )
-        .unwrap_err();
-
-    // Invalid collaborators
-    let _res = app
-        .execute_contract(
-            creator.clone(),
-            channel_contract_addr.clone(),
-            &ExecuteMsg::ChannelUpdateDetails {
-                channel_id: channel_id.clone(),
-                description: None,
-                banner_picture: None,
-                profile_picture: None,
-                channel_name: None,
-                // Invalid address
-                collaborators: Some(vec!["creator_1".to_string()]),
             },
             &[coin(1000000, "uflix")],
         )

@@ -1,11 +1,11 @@
 use asset_manager::error::PlaylistError;
-use asset_manager::types::Playlist;
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
+use omniflix_channel_types::asset::Playlist;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
-use crate::helpers::msg_wrapper::{get_channel_create_msg, get_channel_instantiate_msg};
+use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 
@@ -34,7 +34,7 @@ fn asset_not_in_playlist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -125,7 +125,7 @@ fn playlist_does_not_exist() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -243,7 +243,7 @@ fn not_owned() {
         .unwrap();
 
     // Create a channel
-    let create_channel_msg = get_channel_create_msg("username".to_string());
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     let res = app
         .execute_contract(
@@ -303,7 +303,7 @@ fn not_owned() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: asset_manager::types::AssetType::Nft {
+        asset_type: omniflix_channel_types::asset::AssetType::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },

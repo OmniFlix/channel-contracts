@@ -2,6 +2,7 @@ use asset_manager::error::AssetError;
 use asset_manager::error::PlaylistError;
 use channel_manager::error::ChannelError;
 use cosmwasm_std::{Coin, StdError};
+use cw_utils::PaymentError;
 use pauser::PauseError;
 use thiserror::Error;
 
@@ -21,6 +22,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Asset(#[from] AssetError),
+
+    #[error(transparent)]
+    Payment(#[from] PaymentError),
 
     #[error("Unauthorized")]
     Unauthorized {},
@@ -96,6 +100,12 @@ pub enum ContractError {
 
     #[error("Invalid channel name")]
     InvalidChannelName {},
+
+    #[error("Invalid tip denom")]
+    InvalidTipDenom {},
+
+    #[error("Invalid tip amount")]
+    InvalidTipAmount {},
 }
 
 impl From<ContractError> for StdError {
