@@ -22,7 +22,6 @@ pub struct CreateChannelMsgBuilder {
     user_name: String,
     description: String,
     channel_name: String,
-    collaborators: Option<Vec<String>>,
     banner_picture: Option<String>,
     profile_picture: Option<String>,
     payment_address: Addr,
@@ -35,7 +34,6 @@ impl CreateChannelMsgBuilder {
             user_name: user_name.to_string(),
             description: "Default description".to_string(),
             channel_name: user_name.to_string(), // Default to the same as user_name
-            collaborators: None,
             banner_picture: None,
             profile_picture: None,
             payment_address,
@@ -49,11 +47,6 @@ impl CreateChannelMsgBuilder {
 
     pub fn channel_name(mut self, channel_name: String) -> Self {
         self.channel_name = channel_name;
-        self
-    }
-
-    pub fn collaborators(mut self, collaborators: Vec<String>) -> Self {
-        self.collaborators = Some(collaborators);
         self
     }
 
@@ -77,7 +70,6 @@ impl CreateChannelMsgBuilder {
             salt: self.salt,
             user_name: self.user_name,
             description: Some(self.description),
-            collaborators: self.collaborators,
             banner_picture: self.banner_picture,
             profile_picture: self.profile_picture,
             channel_name: self.channel_name,

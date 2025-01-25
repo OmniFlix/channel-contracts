@@ -117,7 +117,6 @@ fn channel_not_owned() {
         .unwrap();
     // Get the channel_id from the event
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
-    let channel_onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");
     // Creator owns the channel
     // Lets create a asset for collector and try to publish it
 
@@ -160,13 +159,7 @@ fn channel_not_owned() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::OnftNotOwned {
-            collection_id: "Channels".to_string(),
-            onft_id: channel_onft_id.clone()
-        }
-    );
+    assert_eq!(typed_err, &ContractError::Unauthorized {});
 }
 
 #[test]

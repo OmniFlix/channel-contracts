@@ -45,6 +45,7 @@ fn missing_channel_id() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
+                payment_address: None,
             },
             &[],
         )
@@ -92,6 +93,7 @@ fn invalid_channel() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
+                payment_address: None,
             },
             &[],
         )
@@ -154,7 +156,6 @@ fn unauthorized() {
         )
         .unwrap();
     let channel_id = channel.channel_id.clone();
-    let onft_id = channel.onft_id.clone();
 
     // Unauthorized
     let res = app
@@ -167,19 +168,14 @@ fn unauthorized() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
+                payment_address: None,
             },
             &[],
         )
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::OnftNotOwned {
-            collection_id: "Channels".to_string(),
-            onft_id: onft_id.clone()
-        }
-    );
+    assert_eq!(typed_err, &ContractError::Unauthorized {});
 }
 
 #[test]
@@ -242,6 +238,7 @@ fn happy_path() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
+                payment_address: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -308,6 +305,7 @@ fn invalid() {
                 banner_picture: Some("i".repeat(1001)),
                 profile_picture: None,
                 channel_name: None,
+                payment_address: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -324,6 +322,7 @@ fn invalid() {
                 banner_picture: None,
                 profile_picture: Some("i".repeat(1001)),
                 channel_name: None,
+                payment_address: None,
             },
             &[coin(1000000, "uflix")],
         )
@@ -341,6 +340,7 @@ fn invalid() {
                 profile_picture: None,
                 // No special characters
                 channel_name: Some("creator_1".to_string()),
+                payment_address: None,
             },
             &[coin(1000000, "uflix")],
         )

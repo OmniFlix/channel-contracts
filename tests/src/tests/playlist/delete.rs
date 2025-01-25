@@ -126,13 +126,7 @@ fn not_owned() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::OnftNotOwned {
-            onft_id: channel_id.clone().to_string().replace("channel", "onft"),
-            collection_id: "Channels".to_string(),
-        }
-    );
+    assert_eq!(typed_err, &ContractError::Unauthorized {});
 }
 
 // Happy path

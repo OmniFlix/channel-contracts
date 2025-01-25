@@ -139,8 +139,6 @@ pub enum ExecuteMsg {
         description: Option<String>,
         /// The payment address of the channel owner.
         payment_address: Addr,
-        /// (Optional) A list of collaborator addresses for the channel.
-        collaborators: Option<Vec<String>>,
         /// (Optional) Profile image of the channel
         profile_picture: Option<String>,
         /// (Optional) Banner image of the channel
@@ -167,6 +165,8 @@ pub enum ExecuteMsg {
         profile_picture: Option<String>,
         /// (Optional) The new banner image of the channel.
         banner_picture: Option<String>,
+        /// (Optional) The new payment address of the channel.
+        payment_address: Option<String>,
     },
 
     /// Updates the configuration of the contract, including the channel creation fee,
@@ -266,4 +266,11 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(ChannelCollaborator)]
+    GetChannelCollaborator {
+        channel_id: String,
+        collaborator_address: Addr,
+    },
+    #[returns(Vec<(Addr, ChannelCollaborator)>)]
+    GetChannelCollaborators { channel_id: String },
 }
