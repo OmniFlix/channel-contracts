@@ -239,7 +239,6 @@ fn happy_path() {
         collaborator_address: collector.clone().into_string(),
         collaborator_details: omniflix_channel_types::channel::ChannelCollaborator {
             role: omniflix_channel_types::channel::Role::Moderator,
-            expires_at: None,
             share: Decimal::from_ratio(Uint128::one(), Uint128::from(3u128)),
         },
     };

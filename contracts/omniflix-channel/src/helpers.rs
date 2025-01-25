@@ -1,10 +1,11 @@
 use crate::ContractError;
 use asset_manager::assets::Assets;
+use channel_manager::channel::ChannelsManager;
 use cosmwasm_std::{Addr, Api, Attribute, Binary, Coin, Decimal, Deps, Env, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
 use cw_utils::NativeBalance;
 use omniflix_channel_types::asset::AssetKey;
-use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
+use omniflix_channel_types::channel::{ChannelDetails, ChannelId, ChannelMetadata, Role};
 use omniflix_channel_types::msg::ReservedUsername;
 use omniflix_std::types::omniflix::onft::v1beta1::Onft;
 use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
@@ -57,6 +58,56 @@ pub fn get_onft_with_owner(
     }
 
     Ok(onft)
+}
+
+pub fn access_control(
+    deps: Deps,
+    channel_id: ChannelId,
+    sender: Addr,
+    channels_collection_id: String,
+    required_role: Role,
+) -> Result<(), ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_onft_id = channel_details.onft_id;
+
+    // First check if they own the channel NFT
+    if let Ok(_channel_onft) = get_onft_with_owner(
+        deps,
+        channels_collection_id,
+        channel_onft_id,
+        sender.to_string(),
+    ) {
+        // Channel owner (NFT holder) has admin privileges
+        return Ok(());
+    }
+
+    // If not the owner, check if user is a collaborator with sufficient privileges
+    if let Ok(collaborator) = channels.get_collaborator(deps.storage, channel_id, sender) {
+        if has_sufficient_privileges(collaborator.role, required_role) {
+            return Ok(());
+        }
+    }
+
+    // If neither owner nor collaborator with sufficient privileges, return error
+    Err(ContractError::Unauthorized {})
+}
+
+// Helper function to check role hierarchy
+fn has_sufficient_privileges(actual_role: Role, required_role: Role) -> bool {
+    match (actual_role, required_role) {
+        // Admin can do everything
+        (Role::Admin, _) => true,
+
+        // Moderator can do moderator and publisher tasks
+        (Role::Moderator, Role::Moderator | Role::Publisher) => true,
+
+        // Publisher can only do publisher tasks
+        (Role::Publisher, Role::Publisher) => true,
+
+        // All other combinations are insufficient privileges
+        _ => false,
+    }
 }
 
 pub fn check_payment(expected: Vec<Coin>, received: Vec<Coin>) -> Result<(), ContractError> {

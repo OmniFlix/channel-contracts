@@ -31,4 +31,10 @@ pub enum ChannelError {
 
     #[error("Collaborator not found")]
     CollaboratorNotFound {},
+
+    #[error("Collaborator expired")]
+    CollaboratorExpired {},
+
+    #[error("Total unique collaborators limit exceeded")]
+    TotalUniqueCollaboratorsLimitExceeded {},
 }

@@ -1,8 +1,8 @@
 use crate::error::ContractError;
 use crate::helpers::{
-    bank_msg_wrapper, check_payment, distribute_funds_with_shares, filter_assets_to_remove,
-    generate_random_id_with_prefix, get_collection_creation_fee, get_onft_with_owner,
-    validate_channel_details, validate_channel_metadata, validate_optional_addr_list,
+    access_control, bank_msg_wrapper, check_payment, distribute_funds_with_shares,
+    filter_assets_to_remove, generate_random_id_with_prefix, get_collection_creation_fee,
+    get_onft_with_owner, validate_channel_details, validate_channel_metadata,
     validate_reserved_usernames,
 };
 use crate::state::CONFIG;
@@ -17,7 +17,7 @@ use cosmwasm_std::{
 use cw_utils::must_pay;
 use omniflix_channel_types::asset::{Asset, AssetType, Playlist};
 use omniflix_channel_types::channel::{
-    ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData,
+    ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
 use omniflix_channel_types::config::ChannelConractConfig;
 use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
@@ -135,13 +135,12 @@ pub fn execute(
         ExecuteMsg::PlaylistCreate {
             playlist_name,
             channel_id,
-        } => create_playlist(deps, env, info, channel_id, playlist_name),
+        } => create_playlist(deps, info, channel_id, playlist_name),
         ExecuteMsg::ChannelCreate {
             user_name,
             channel_name,
             salt,
             description,
-            collaborators,
             profile_picture,
             banner_picture,
             payment_address,
@@ -154,7 +153,6 @@ pub fn execute(
             payment_address,
             user_name,
             channel_name,
-            collaborators,
             profile_picture,
             banner_picture,
         ),
@@ -164,6 +162,7 @@ pub fn execute(
             channel_name,
             profile_picture,
             banner_picture,
+            payment_address,
         } => update_channel_details(
             deps,
             info,
@@ -172,6 +171,7 @@ pub fn execute(
             channel_name,
             profile_picture,
             banner_picture,
+            payment_address,
         ),
 
         ExecuteMsg::PlaylistDelete {
@@ -241,7 +241,6 @@ fn create_channel(
     payment_address: Addr,
     user_name: String,
     channel_name: String,
-    collaborators: Option<Vec<String>>,
     profile_picture: Option<String>,
     banner_picture: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -261,15 +260,10 @@ fn create_channel(
 
     let channels_manager = ChannelsManager::new();
 
-    // Validate the collaborators addresses
-    // If no collaborators are provided, the vector will be empty
-    let addr_collaborators: Vec<Addr> = validate_optional_addr_list(collaborators, deps.api)?;
-
     let channel_details = ChannelDetails {
         channel_id: channel_id.clone(),
         user_name: user_name.clone(),
         onft_id: onft_id.clone(),
-        collaborators: addr_collaborators.clone(),
         payment_address: deps.api.addr_validate(&payment_address.into_string())?,
     };
     let channel_metadata = ChannelMetadata {
@@ -393,21 +387,13 @@ fn publish(
 
     let config = CONFIG.load(deps.storage)?;
 
-    // Find and validate the channel being published to is owned by the sender
-    // or the sender is a collaborator
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    // Check if the sender is a collaborator
-    // Else check if the sender is the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
@@ -478,18 +464,13 @@ fn unpublish(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let assets = Assets::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
@@ -514,19 +495,13 @@ fn refresh_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let playlist_manager = PlaylistsManager::new();
     let playlist_asset_keys = playlist_manager
@@ -556,7 +531,6 @@ fn refresh_playlist(
 
 fn create_playlist(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     channel_id: String,
     playlist_name: String,
@@ -566,19 +540,13 @@ fn create_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    // Find and validate the channel being published to is owned by the sender
-    let channel_manager = ChannelsManager::new();
-    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let playlist_manager = PlaylistsManager::new();
     playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
@@ -643,19 +611,17 @@ fn add_collaborator(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // First check if the channel exists and the sender is the owner
-    let channel_manager = ChannelsManager::new();
-    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    let _channel_onft = get_onft_with_owner(
+    access_control(
         deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
         config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
+        Role::Admin,
     )?;
 
     // Validate the collaborator address
     let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
+    let channel_manager = ChannelsManager::new();
 
     // Add the collaborator to the channel
     channel_manager.add_collaborator(
@@ -669,10 +635,6 @@ fn add_collaborator(
         .add_attribute("action", "add_collaborator")
         .add_attribute("channel_id", channel_id)
         .add_attribute("collaborator_address", collaborator_address)
-        .add_attribute(
-            "expires_at",
-            collaborator_details.expires_at.unwrap_or(0).to_string(),
-        )
         .add_attribute("share", collaborator_details.share.to_string());
 
     Ok(response)
@@ -686,21 +648,19 @@ fn remove_collaborator(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // First check if the channel exists and the sender is the owner
-    let channel_manager = ChannelsManager::new();
-    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    let _channel_onft = get_onft_with_owner(
+    access_control(
         deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
         config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
+        Role::Admin,
     )?;
 
     // Validate the collaborator address
     let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
 
     // Remove the collaborator from the channel
+    let channel_manager = ChannelsManager::new();
     channel_manager.remove_collaborator(
         deps.storage,
         channel_id.clone(),
@@ -723,25 +683,22 @@ fn update_channel_details(
     channel_name: Option<String>,
     profile_picture: Option<String>,
     banner_picture: Option<String>,
+    payment_address: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
-    let channel_collection_id = config.channels_collection_id.clone();
+    let channels_collection_id = config.channels_collection_id.clone();
 
     let channel_manager = ChannelsManager::new();
-    let channel_details = channel_manager.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.clone().onft_id;
 
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            channel_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        channels_collection_id.clone(),
+        Role::Admin,
+    )?;
 
     let mut channel_metadata =
         channel_manager.get_channel_metadata(deps.storage, channel_id.clone())?;
@@ -769,11 +726,14 @@ fn update_channel_details(
         channel_metadata.clone(),
     )?;
 
-    channel_manager.update_channel_details(
-        deps.storage,
-        channel_id.clone(),
-        channel_details.clone(),
-    )?;
+    if let Some(payment_address) = payment_address.clone() {
+        let payment_address = deps.api.addr_validate(&payment_address)?;
+        channel_manager.update_payment_address(
+            deps.storage,
+            channel_id.clone(),
+            payment_address,
+        )?;
+    }
 
     let response = Response::new()
         .add_attribute("action", "update_channel_details")
@@ -793,19 +753,13 @@ fn delete_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let playlist_manager = PlaylistsManager::new();
     playlist_manager.delete_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
@@ -830,18 +784,13 @@ fn add_asset_to_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let playlist_manager = PlaylistsManager::new();
 
@@ -883,19 +832,13 @@ fn remove_asset_from_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-
-    // Check if the sender is a collaborator or the owner
-    if !channel_details.collaborators.contains(&info.sender) {
-        let _channel_onft = get_onft_with_owner(
-            deps.as_ref(),
-            config.channels_collection_id.clone(),
-            channel_onft_id,
-            info.sender.clone().to_string(),
-        )?;
-    };
+    access_control(
+        deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
+        config.channels_collection_id.clone(),
+        Role::Publisher,
+    )?;
 
     let playlist_manager = PlaylistsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
@@ -928,16 +871,12 @@ fn update_asset_details(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    // Only channel owner can set asset details
-    // Collaborators cannot set asset details
-    let _channel_onft = get_onft_with_owner(
+    access_control(
         deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
         config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
+        Role::Publisher,
     )?;
 
     let assets = Assets::new();
@@ -1113,6 +1052,17 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ChannelMetadata { channel_id } => {
             to_json_binary(&query_channel_metadata(deps, channel_id)?)
         }
+        QueryMsg::GetChannelCollaborator {
+            channel_id,
+            collaborator_address,
+        } => to_json_binary(&query_channel_collaborator(
+            deps,
+            channel_id,
+            collaborator_address,
+        )?),
+        QueryMsg::GetChannelCollaborators { channel_id } => {
+            to_json_binary(&query_channel_collaborators(deps, channel_id)?)
+        }
     }
 }
 
@@ -1226,6 +1176,26 @@ fn query_channel_metadata(
     let channels = ChannelsManager::new();
     let channel_metadata = channels.get_channel_metadata(deps.storage, channel_id)?;
     Ok(channel_metadata)
+}
+
+fn query_channel_collaborator(
+    deps: Deps,
+    channel_id: String,
+    collaborator_address: Addr,
+) -> Result<ChannelCollaborator, ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_collaborator =
+        channels.get_collaborator(deps.storage, channel_id, collaborator_address)?;
+    Ok(channel_collaborator)
+}
+
+fn query_channel_collaborators(
+    deps: Deps,
+    channel_id: String,
+) -> Result<Vec<(Addr, ChannelCollaborator)>, ContractError> {
+    let channels = ChannelsManager::new();
+    let channel_collaborators = channels.get_channel_collaborators(deps.storage, channel_id)?;
+    Ok(channel_collaborators)
 }
 
 #[cfg(test)]
