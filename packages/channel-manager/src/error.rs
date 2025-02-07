@@ -37,4 +37,10 @@ pub enum ChannelError {
 
     #[error("Total unique collaborators limit exceeded")]
     TotalUniqueCollaboratorsLimitExceeded {},
+
+    #[error("Follower not found")]
+    FollowerNotFound {},
+
+    #[error("Already following")]
+    AlreadyFollowing {},
 }

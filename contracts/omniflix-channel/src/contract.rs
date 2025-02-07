@@ -229,6 +229,8 @@ pub fn execute(
             channel_id,
             collaborator_address,
         } => remove_collaborator(deps, info, channel_id, collaborator_address),
+        ExecuteMsg::ChannelFollow { channel_id } => follow_channel(deps, info, channel_id),
+        ExecuteMsg::ChannelUnfollow { channel_id } => unfollow_channel(deps, info, channel_id),
     }
 }
 
@@ -290,7 +292,6 @@ fn create_channel(
     channels_manager.add_channel(
         deps.storage,
         channel_id.clone(),
-        user_name.clone(),
         channel_details.clone(),
         channel_metadata.clone(),
     )?;
@@ -337,6 +338,35 @@ fn create_channel(
         .add_attribute("onft_id", onft_id);
     Ok(response)
 }
+
+fn follow_channel(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+) -> Result<Response, ContractError> {
+    let channels_manager = ChannelsManager::new();
+    channels_manager.add_follower(deps.storage, channel_id.clone(), info.sender.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "follow_channel")
+        .add_attribute("channel_id", channel_id);
+    Ok(response)
+}
+
+fn unfollow_channel(
+    deps: DepsMut,
+    info: MessageInfo,
+    channel_id: String,
+) -> Result<Response, ContractError> {
+    let channels_manager = ChannelsManager::new();
+    channels_manager.remove_follower(deps.storage, channel_id.clone(), info.sender.clone())?;
+
+    let response = Response::new()
+        .add_attribute("action", "unfollow_channel")
+        .add_attribute("channel_id", channel_id);
+    Ok(response)
+}
+
 fn delete_channel(
     deps: DepsMut,
     info: MessageInfo,
@@ -1060,9 +1090,24 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             channel_id,
             collaborator_address,
         )?),
-        QueryMsg::GetChannelCollaborators { channel_id } => {
-            to_json_binary(&query_channel_collaborators(deps, channel_id)?)
+        QueryMsg::GetChannelCollaborators {
+            channel_id,
+            start_after,
+            limit,
+        } => to_json_binary(&query_channel_collaborators(
+            deps,
+            channel_id,
+            start_after,
+            limit,
+        )?),
+        QueryMsg::FollowersCount { channel_id } => {
+            to_json_binary(&query_followers_count(deps, channel_id)?)
         }
+        QueryMsg::Followers {
+            channel_id,
+            start_after,
+            limit,
+        } => to_json_binary(&query_followers(deps, channel_id, start_after, limit)?),
     }
 }
 
@@ -1192,10 +1237,30 @@ fn query_channel_collaborator(
 fn query_channel_collaborators(
     deps: Deps,
     channel_id: String,
+    start_after: Option<String>,
+    limit: Option<u32>,
 ) -> Result<Vec<(Addr, ChannelCollaborator)>, ContractError> {
     let channels = ChannelsManager::new();
-    let channel_collaborators = channels.get_channel_collaborators(deps.storage, channel_id)?;
+    let channel_collaborators =
+        channels.get_channel_collaborators(deps.storage, channel_id, start_after, limit)?;
     Ok(channel_collaborators)
+}
+
+fn query_followers_count(deps: Deps, channel_id: String) -> Result<u64, ContractError> {
+    let channels = ChannelsManager::new();
+    let followers_count = channels.get_followers_count(deps.storage, channel_id)?;
+    Ok(followers_count)
+}
+
+fn query_followers(
+    deps: Deps,
+    channel_id: String,
+    start_after: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<Addr>, ContractError> {
+    let channels = ChannelsManager::new();
+    let followers = channels.get_followers(deps.storage, channel_id, start_after, limit)?;
+    Ok(followers)
 }
 
 #[cfg(test)]
