@@ -15,6 +15,8 @@ const CHANNEL_COLLABORATORS: &str = "col"; // channel_collaborators
 const TOTAL_COLLABORATOR_SHARES: &str = "tcs"; // total_collaborator_shares
 const TOTAL_UNIQUE_COLLABORATOR_LIMIT: u32 = 10;
 
+const FOLLOWERS: &str = "f"; // followers
+const FOLLOWERS_COUNT: &str = "fc"; // followers_count
 pub struct ChannelsManager {
     pub channel_details: Map<ChannelId, ChannelDetails>,
     pub channel_metadata: Map<ChannelId, ChannelMetadata>,
@@ -23,6 +25,8 @@ pub struct ChannelsManager {
     pub reserved_usernames: Map<UserName, Addr>,
     pub channel_collaborators: Map<(ChannelId, Addr), ChannelCollaborator>,
     pub total_collaborator_shares: Map<ChannelId, Decimal>,
+    pub followers: Map<(ChannelId, Addr), bool>,
+    pub followers_count: Map<ChannelId, u64>,
 }
 
 impl ChannelsManager {
@@ -35,6 +39,8 @@ impl ChannelsManager {
             channel_metadata: Map::new(CHANNEL_METADATA),
             channel_collaborators: Map::new(CHANNEL_COLLABORATORS),
             total_collaborator_shares: Map::new(TOTAL_COLLABORATOR_SHARES),
+            followers: Map::new(FOLLOWERS),
+            followers_count: Map::new(FOLLOWERS_COUNT),
         }
     }
 
@@ -96,7 +102,6 @@ impl ChannelsManager {
         &self,
         store: &mut dyn Storage,
         channel_id: ChannelId,
-        user_name: UserName,
         channel_details: ChannelDetails,
         channel_metadata: ChannelMetadata,
     ) -> Result<(), ChannelError> {
@@ -104,7 +109,10 @@ impl ChannelsManager {
         if self.channel_details.has(store, channel_id.clone()) {
             return Err(ChannelError::ChannelIdAlreadyExists {});
         }
-        if self.username_to_channel_id.has(store, user_name.clone()) {
+        if self
+            .username_to_channel_id
+            .has(store, channel_details.user_name.clone())
+        {
             return Err(ChannelError::UserNameAlreadyTaken {});
         }
 
@@ -113,10 +121,10 @@ impl ChannelsManager {
             .save(store, channel_id.clone(), &channel_details)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
         self.username_to_channel_id
-            .save(store, user_name.clone(), &channel_id)
+            .save(store, channel_details.user_name.clone(), &channel_id)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
         self.channel_id_to_username
-            .save(store, channel_id.clone(), &user_name)
+            .save(store, channel_id.clone(), &channel_details.user_name)
             .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
         self.channel_metadata
             .save(store, channel_id, &channel_metadata)
@@ -251,6 +259,10 @@ impl ChannelsManager {
         address: Addr,
         collaborator: ChannelCollaborator,
     ) -> Result<(), ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
         // Check if collaborator already exists
         if self
             .channel_collaborators
@@ -299,6 +311,10 @@ impl ChannelsManager {
         channel_id: ChannelId,
         address: Addr,
     ) -> Result<(), ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
         // Check if the collaborator exists
         if !self
             .channel_collaborators
@@ -329,6 +345,11 @@ impl ChannelsManager {
         store: &dyn Storage,
         channel_id: ChannelId,
     ) -> Result<Vec<(Addr, Decimal)>, ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+
         let channel_collaborators: Vec<(Addr, ChannelCollaborator)> = self
             .channel_collaborators
             .prefix(channel_id)
@@ -349,6 +370,11 @@ impl ChannelsManager {
         channel_id: ChannelId,
         sender: Addr,
     ) -> Result<bool, ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+
         let collaborator = self
             .channel_collaborators
             .has(store, (channel_id.clone(), sender.clone()));
@@ -360,6 +386,11 @@ impl ChannelsManager {
         channel_id: ChannelId,
         sender: Addr,
     ) -> Result<ChannelCollaborator, ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+
         let collaborator = self
             .channel_collaborators
             .load(store, (channel_id.clone(), sender.clone()));
@@ -373,14 +404,140 @@ impl ChannelsManager {
         &self,
         store: &dyn Storage,
         channel_id: ChannelId,
+        start_after: Option<String>,
+        limit: Option<u32>,
     ) -> Result<Vec<(Addr, ChannelCollaborator)>, ChannelError> {
-        let channel_collaborators: Vec<(Addr, ChannelCollaborator)> = self
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+
+        let limit = limit.unwrap_or(25).min(25) as usize;
+        let start = start_after.map(|addr| Bound::exclusive(Addr::unchecked(addr)));
+
+        let channel_collaborators = self
             .channel_collaborators
             .prefix(channel_id)
-            .range(store, None, None, Order::Ascending)
+            .range(store, start, None, Order::Ascending)
+            .take(limit)
             .collect::<Result<Vec<_>, _>>()
             .unwrap_or_default();
+
         Ok(channel_collaborators)
+    }
+
+    pub fn add_follower(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        follower: Addr,
+    ) -> Result<(), ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+        // Check if the follower already exists
+        if self
+            .followers
+            .has(store, (channel_id.clone(), follower.clone()))
+        {
+            return Err(ChannelError::AlreadyFollowing {});
+        }
+
+        self.followers
+            .save(store, (channel_id.clone(), follower.clone()), &true)
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+
+        let current_count = self
+            .followers_count
+            .load(store, channel_id.clone())
+            .unwrap_or(0);
+        self.followers_count
+            .save(store, channel_id.clone(), &(current_count + 1))
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+        Ok(())
+    }
+
+    pub fn remove_follower(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        follower: Addr,
+    ) -> Result<(), ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+        // Check if the follower exists
+        if !self
+            .followers
+            .has(store, (channel_id.clone(), follower.clone()))
+        {
+            return Err(ChannelError::FollowerNotFound {});
+        }
+        self.followers
+            .remove(store, (channel_id.clone(), follower.clone()));
+
+        let current_count = self
+            .followers_count
+            .load(store, channel_id.clone())
+            .unwrap_or(0);
+        self.followers_count
+            .save(store, channel_id.clone(), &(current_count - 1))
+            .map_err(|_| ChannelError::SaveChannelDetailsFailed {})?;
+        Ok(())
+    }
+
+    pub fn get_followers_count(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+    ) -> Result<u64, ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+        let count = self
+            .followers_count
+            .load(store, channel_id.clone())
+            .unwrap_or(0);
+        Ok(count)
+    }
+
+    pub fn is_follower(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        follower: Addr,
+    ) -> Result<bool, ChannelError> {
+        // Check if channel exists
+        if !self.channel_details.has(store, channel_id.clone()) {
+            return Err(ChannelError::ChannelIdNotFound {});
+        }
+        let follower = self
+            .followers
+            .has(store, (channel_id.clone(), follower.clone()));
+        Ok(follower)
+    }
+
+    pub fn get_followers(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<Vec<Addr>, ChannelError> {
+        let limit = limit.unwrap_or(25).min(25) as usize;
+        let start = start_after.map(|addr| Bound::exclusive(Addr::unchecked(addr)));
+
+        let followers = self
+            .followers
+            .prefix(channel_id)
+            .keys(store, start, None, Order::Ascending)
+            .take(limit)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap_or_default();
+        Ok(followers)
     }
 }
 
@@ -396,6 +553,49 @@ mod tests {
         let channels = ChannelsManager::new();
         let channel_id1 = "channel1".to_string();
         let channel_id2 = "channel2".to_string();
+
+        // Create channel 1
+        let channel_details1 = ChannelDetails {
+            channel_id: channel_id1.clone(),
+            onft_id: "".to_string(),
+            payment_address: Addr::unchecked("payment_address"),
+            user_name: "user1".to_string(),
+        };
+        channels
+            .add_channel(
+                &mut deps.storage,
+                channel_id1.clone(),
+                channel_details1,
+                ChannelMetadata {
+                    channel_name: "channel1".to_string(),
+                    description: Some("description1".to_string()),
+                    profile_picture: Some("profile_picture1".to_string()),
+                    banner_picture: Some("banner_picture1".to_string()),
+                },
+            )
+            .unwrap();
+
+        // Create channel 2
+        let channel_details2 = ChannelDetails {
+            channel_id: channel_id2.clone(),
+            onft_id: "".to_string(),
+            payment_address: Addr::unchecked("payment_address"),
+            user_name: "user2".to_string(),
+        };
+        channels
+            .add_channel(
+                &mut deps.storage,
+                channel_id2.clone(),
+                channel_details2,
+                ChannelMetadata {
+                    channel_name: "channel2".to_string(),
+                    description: Some("description2".to_string()),
+                    profile_picture: Some("profile_picture2".to_string()),
+                    banner_picture: Some("banner_picture2".to_string()),
+                },
+            )
+            .unwrap();
+
         let addr1 = Addr::unchecked("addr1");
         let addr2 = Addr::unchecked("addr2");
         let addr3 = Addr::unchecked("addr3");
@@ -406,6 +606,7 @@ mod tests {
             role: Role::Moderator,
             share: Decimal::percent(50), // 50%
         };
+
         let result = channels.add_collaborator(
             &mut deps.storage,
             channel_id1.clone(),
@@ -497,6 +698,27 @@ mod tests {
         let addr2 = Addr::unchecked("addr2");
         let addr3 = Addr::unchecked("addr3");
 
+        // Create channel
+        let channel_details = ChannelDetails {
+            channel_id: channel_id.clone(),
+            onft_id: "".to_string(),
+            payment_address: Addr::unchecked("payment_address"),
+            user_name: "user1".to_string(),
+        };
+        channels
+            .add_channel(
+                &mut deps.storage,
+                channel_id.clone(),
+                channel_details,
+                ChannelMetadata {
+                    channel_name: "channel1".to_string(),
+                    description: Some("description1".to_string()),
+                    profile_picture: Some("profile_picture1".to_string()),
+                    banner_picture: Some("banner_picture1".to_string()),
+                },
+            )
+            .unwrap();
+
         // Add first collaborator
         let collab1 = ChannelCollaborator {
             role: Role::Moderator,
@@ -545,6 +767,27 @@ mod tests {
         let channel_id = "channel1".to_string();
         let addr1 = Addr::unchecked("addr1");
 
+        // Create channel
+        let channel_details = ChannelDetails {
+            channel_id: channel_id.clone(),
+            onft_id: "".to_string(),
+            payment_address: Addr::unchecked("payment_address"),
+            user_name: "user1".to_string(),
+        };
+        channels
+            .add_channel(
+                &mut deps.storage,
+                channel_id.clone(),
+                channel_details,
+                ChannelMetadata {
+                    channel_name: "channel1".to_string(),
+                    description: Some("description1".to_string()),
+                    profile_picture: Some("profile_picture1".to_string()),
+                    banner_picture: Some("banner_picture1".to_string()),
+                },
+            )
+            .unwrap();
+
         // Add first collaborator
         let collab = ChannelCollaborator {
             role: Role::Moderator,
@@ -566,5 +809,99 @@ mod tests {
             collab.clone(),
         );
         assert!(matches!(result, Err(ChannelError::CollaboratorExists {})));
+    }
+
+    #[test]
+    fn test_follower_operations() {
+        let mut deps = mock_dependencies();
+        let channels = ChannelsManager::new();
+        let channel_id = "channel1".to_string();
+        let follower1 = deps.api.addr_make("follower1");
+        let follower2 = deps.api.addr_make("follower2");
+        let non_follower = deps.api.addr_make("non_follower");
+
+        // Create channel
+        let channel_details = ChannelDetails {
+            channel_id: channel_id.clone(),
+            onft_id: "".to_string(),
+            payment_address: Addr::unchecked("payment_address"),
+            user_name: "user1".to_string(),
+        };
+        channels
+            .add_channel(
+                &mut deps.storage,
+                channel_id.clone(),
+                channel_details,
+                ChannelMetadata {
+                    channel_name: "channel1".to_string(),
+                    description: Some("description1".to_string()),
+                    profile_picture: Some("profile_picture1".to_string()),
+                    banner_picture: Some("banner_picture1".to_string()),
+                },
+            )
+            .unwrap();
+
+        // Test initial followers count
+        let count = channels
+            .get_followers_count(&deps.storage, channel_id.clone())
+            .unwrap();
+        assert_eq!(count, 0);
+
+        // Test adding followers
+        let result =
+            channels.add_follower(&mut deps.storage, channel_id.clone(), follower1.clone());
+        assert!(result.is_ok());
+        let result =
+            channels.add_follower(&mut deps.storage, channel_id.clone(), follower2.clone());
+        assert!(result.is_ok());
+
+        // Test followers count after adding
+        let count = channels
+            .get_followers_count(&deps.storage, channel_id.clone())
+            .unwrap();
+        assert_eq!(count, 2);
+
+        // Test is_follower
+        assert!(channels
+            .is_follower(&deps.storage, channel_id.clone(), follower1.clone())
+            .unwrap());
+        assert!(channels
+            .is_follower(&deps.storage, channel_id.clone(), follower2.clone())
+            .unwrap());
+        assert!(!channels
+            .is_follower(&deps.storage, channel_id.clone(), non_follower.clone())
+            .unwrap());
+
+        // Test get_followers
+        let followers = channels
+            .get_followers(&deps.storage, channel_id.clone(), None, None)
+            .unwrap();
+        assert_eq!(followers.len(), 2);
+        assert!(followers.contains(&follower1));
+        assert!(followers.contains(&follower2));
+
+        // Test removing follower
+        let result =
+            channels.remove_follower(&mut deps.storage, channel_id.clone(), follower1.clone());
+        assert!(result.is_ok());
+
+        // Test followers count after removing
+        let count = channels
+            .get_followers_count(&deps.storage, channel_id.clone())
+            .unwrap();
+        assert_eq!(count, 1);
+
+        // Test removing non-existent follower
+        let result =
+            channels.remove_follower(&mut deps.storage, channel_id.clone(), non_follower.clone());
+        assert!(matches!(result, Err(ChannelError::FollowerNotFound {})));
+
+        // Verify remaining followers
+        let followers = channels
+            .get_followers(&deps.storage, channel_id.clone(), None, None)
+            .unwrap();
+        assert_eq!(followers.len(), 1);
+        assert!(followers.contains(&follower2));
+        assert!(!followers.contains(&follower1));
     }
 }

@@ -214,6 +214,18 @@ pub enum ExecuteMsg {
         /// The address of the collaborator to be removed.
         collaborator_address: String,
     },
+
+    /// Follow a channel
+    ChannelFollow {
+        /// The ID of the channel to follow.
+        channel_id: String,
+    },
+
+    /// Unfollow a channel
+    ChannelUnfollow {
+        /// The ID of the channel to unfollow.
+        channel_id: String,
+    },
 }
 
 #[cw_serde]
@@ -272,5 +284,17 @@ pub enum QueryMsg {
         collaborator_address: Addr,
     },
     #[returns(Vec<(Addr, ChannelCollaborator)>)]
-    GetChannelCollaborators { channel_id: String },
+    GetChannelCollaborators {
+        channel_id: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    #[returns(u64)]
+    FollowersCount { channel_id: String },
+    #[returns(Vec<Addr>)]
+    Followers {
+        channel_id: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }
