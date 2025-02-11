@@ -17,6 +17,9 @@ const TOTAL_UNIQUE_COLLABORATOR_LIMIT: u32 = 10;
 
 const FOLLOWERS: &str = "f"; // followers
 const FOLLOWERS_COUNT: &str = "fc"; // followers_count
+
+const PAGINATION_LIMIT: u32 = 50;
+
 pub struct ChannelsManager {
     pub channel_details: Map<ChannelId, ChannelDetails>,
     pub channel_metadata: Map<ChannelId, ChannelMetadata>,
@@ -77,7 +80,7 @@ impl ChannelsManager {
         start_after: Option<UserName>,
         limit: Option<u32>,
     ) -> StdResult<Vec<(UserName, Addr)>> {
-        let limit = limit.unwrap_or(25).min(25) as usize;
+        let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(Bound::exclusive);
 
         self.reserved_usernames
@@ -161,7 +164,7 @@ impl ChannelsManager {
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<Vec<ChannelDetails>> {
-        let limit = limit.unwrap_or(25) as usize;
+        let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(Bound::exclusive);
 
         self.channel_details
@@ -412,7 +415,7 @@ impl ChannelsManager {
             return Err(ChannelError::ChannelIdNotFound {});
         }
 
-        let limit = limit.unwrap_or(25).min(25) as usize;
+        let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(|addr| Bound::exclusive(Addr::unchecked(addr)));
 
         let channel_collaborators = self
@@ -527,7 +530,7 @@ impl ChannelsManager {
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> Result<Vec<Addr>, ChannelError> {
-        let limit = limit.unwrap_or(25).min(25) as usize;
+        let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(|addr| Bound::exclusive(Addr::unchecked(addr)));
 
         let followers = self

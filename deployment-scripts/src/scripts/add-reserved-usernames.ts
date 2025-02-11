@@ -18,12 +18,12 @@ const addReservedUsernames = async () => {
     let reservedUsernames: ReservedUsername[] = [];
     for (let i = 0; i < 24; i++) {
         // Generate a random username of length 8 (can be adjusted)
-        let username = '';
+        let reservedUsername: ReservedUsername = { username: '' };
         for (let j = 0; j < 8; j++) {
             // Get a random lowercase letter (ASCII 'a' to 'z')
-            username += String.fromCharCode(97 + Math.floor(Math.random() * 26));
+            reservedUsername.username += String.fromCharCode(97 + Math.floor(Math.random() * 26));
         }
-        reservedUsernames.push({ username: username });
+        reservedUsernames.push(reservedUsername);
     }
     console.log(reservedUsernames);
     await channel_helper.AddReservedUsernames(context, reservedUsernames);
@@ -32,8 +32,16 @@ const addReservedUsernames = async () => {
     await channel_helper.QueryReservedUsernames(context);
 
     // Readd the first usernmame with a valid address
-    reservedUsernames[0].address = context.getTestUser('creator').address;
+    reservedUsernames[0].address = context.getTestUser('creator')?.address;
+    logger.log(1, `Setting creators address as the first reserved username ${reservedUsernames[0].username}`);
     await channel_helper.AddReservedUsernames(context, [reservedUsernames[0]]);
+
+    // Query reserved usernames
+    await channel_helper.QueryReservedUsernames(context);
+
+    // Create a new channel with reserved username
+    await channel_helper.CreateChannel(context, "creator", reservedUsernames[0].username);
+    logger.log(1, `Created a new channel with reserved username ${reservedUsernames[0].username}`);
 
     // Query reserved usernames
     await channel_helper.QueryReservedUsernames(context);

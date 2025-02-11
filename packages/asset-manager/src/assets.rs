@@ -11,6 +11,8 @@ pub struct Assets {
     pub assets: Map<AssetKey, Asset>,
 }
 
+const PAGINATION_LIMIT: u32 = 50;
+
 impl Assets {
     /// Create a new `Assets` instance.
     pub const fn new() -> Self {
@@ -61,7 +63,7 @@ impl Assets {
         start_after: Option<PublishId>,
         limit: Option<u32>,
     ) -> StdResult<Vec<Asset>> {
-        let limit = limit.unwrap_or(25).min(25) as usize;
+        let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(Bound::exclusive);
 
         self.assets
@@ -150,9 +152,14 @@ mod tests {
 
         // Test with a limit > MAX_LIMIT
         let assets_page_3 = assets
-            .get_all_assets(&storage, channel_id.clone(), None, Some(25 + 1))
+            .get_all_assets(
+                &storage,
+                channel_id.clone(),
+                None,
+                Some(PAGINATION_LIMIT + 1),
+            )
             .unwrap();
-        assert_eq!(assets_page_3.len(), 25); // Should return exactly 25 assets
+        assert_eq!(assets_page_3.len(), PAGINATION_LIMIT as usize); // Should return exactly 25 assets
     }
 
     #[test]
