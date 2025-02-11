@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetType, Binary, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetType, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -75,6 +75,36 @@ export interface OmniFlixChannelReadOnlyInterface {
     limit?: number;
     startAfter?: string;
   }) => Promise<ArrayOfReservedUsername>;
+  getChannelCollaborator: ({
+    channelId,
+    collaboratorAddress
+  }: {
+    channelId: string;
+    collaboratorAddress: Addr;
+  }) => Promise<ChannelCollaborator>;
+  getChannelCollaborators: ({
+    channelId,
+    limit,
+    startAfter
+  }: {
+    channelId: string;
+    limit?: number;
+    startAfter?: string;
+  }) => Promise<ArrayOfTupleOfAddrAndChannelCollaborator>;
+  followersCount: ({
+    channelId
+  }: {
+    channelId: string;
+  }) => Promise<Uint64>;
+  followers: ({
+    channelId,
+    limit,
+    startAfter
+  }: {
+    channelId: string;
+    limit?: number;
+    startAfter?: string;
+  }) => Promise<ArrayOfAddr>;
 }
 export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterface {
   client: CosmWasmClient;
@@ -95,6 +125,10 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     this.assets = this.assets.bind(this);
     this.asset = this.asset.bind(this);
     this.reservedUsernames = this.reservedUsernames.bind(this);
+    this.getChannelCollaborator = this.getChannelCollaborator.bind(this);
+    this.getChannelCollaborators = this.getChannelCollaborators.bind(this);
+    this.followersCount = this.followersCount.bind(this);
+    this.followers = this.followers.bind(this);
   }
 
   isPaused = async (): Promise<Boolean> => {
@@ -238,6 +272,65 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
       }
     });
   };
+  getChannelCollaborator = async ({
+    channelId,
+    collaboratorAddress
+  }: {
+    channelId: string;
+    collaboratorAddress: Addr;
+  }): Promise<ChannelCollaborator> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      get_channel_collaborator: {
+        channel_id: channelId,
+        collaborator_address: collaboratorAddress
+      }
+    });
+  };
+  getChannelCollaborators = async ({
+    channelId,
+    limit,
+    startAfter
+  }: {
+    channelId: string;
+    limit?: number;
+    startAfter?: string;
+  }): Promise<ArrayOfTupleOfAddrAndChannelCollaborator> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      get_channel_collaborators: {
+        channel_id: channelId,
+        limit,
+        start_after: startAfter
+      }
+    });
+  };
+  followersCount = async ({
+    channelId
+  }: {
+    channelId: string;
+  }): Promise<Uint64> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      followers_count: {
+        channel_id: channelId
+      }
+    });
+  };
+  followers = async ({
+    channelId,
+    limit,
+    startAfter
+  }: {
+    channelId: string;
+    limit?: number;
+    startAfter?: string;
+  }): Promise<ArrayOfAddr> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      followers: {
+        channel_id: channelId,
+        limit,
+        start_after: startAfter
+      }
+    });
+  };
 }
 export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
@@ -322,16 +415,16 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   channelCreate: ({
     bannerPicture,
     channelName,
-    collaborators,
     description,
+    paymentAddress,
     profilePicture,
     salt,
     userName
   }: {
     bannerPicture?: string;
     channelName: string;
-    collaborators?: string[];
-    description: string;
+    description?: string;
+    paymentAddress: Addr;
     profilePicture?: string;
     salt: Binary;
     userName: string;
@@ -345,15 +438,15 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     bannerPicture,
     channelId,
     channelName,
-    collaborators,
     description,
+    paymentAddress,
     profilePicture
   }: {
     bannerPicture?: string;
     channelId: string;
     channelName?: string;
-    collaborators?: string[];
     description?: string;
+    paymentAddress?: string;
     profilePicture?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   setConfig: ({
@@ -371,6 +464,39 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }: {
     addUsernames?: ReservedUsername[];
     removeUsernames?: string[];
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  tipCreator: ({
+    amount,
+    channelId
+  }: {
+    amount: Coin;
+    channelId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  channelAddCollaborator: ({
+    channelId,
+    collaboratorAddress,
+    collaboratorDetails
+  }: {
+    channelId: string;
+    collaboratorAddress: string;
+    collaboratorDetails: ChannelCollaborator;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  channelRemoveCollaborator: ({
+    channelId,
+    collaboratorAddress
+  }: {
+    channelId: string;
+    collaboratorAddress: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  channelFollow: ({
+    channelId
+  }: {
+    channelId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  channelUnfollow: ({
+    channelId
+  }: {
+    channelId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements OmniFlixChannelInterface {
@@ -399,6 +525,11 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
     this.setConfig = this.setConfig.bind(this);
     this.manageReservedUsernames = this.manageReservedUsernames.bind(this);
+    this.tipCreator = this.tipCreator.bind(this);
+    this.channelAddCollaborator = this.channelAddCollaborator.bind(this);
+    this.channelRemoveCollaborator = this.channelRemoveCollaborator.bind(this);
+    this.channelFollow = this.channelFollow.bind(this);
+    this.channelUnfollow = this.channelUnfollow.bind(this);
   }
 
   pause = async (fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
@@ -558,16 +689,16 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   channelCreate = async ({
     bannerPicture,
     channelName,
-    collaborators,
     description,
+    paymentAddress,
     profilePicture,
     salt,
     userName
   }: {
     bannerPicture?: string;
     channelName: string;
-    collaborators?: string[];
-    description: string;
+    description?: string;
+    paymentAddress: Addr;
     profilePicture?: string;
     salt: Binary;
     userName: string;
@@ -576,8 +707,8 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       channel_create: {
         banner_picture: bannerPicture,
         channel_name: channelName,
-        collaborators,
         description,
+        payment_address: paymentAddress,
         profile_picture: profilePicture,
         salt,
         user_name: userName
@@ -599,15 +730,15 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     bannerPicture,
     channelId,
     channelName,
-    collaborators,
     description,
+    paymentAddress,
     profilePicture
   }: {
     bannerPicture?: string;
     channelId: string;
     channelName?: string;
-    collaborators?: string[];
     description?: string;
+    paymentAddress?: string;
     profilePicture?: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
@@ -615,8 +746,8 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
         banner_picture: bannerPicture,
         channel_id: channelId,
         channel_name: channelName,
-        collaborators,
         description,
+        payment_address: paymentAddress,
         profile_picture: profilePicture
       }
     }, fee, memo, _funds);
@@ -649,6 +780,73 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       manage_reserved_usernames: {
         add_usernames: addUsernames,
         remove_usernames: removeUsernames
+      }
+    }, fee, memo, _funds);
+  };
+  tipCreator = async ({
+    amount,
+    channelId
+  }: {
+    amount: Coin;
+    channelId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      tip_creator: {
+        amount,
+        channel_id: channelId
+      }
+    }, fee, memo, _funds);
+  };
+  channelAddCollaborator = async ({
+    channelId,
+    collaboratorAddress,
+    collaboratorDetails
+  }: {
+    channelId: string;
+    collaboratorAddress: string;
+    collaboratorDetails: ChannelCollaborator;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      channel_add_collaborator: {
+        channel_id: channelId,
+        collaborator_address: collaboratorAddress,
+        collaborator_details: collaboratorDetails
+      }
+    }, fee, memo, _funds);
+  };
+  channelRemoveCollaborator = async ({
+    channelId,
+    collaboratorAddress
+  }: {
+    channelId: string;
+    collaboratorAddress: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      channel_remove_collaborator: {
+        channel_id: channelId,
+        collaborator_address: collaboratorAddress
+      }
+    }, fee, memo, _funds);
+  };
+  channelFollow = async ({
+    channelId
+  }: {
+    channelId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      channel_follow: {
+        channel_id: channelId
+      }
+    }, fee, memo, _funds);
+  };
+  channelUnfollow = async ({
+    channelId
+  }: {
+    channelId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      channel_unfollow: {
+        channel_id: channelId
       }
     }, fee, memo, _funds);
   };

@@ -6,7 +6,7 @@ import { MsgGrant, MsgExec } from 'cosmjs-types/cosmos/authz/v1beta1/tx'
 import { GenericAuthorization, Grant } from 'cosmjs-types/cosmos/authz/v1beta1/authz';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { MsgExecuteContract, MsgExecuteContractResponse } from 'cosmjs-types/cosmwasm/wasm/v1/tx';
-import { deploymentConfig } from '../../configs/deployment_config.example';
+import { deploymentConfig } from '../../configs/deployment_config';
 import { chain } from 'lodash';
 const encoding_1 = require("@cosmjs/encoding");
 import chainConfig from '../../configs/chain_config.json'

@@ -7,6 +7,7 @@
 export type Addr = string;
 export type Uint128 = string;
 export interface InstantiateMsg {
+  accepted_tip_denoms: string[];
   admin: Addr;
   channel_creation_fee: Coin[];
   channels_collection_id: string;
@@ -82,8 +83,8 @@ export type ExecuteMsg = {
   channel_create: {
     banner_picture?: string | null;
     channel_name: string;
-    collaborators?: string[] | null;
-    description: string;
+    description?: string | null;
+    payment_address: Addr;
     profile_picture?: string | null;
     salt: Binary;
     user_name: string;
@@ -97,8 +98,8 @@ export type ExecuteMsg = {
     banner_picture?: string | null;
     channel_id: string;
     channel_name?: string | null;
-    collaborators?: string[] | null;
     description?: string | null;
+    payment_address?: string | null;
     profile_picture?: string | null;
   };
 } | {
@@ -111,6 +112,30 @@ export type ExecuteMsg = {
   manage_reserved_usernames: {
     add_usernames?: ReservedUsername[] | null;
     remove_usernames?: string[] | null;
+  };
+} | {
+  tip_creator: {
+    amount: Coin;
+    channel_id: string;
+  };
+} | {
+  channel_add_collaborator: {
+    channel_id: string;
+    collaborator_address: string;
+    collaborator_details: ChannelCollaborator;
+  };
+} | {
+  channel_remove_collaborator: {
+    channel_id: string;
+    collaborator_address: string;
+  };
+} | {
+  channel_follow: {
+    channel_id: string;
+  };
+} | {
+  channel_unfollow: {
+    channel_id: string;
   };
 };
 export type AssetType = {
@@ -126,6 +151,12 @@ export type AssetType = {
   };
 };
 export type Binary = string;
+export type Role = "admin" | "publisher" | "moderator";
+export type Decimal = string;
+export interface ChannelCollaborator {
+  role: Role;
+  share: Decimal;
+}
 export type QueryMsg = {
   is_paused: {};
 } | {
@@ -177,6 +208,27 @@ export type QueryMsg = {
     limit?: number | null;
     start_after?: string | null;
   };
+} | {
+  get_channel_collaborator: {
+    channel_id: string;
+    collaborator_address: Addr;
+  };
+} | {
+  get_channel_collaborators: {
+    channel_id: string;
+    limit?: number | null;
+    start_after?: string | null;
+  };
+} | {
+  followers_count: {
+    channel_id: string;
+  };
+} | {
+  followers: {
+    channel_id: string;
+    limit?: number | null;
+    start_after?: string | null;
+  };
 };
 export interface Asset {
   asset_type: AssetType;
@@ -187,8 +239,8 @@ export interface Asset {
 export type ArrayOfAsset = Asset[];
 export interface ChannelDetails {
   channel_id: string;
-  collaborators: Addr[];
   onft_id: string;
+  payment_address: Addr;
   user_name: string;
 }
 export type String = string;
@@ -200,6 +252,7 @@ export interface ChannelMetadata {
 }
 export type ArrayOfChannelDetails = ChannelDetails[];
 export interface ChannelConractConfig {
+  accepted_tip_denoms: string[];
   admin: Addr;
   channel_creation_fee: Coin[];
   channels_collection_id: string;
@@ -207,6 +260,9 @@ export interface ChannelConractConfig {
   channels_collection_symbol: string;
   fee_collector: Addr;
 }
+export type ArrayOfAddr = Addr[];
+export type Uint64 = number;
+export type ArrayOfTupleOfAddrAndChannelCollaborator = [Addr, ChannelCollaborator][];
 export type Boolean = boolean;
 export type ArrayOfString = string[];
 export interface Playlist {

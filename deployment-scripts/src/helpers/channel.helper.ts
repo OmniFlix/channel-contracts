@@ -17,7 +17,7 @@ export default class ChannelHelper {
         let instantiateOptions: InstantiateOptions = {
             funds: [
                 {
-                    amount: deploymentConfig.onft_collection_creator_fee,
+                    amount: deploymentConfig.onft_collection_creation_fee,
                     denom: chainConfig.denom,
                 },
             ],
@@ -45,6 +45,9 @@ export default class ChannelHelper {
                 {
                     username: "reserved",
                 },
+            ],
+            accepted_tip_denoms: [
+                chainConfig.denom,
             ],
         }
 
@@ -113,10 +116,10 @@ export default class ChannelHelper {
             userName: user_name,
             description: "OmniFlix Channel Testing",
             salt: context.generateRandomSalt(5),
-            collaborators: collaborators,
             channelName: user_name,
             bannerPicture: "link.com",
             profilePicture: "link.com",
+            paymentAddress: senderAddress,
         }, "auto", "", [
             {
                 amount: deploymentConfig.channel_creation_fee,
@@ -250,7 +253,6 @@ export default class ChannelHelper {
             channelName: channel_name,
             bannerPicture: banner_picture,
             profilePicture: profile_picture,
-            collaborators: collaborators,
         });
         logger.log(1, `Channel details updated with id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
@@ -351,6 +353,56 @@ export default class ChannelHelper {
         });
         logger.log(1, `Reserved usernames: ${JSON.stringify(res)}`)
         return res;
+    }
+
+    async FollowChannel(context: Context, follower: string, channelId: string) {
+        const client = await context.getTestUser(follower).client;
+        const channelContract = context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL);
+
+        const msg = {
+            channel_follow: {
+                channel_id: channelId
+            }
+        };
+
+        const result = await client.execute(
+            context.getTestUser(follower).address,
+            channelContract,
+            msg,
+            'auto'
+        );
+
+        return result;
+    }
+
+    async QueryFollowersCount(context: Context, channelId: string): Promise<number> {
+        const client = await context.getTestUser("admin").client;
+        const channelContract = context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL);
+
+        const msg = {
+            followers_count: {
+                channel_id: channelId
+            }
+        };
+
+        const result = await client.queryContractSmart(channelContract, msg);
+        return result;
+    }
+
+    async QueryFollowers(context: Context, channelId: string, startAfter?: string, limit?: number): Promise<string[]> {
+        const client = await context.getTestUser("admin").client;
+        const channelContract = context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL);
+
+        const msg = {
+            followers: {
+                channel_id: channelId,
+                start_after: startAfter,
+                limit: limit
+            }
+        };
+
+        const result = await client.queryContractSmart(channelContract, msg);
+        return result;
     }
 
 }

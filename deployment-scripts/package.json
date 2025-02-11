@@ -23,7 +23,8 @@
     "delete-channel": "ts-node src/scripts/delete-channel.ts",
     "authz-ops": "ts-node src/scripts/authz-operations.ts",
     "admin-create-channel": "ts-node src/scripts/admin-create-channel.ts",
-    "add-reserved-usernames": "ts-node src/scripts/add-reserved-usernames.ts"
+    "add-reserved-usernames": "ts-node src/scripts/add-reserved-usernames.ts",
+    "follow": "ts-node src/scripts/follow.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.32.3",

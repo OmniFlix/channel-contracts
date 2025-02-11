@@ -7,7 +7,7 @@ import _ from 'lodash'
 import path from 'path'
 import { logger } from '../utils/logger'
 import { Coin, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
-import { deploymentConfig } from '../../configs/deployment_config.example.ts'
+import { deploymentConfig } from '../../configs/deployment_config.ts'
 import { nanoToDate, nanoToReadableDate } from '../utils/datetime.ts'
 export const CONTRACT_MAP = {
     OMNIFLIX_CHANNEL: 'omniflix_channel',

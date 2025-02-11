@@ -34,6 +34,7 @@ echo "TS directory: $TS_DIR"
 # Navigate to the ts directory and generate TypeScript code
 if [ -d "$TS_DIR" ]; then
   cd "$TS_DIR" || exit
+  yarn install
   yarn generate-ts
   cd "$MAIN_DIR" || exit
 else
