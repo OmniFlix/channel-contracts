@@ -1,7 +1,7 @@
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{Asset, AssetType};
+use omniflix_channel_types::asset::{Asset, AssetSource};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
@@ -72,7 +72,7 @@ fn channel_not_owned() {
 
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -236,7 +236,7 @@ fn happy_path() {
 
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },

@@ -5,20 +5,20 @@ resolver = "2"
 
 
 [workspace.package]
-version = "0.0.1-beta"
+version = "0.0.1"
 edition = "2021"
 homepage = ""
 repository = ""
 license = "Apache-2.0"
 
 [workspace.dependencies]
-cosmwasm-schema = "2.0.0"
-cosmwasm-std = { version = "2.0.0", features = [
+cosmwasm-schema = "2.2.1"
+cosmwasm-std = { version = "2.2.1", features = [
     "iterator",
     "staking",
     "stargate",
 ] }
-omniflix-std = "1.0.2-beta"
+omniflix-std = "1.1.0-beta"
 cw-controllers = "2.0.0"
 cw2 = "2.0.0"
 cw4 = "2.0.0"

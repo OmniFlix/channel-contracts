@@ -6,6 +6,8 @@ use cw_utils::PaymentError;
 use pauser::PauseError;
 use thiserror::Error;
 
+use crate::string_validation::StringValidationError;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -25,6 +27,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Payment(#[from] PaymentError),
+
+    #[error(transparent)]
+    StringValidationError(#[from] StringValidationError),
 
     #[error("Unauthorized")]
     Unauthorized {},

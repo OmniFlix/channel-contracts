@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetType, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -343,13 +343,13 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     pausers: string[];
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   publish: ({
-    assetType,
+    assetSource,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetType: AssetType;
+    assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -554,13 +554,13 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     }, fee, memo, _funds);
   };
   publish = async ({
-    assetType,
+    assetSource,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetType: AssetType;
+    assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -568,7 +568,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       publish: {
-        asset_type: assetType,
+        asset_source: assetSource,
         channel_id: channelId,
         is_visible: isVisible,
         playlist_name: playlistName,

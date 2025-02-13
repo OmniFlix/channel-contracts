@@ -1,10 +1,11 @@
+use crate::access_control::validate_permissions;
+use crate::bank_helpers::{bank_msg_wrapper, check_payment, distribute_funds_with_shares};
 use crate::error::ContractError;
 use crate::helpers::{
-    access_control, bank_msg_wrapper, check_payment, distribute_funds_with_shares,
-    filter_assets_to_remove, generate_random_id_with_prefix, get_collection_creation_fee,
-    get_onft_with_owner, validate_channel_details, validate_channel_metadata,
-    validate_reserved_usernames,
+    filter_assets_to_remove, get_collection_creation_fee, validate_asset_source,
+    validate_channel_details, validate_channel_metadata, validate_reserved_usernames,
 };
+use crate::random::generate_random_id_with_prefix;
 use crate::state::CONFIG;
 use asset_manager::assets::Assets;
 use asset_manager::playlist::PlaylistsManager;
@@ -15,7 +16,7 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw_utils::must_pay;
-use omniflix_channel_types::asset::{Asset, AssetType, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetSource, Playlist};
 use omniflix_channel_types::channel::{
     ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
@@ -109,7 +110,7 @@ pub fn execute(
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
         ExecuteMsg::Publish {
-            asset_type,
+            asset_source,
             salt,
             channel_id,
             playlist_name,
@@ -118,7 +119,7 @@ pub fn execute(
             deps,
             env,
             info,
-            asset_type,
+            asset_source,
             salt,
             channel_id,
             playlist_name,
@@ -312,6 +313,7 @@ fn create_channel(
         sender: env.contract.address.clone().to_string(),
         recipient: info.sender.clone().to_string(),
         data: string_onft_data,
+        // TODO: Check if this is correct
         metadata: Some(Metadata {
             media_uri: "mediauri.com".to_string(),
             name: user_name.clone(),
@@ -380,15 +382,13 @@ fn delete_channel(
     let channels = ChannelsManager::new();
     let asset_manager = Assets::new();
     let playlist_manager = PlaylistsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
-    let channel_onft_id = channel_details.onft_id;
-    // Check if the sender is the owner
-    // Collaborators cannot delete channels
-    let _channel_onft = get_onft_with_owner(
+    // Check if the sender has admin permissions
+    validate_permissions(
         deps.as_ref(),
+        channel_id.clone(),
+        info.sender.clone(),
         config.channels_collection_id.clone(),
-        channel_onft_id,
-        info.sender.clone().to_string(),
+        Role::Admin,
     )?;
 
     channels.delete_channel(deps.storage, channel_id.clone())?;
@@ -406,7 +406,7 @@ fn publish(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    asset_type: AssetType,
+    asset_source: AssetSource,
     salt: Binary,
     channel_id: String,
     playlist_name: Option<String>,
@@ -417,7 +417,7 @@ fn publish(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -427,30 +427,13 @@ fn publish(
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
-    // Check if the asset is an NFT and the sender is the owner
-    match asset_type.clone() {
-        AssetType::Nft {
-            collection_id,
-            onft_id,
-        } => {
-            let _asset_onft = get_onft_with_owner(
-                deps.as_ref(),
-                collection_id.clone(),
-                onft_id.clone(),
-                info.sender.clone().to_string(),
-            )?;
-        }
-        _ => {
-            // TODO: Implement asset type validation
-            //asset_type.clone().validate()?;
-        }
-    }
+    validate_asset_source(deps.as_ref(), asset_source.clone(), info.sender.clone())?;
 
     // Define the asset to be published
     let asset = Asset {
         channel_id: channel_id.clone(),
         publish_id: publish_id.clone(),
-        asset_type: asset_type.clone(),
+        asset_source: asset_source.clone(),
         is_visible: is_visible,
     };
 
@@ -475,7 +458,7 @@ fn publish(
         .add_attribute("action", "publish")
         .add_attribute("publish_id", publish_id)
         .add_attribute("channel_id", channel_id)
-        .add_attribute("asset_type", asset_type.to_string());
+        .add_attribute("asset_source", asset_source.to_string());
 
     if let Some(playlist_name) = playlist_name {
         response = response.add_attribute("playlist_name", playlist_name);
@@ -494,7 +477,7 @@ fn unpublish(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -525,7 +508,7 @@ fn refresh_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -570,7 +553,7 @@ fn create_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -641,7 +624,7 @@ fn add_collaborator(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -678,7 +661,7 @@ fn remove_collaborator(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -722,7 +705,7 @@ fn update_channel_details(
 
     let channel_manager = ChannelsManager::new();
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -783,7 +766,7 @@ fn delete_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -814,7 +797,7 @@ fn add_asset_to_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -862,7 +845,7 @@ fn remove_asset_from_playlist(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),
@@ -901,7 +884,7 @@ fn update_asset_details(
 
     let config = CONFIG.load(deps.storage)?;
 
-    access_control(
+    validate_permissions(
         deps.as_ref(),
         channel_id.clone(),
         info.sender.clone(),

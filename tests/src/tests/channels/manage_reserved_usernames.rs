@@ -1,5 +1,6 @@
 use cosmwasm_std::{coin, Addr};
 use cw_multi_test::Executor;
+use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
 
@@ -81,7 +82,12 @@ fn add_reserved_usernames() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::InvalidUserName {});
+    assert_eq!(
+        typed_err,
+        &ContractError::StringValidationError(StringValidationError::UppercaseNotAllowed {
+            sent: "Admin".to_string()
+        })
+    );
     // Add valid reserved username with invalid address
     let msg = ExecuteMsg::ManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {

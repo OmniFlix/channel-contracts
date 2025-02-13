@@ -112,7 +112,7 @@ impl Assets {
 mod tests {
     use super::*;
     use cosmwasm_std::testing::MockStorage;
-    use omniflix_channel_types::asset::AssetType;
+    use omniflix_channel_types::asset::AssetSource;
 
     #[test]
     fn test_get_all_assets_with_limit() {
@@ -128,7 +128,7 @@ mod tests {
                 publish_id: publish_id.clone(),
                 channel_id: channel_id.clone(),
                 is_visible: true,
-                asset_type: AssetType::Nft {
+                asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
                 },
@@ -176,7 +176,7 @@ mod tests {
                 publish_id: publish_id.clone(),
                 channel_id: channel_id.clone(),
                 is_visible: true,
-                asset_type: AssetType::Nft {
+                asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
                 },
@@ -215,7 +215,7 @@ mod tests {
                 publish_id: publish_id.clone(),
                 channel_id: channel_id.clone(),
                 is_visible: true,
-                asset_type: AssetType::Nft {
+                asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
                 },
@@ -253,7 +253,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -284,7 +284,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -317,7 +317,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -353,7 +353,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -373,7 +373,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: false, // Changing visibility
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "new_collection".to_string(),
                 onft_id: "new_onft_id".to_string(),
             },
@@ -404,7 +404,7 @@ mod tests {
             publish_id: publish_id1.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -413,7 +413,7 @@ mod tests {
             publish_id: publish_id2.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
@@ -457,7 +457,7 @@ mod tests {
             publish_id: publish_id.clone(),
             channel_id: channel_id.clone(),
             is_visible: true,
-            asset_type: AssetType::Nft {
+            asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
             },
