@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetType, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;
@@ -19,13 +19,13 @@ export interface OmniFlixChannelMsg {
     pausers: string[];
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   publish: ({
-    assetType,
+    assetSource,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetType: AssetType;
+    assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -251,13 +251,13 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     };
   };
   publish = ({
-    assetType,
+    assetSource,
     channelId,
     isVisible,
     playlistName,
     salt
   }: {
-    assetType: AssetType;
+    assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     playlistName?: string;
@@ -270,7 +270,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           publish: {
-            asset_type: assetType,
+            asset_source: assetSource,
             channel_id: channelId,
             is_visible: isVisible,
             playlist_name: playlistName,

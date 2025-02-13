@@ -2,7 +2,7 @@ use asset_manager::error::PlaylistError;
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{Asset, AssetType, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetSource, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
@@ -51,7 +51,7 @@ fn asset_does_not_exist() {
 
     // Try publishing an asset without it existing
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: "id".to_string(),
             onft_id: "asset_id".to_string(),
         },
@@ -139,7 +139,7 @@ fn channel_not_owned() {
 
     // Publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -222,7 +222,7 @@ fn playlist_does_not_exist() {
 
     // Publish the asset with wrong playlist name
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -323,7 +323,7 @@ fn with_playlist() {
 
     // Publish the asset under the new playlist
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -419,7 +419,7 @@ fn asset_not_owned() {
     // Asset is owned by collector
     // Creator tries to publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -488,8 +488,8 @@ fn publish_off_chain_asset() {
 
     // Publish an asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::OffChain {
-            media_uri: "media_uri".to_string(),
+        asset_source: AssetSource::OffChain {
+            media_uri: "https://omniflix.network/".to_string(),
             name: "name".to_string(),
             description: "description".to_string(),
         },
@@ -523,9 +523,9 @@ fn publish_off_chain_asset() {
 
     assert_eq!(asset.publish_id, publish_id);
     assert_eq!(
-        asset.asset_type,
-        AssetType::OffChain {
-            media_uri: "media_uri".to_string(),
+        asset.asset_source,
+        AssetSource::OffChain {
+            media_uri: "https://omniflix.network/".to_string(),
             name: "name".to_string(),
             description: "description".to_string(),
         }
@@ -596,7 +596,7 @@ fn happy_path() {
 
     // Publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -630,8 +630,8 @@ fn happy_path() {
 
     assert_eq!(asset.publish_id, publish_id);
     assert_eq!(
-        asset.asset_type,
-        AssetType::Nft {
+        asset.asset_source,
+        AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         }

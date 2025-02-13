@@ -3,6 +3,7 @@ use crate::helpers::setup::setup;
 use crate::helpers::utils::get_event_attribute;
 use cosmwasm_std::coin;
 use cw_multi_test::Executor;
+use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::channel::ChannelDetails;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
@@ -147,7 +148,14 @@ fn failed_validations() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::InvalidUserName {});
+    assert_eq!(
+        typed_err,
+        &ContractError::StringValidationError(StringValidationError::InvalidLength {
+            sent: "creatorcreatorcreatorcreatorcreator".to_string(),
+            min_length: 3,
+            max_length: 32,
+        })
+    );
 
     let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone())
         .description("a".repeat(257))
@@ -164,7 +172,14 @@ fn failed_validations() {
         .unwrap_err();
 
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(typed_err, &ContractError::InvalidDescription {});
+    assert_eq!(
+        typed_err,
+        &ContractError::StringValidationError(StringValidationError::InvalidLength {
+            sent: "a".repeat(257),
+            min_length: 3,
+            max_length: 256,
+        })
+    );
 }
 
 #[test]

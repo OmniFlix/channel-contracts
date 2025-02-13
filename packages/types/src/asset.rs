@@ -13,7 +13,7 @@ pub struct Playlist {
 }
 
 #[cw_serde]
-pub enum AssetType {
+pub enum AssetSource {
     Nft {
         collection_id: String,
         onft_id: String,
@@ -25,15 +25,15 @@ pub enum AssetType {
     },
 }
 
-// Implement to string for AssetType
-impl std::fmt::Display for AssetType {
+// Implement to string for AssetSource
+impl std::fmt::Display for AssetSource {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            AssetType::Nft {
+            AssetSource::Nft {
                 collection_id,
                 onft_id,
             } => write!(f, "NFT: {} {}", collection_id, onft_id),
-            AssetType::OffChain {
+            AssetSource::OffChain {
                 media_uri,
                 name,
                 description,
@@ -46,6 +46,6 @@ impl std::fmt::Display for AssetType {
 pub struct Asset {
     pub channel_id: String,
     pub publish_id: String,
-    pub asset_type: AssetType,
+    pub asset_source: AssetSource,
     pub is_visible: bool,
 }

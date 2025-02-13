@@ -137,7 +137,7 @@ export default class ChannelHelper {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.publish({
-            assetType: {
+            assetSource: {
                 nft: {
                     collection_id: asset_onft_collection_id,
                     onft_id: asset_onft_id,
@@ -157,7 +157,7 @@ export default class ChannelHelper {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.publish({
-            assetType: {
+            assetSource: {
                 off_chain: {
                     media_uri: asset_url,
                     name: asset_name,

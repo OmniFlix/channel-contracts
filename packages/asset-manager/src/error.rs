@@ -16,6 +16,9 @@ pub enum PlaylistError {
 
     #[error("Error saving playlist")]
     SavePlaylistError {},
+
+    #[error("Playlist asset limit reached")]
+    PlaylistAssetLimitReached {},
 }
 
 #[derive(Error, Debug, PartialEq)]

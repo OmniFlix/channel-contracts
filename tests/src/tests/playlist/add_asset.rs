@@ -1,7 +1,7 @@
 use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{AssetType, Playlist};
+use omniflix_channel_types::asset::{AssetSource, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
@@ -67,7 +67,7 @@ fn asset_not_visible() {
 
     // Publish the asset
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },
@@ -208,7 +208,7 @@ fn asset_from_diffirent_channel() {
 
     // Publish the asset under creator 1's channel
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },

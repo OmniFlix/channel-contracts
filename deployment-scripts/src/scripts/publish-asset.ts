@@ -13,7 +13,7 @@ const publishNftAsset = async () => {
     await channelHelper.InstantiateChannelContract(context);
 
     // Create new channel
-    let channelId = await channelHelper.CreateChannel(context, "creator", "TestChannel");
+    let channelId = await channelHelper.CreateChannel(context, "creator", "channel");
 
     // Create an ONFT collection
     logger.log(1, `Creating ONFT collection with id: ${channelId}`);
@@ -48,7 +48,7 @@ const publishOffChainAsset = async () => {
     await channelHelper.InstantiateChannelContract(context);
 
     // Create new channel
-    let channelId = await channelHelper.CreateChannel(context, "creator", "TestChannel");
+    let channelId = await channelHelper.CreateChannel(context, "creator", "channel");
 
     // Publish the asset to the channel
     logger.log(1, `Publishing off-chain asset to channel with id: ${channelId}`);

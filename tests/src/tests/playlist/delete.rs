@@ -5,7 +5,7 @@ use asset_manager::error::PlaylistError;
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::Playlist;
+use omniflix_channel_types::asset::{AssetSource, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
 #[test]
@@ -203,7 +203,7 @@ fn happy_path() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     let publish_msg = ExecuteMsg::Publish {
-        asset_type: omniflix_channel_types::asset::AssetType::Nft {
+        asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         },

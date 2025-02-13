@@ -10,6 +10,7 @@ type ChannelId = String;
 type PlaylistName = String;
 
 const PLAYLISTS_STORAGE_KEY: &str = "playlists";
+const PLAYLISTS_ASSET_LIMIT: u32 = 100;
 
 pub struct PlaylistsManager {
     pub playlists: Map<(ChannelId, PlaylistName), Playlist>,
@@ -66,6 +67,10 @@ impl PlaylistsManager {
         }
 
         playlist.assets.push(asset_key);
+
+        if playlist.assets.len() > PLAYLISTS_ASSET_LIMIT as usize {
+            return Err(PlaylistError::PlaylistAssetLimitReached {});
+        }
 
         self.playlists
             .save(store, (channel_id, playlist_name), &playlist)

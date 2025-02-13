@@ -34,7 +34,7 @@ export type ExecuteMsg = {
   };
 } | {
   publish: {
-    asset_type: AssetType;
+    asset_source: AssetSource;
     channel_id: string;
     is_visible: boolean;
     playlist_name?: string | null;
@@ -138,7 +138,7 @@ export type ExecuteMsg = {
     channel_id: string;
   };
 };
-export type AssetType = {
+export type AssetSource = {
   nft: {
     collection_id: string;
     onft_id: string;
@@ -231,7 +231,7 @@ export type QueryMsg = {
   };
 };
 export interface Asset {
-  asset_type: AssetType;
+  asset_source: AssetSource;
   channel_id: string;
   is_visible: boolean;
   publish_id: string;
