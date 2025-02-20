@@ -1,6 +1,7 @@
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
+    utils::get_event_attribute,
 };
 use channel_manager::error::ChannelError;
 use cosmwasm_std::coin;
@@ -135,7 +136,7 @@ fn unauthorized() {
     let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
 
     // Create a channel
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -143,6 +144,7 @@ fn unauthorized() {
             &[coin(1000000, "uflix")],
         )
         .unwrap();
+    let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
     // Query Channel
     let channel: ChannelDetails = app
@@ -150,12 +152,11 @@ fn unauthorized() {
         .query_wasm_smart(
             channel_contract_addr.clone(),
             &QueryMsg::ChannelDetails {
-                channel_id: None,
-                user_name: Some("creator".to_string()),
+                channel_id: channel_id.clone(),
             },
         )
         .unwrap();
-    let channel_id = channel.channel_id.clone();
+    assert_eq!(channel.channel_id, channel_id);
 
     // Unauthorized
     let res = app
@@ -205,7 +206,7 @@ fn happy_path() {
 
     let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
     // Create a channel
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -213,6 +214,7 @@ fn happy_path() {
             &[coin(1000000, "uflix")],
         )
         .unwrap();
+    let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
     // Query Channel
     let channel: ChannelDetails = app
@@ -220,12 +222,11 @@ fn happy_path() {
         .query_wasm_smart(
             channel_contract_addr.clone(),
             &QueryMsg::ChannelDetails {
-                channel_id: None,
-                user_name: Some("creator".to_string()),
+                channel_id: channel_id.clone(),
             },
         )
         .unwrap();
-    let channel_id = channel.channel_id.clone();
+    assert_eq!(channel.channel_id, channel_id);
 
     // Happy path
     let _res = app
@@ -272,7 +273,7 @@ fn invalid() {
 
     // Create a channel
     let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -280,6 +281,7 @@ fn invalid() {
             &[coin(1000000, "uflix")],
         )
         .unwrap();
+    let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
     // Query Channel
     let channel: ChannelDetails = app
@@ -287,12 +289,11 @@ fn invalid() {
         .query_wasm_smart(
             channel_contract_addr.clone(),
             &QueryMsg::ChannelDetails {
-                channel_id: None,
-                user_name: Some("creator".to_string()),
+                channel_id: channel_id.clone(),
             },
         )
         .unwrap();
-    let channel_id = channel.channel_id.clone();
+    assert_eq!(channel.channel_id, channel_id);
 
     // Invalid banner link
     let _res = app

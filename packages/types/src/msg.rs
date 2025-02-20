@@ -2,7 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
 use crate::{
-    asset::{Asset, AssetKey, AssetSource, Playlist},
+    asset::{Asset, AssetKey, AssetSource, Flag, Playlist},
     channel::{ChannelCollaborator, ChannelDetails, ChannelMetadata},
     config::ChannelConractConfig,
 };
@@ -42,6 +42,10 @@ pub enum ExecuteMsg {
     AdminRemoveAssets {
         /// The keys of the assets to be removed.
         asset_keys: Vec<AssetKey>,
+        /// The flags and the count of flag limits to be removed.
+        flags: Option<Vec<(Flag, u64)>>,
+        /// Removes all flags from the assets if set to true.
+        refresh_flags: Option<bool>,
     },
     /// Manages reserved usernames.
     /// Only callable by the protocol admin.
@@ -99,7 +103,14 @@ pub enum ExecuteMsg {
         /// The new visibility status of the asset.
         is_visible: bool,
     },
-
+    AssetFlag {
+        /// The ID of the channel where the asset is published.
+        channel_id: String,
+        /// The ID of the publish to be flagged.
+        publish_id: String,
+        /// The flag value.
+        flag: Flag,
+    },
     /// Creates a new playlist in the specified channel. The playlist name must be unique
     /// within the channel. Only callable by the channel owner or a collaborator.
     PlaylistCreate {
@@ -235,70 +246,174 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(bool)]
+    #[returns(IsPausedResponse)]
     IsPaused {},
-    #[returns(Vec<String>)]
+    #[returns(PausersResponse)]
     Pausers {},
-    #[returns(ChannelDetails)]
-    ChannelDetails {
-        channel_id: Option<String>,
-        user_name: Option<String>,
-    },
-    #[returns(ChannelMetadata)]
+    #[returns(ChannelDetailsResponse)]
+    ChannelDetails { channel_id: String },
+    #[returns(ChannelMetadataResponse)]
     ChannelMetadata { channel_id: String },
-    #[returns(Vec<ChannelDetails>)]
+    #[returns(ChannelResponse)]
+    Channel { channel_id: String },
+    #[returns(ChannelsResponse)]
     Channels {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(String)]
+    #[returns(ChannelIdResponse)]
     ChannelId { user_name: String },
-    #[returns(Playlist)]
+    #[returns(PlaylistResponse)]
     Playlist {
         channel_id: String,
         playlist_name: String,
     },
-    #[returns(Vec<Playlist>)]
+    #[returns(PlaylistsResponse)]
     Playlists {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(ChannelConractConfig)]
+    #[returns(ConfigResponse)]
     Config {},
-    #[returns(Vec<Asset>)]
+    #[returns(AssetsResponse)]
     Assets {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(Asset)]
+    #[returns(AssetResponse)]
     Asset {
         channel_id: String,
         publish_id: String,
     },
-    #[returns(Vec<ReservedUsername>)]
+    #[returns(ReservedUsernamesResponse)]
     ReservedUsernames {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(ChannelCollaborator)]
+    #[returns(GetChannelCollaboratorResponse)]
     GetChannelCollaborator {
         channel_id: String,
         collaborator_address: Addr,
     },
-    #[returns(Vec<(Addr, ChannelCollaborator)>)]
+    #[returns(GetChannelCollaboratorsResponse)]
     GetChannelCollaborators {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(u64)]
+    #[returns(FollowersCountResponse)]
     FollowersCount { channel_id: String },
-    #[returns(Vec<Addr>)]
+    #[returns(FollowersResponse)]
     Followers {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+}
+
+// Response for IsPaused query
+#[cw_serde]
+pub struct IsPausedResponse {
+    pub is_paused: bool,
+}
+
+// Response for Pausers query
+#[cw_serde]
+pub struct PausersResponse {
+    pub pausers: Vec<String>,
+}
+
+// Response for ChannelDetails query
+#[cw_serde]
+pub struct ChannelDetailsResponse {
+    pub details: ChannelDetails,
+}
+
+// Response for ChannelMetadata query
+#[cw_serde]
+pub struct ChannelMetadataResponse {
+    pub metadata: ChannelMetadata,
+}
+
+// Response for Channels query
+#[cw_serde]
+pub struct ChannelsResponse {
+    pub channels: Vec<ChannelResponse>,
+}
+
+// Response for ChannelId query
+#[cw_serde]
+pub struct ChannelIdResponse {
+    pub channel_id: String,
+}
+
+// Response for Playlist query
+#[cw_serde]
+pub struct PlaylistResponse {
+    pub playlist: Playlist,
+}
+
+// Response for Playlists query
+#[cw_serde]
+pub struct PlaylistsResponse {
+    pub playlists: Vec<Playlist>,
+}
+
+// Response for Config query
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: ChannelConractConfig,
+}
+
+// Response for Assets query
+#[cw_serde]
+pub struct AssetsResponse {
+    pub assets: Vec<AssetResponse>,
+}
+
+// Response for Asset query
+#[cw_serde]
+pub struct AssetResponse {
+    pub asset: Asset,
+    pub flags: Vec<(Flag, u64)>,
+}
+
+// Response for ReservedUsernames query
+#[cw_serde]
+pub struct ReservedUsernamesResponse {
+    pub reserved_usernames: Vec<ReservedUsername>,
+}
+
+// Response for GetChannelCollaborator query
+#[cw_serde]
+pub struct GetChannelCollaboratorResponse {
+    pub collaborator: ChannelCollaborator,
+}
+
+// Response for GetChannelCollaborators query
+#[cw_serde]
+pub struct GetChannelCollaboratorsResponse {
+    pub collaborators: Vec<(Addr, ChannelCollaborator)>,
+}
+
+// Response for FollowersCount query
+#[cw_serde]
+pub struct FollowersCountResponse {
+    pub count: u64,
+}
+
+// Response for Followers query
+#[cw_serde]
+pub struct FollowersResponse {
+    pub followers: Vec<Addr>,
+}
+
+// Response for Channel query
+#[cw_serde]
+pub struct ChannelResponse {
+    pub channel_details: ChannelDetails,
+    pub channel_metadata: ChannelMetadata,
+    pub channel_collaborators: Vec<(String, ChannelCollaborator)>,
 }

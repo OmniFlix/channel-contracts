@@ -16,12 +16,14 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw_utils::must_pay;
-use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Flag, Playlist};
 use omniflix_channel_types::channel::{
     ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
 use omniflix_channel_types::config::{AuthDetails, ChannelConractConfig};
-use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
+use omniflix_channel_types::msg::{
+    ChannelResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername,
+};
 use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
 
@@ -114,7 +116,16 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AdminRemoveAssets { asset_keys } => remove_assets(deps, info, asset_keys),
+        ExecuteMsg::AdminRemoveAssets {
+            asset_keys,
+            flags,
+            refresh_flags,
+        } => remove_assets(deps, info, asset_keys, flags, refresh_flags),
+        ExecuteMsg::AssetFlag {
+            channel_id,
+            publish_id,
+            flag,
+        } => add_flag(deps, info, channel_id, publish_id, flag),
         ExecuteMsg::Pause {} => pause(deps, info),
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
@@ -1057,28 +1068,68 @@ fn remove_assets(
     deps: DepsMut,
     info: MessageInfo,
     asset_keys: Vec<AssetKey>,
+    flags: Option<Vec<(Flag, u64)>>,
+    refresh_flags: Option<bool>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.auth_details.protocol_admin {
         return Err(ContractError::Unauthorized {});
     }
 
+    // First remove the dirrect assets to be removed
     let assets_manager = AssetsManager::new();
     assets_manager.delete_assets(deps.storage, asset_keys)?;
+
+    // Apply the flag limited deletion if set
+    if let Some(flags) = flags {
+        assets_manager.remove_assets_by_flag_count(deps.storage, flags)?;
+    }
+
+    // Refresh the flags if set
+    if let Some(refresh_flags) = refresh_flags {
+        if refresh_flags {
+            assets_manager.remove_all_flags(deps.storage)?;
+        }
+    }
 
     Ok(Response::new()
         .add_attribute("action", "remove_assets")
         .add_attribute("admin", config.auth_details.protocol_admin.to_string()))
 }
+
+fn add_flag(
+    deps: DepsMut,
+    _info: MessageInfo,
+    channel_id: String,
+    publish_id: String,
+    flag: Flag,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let assets_manager = AssetsManager::new();
+    assets_manager.add_flag(
+        deps.storage,
+        channel_id.clone(),
+        publish_id.clone(),
+        flag.clone(),
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("action", "add_flag")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("publish_id", publish_id)
+        .add_attribute("flag", flag.to_string()))
+}
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Channel { channel_id } => to_json_binary(&query_channel(deps, channel_id)?),
         QueryMsg::IsPaused {} => to_json_binary(&query_is_paused(deps)?),
         QueryMsg::Pausers {} => to_json_binary(&query_pausers(deps)?),
-        QueryMsg::ChannelDetails {
-            channel_id,
-            user_name,
-        } => to_json_binary(&query_channel_details(deps, channel_id, user_name)?),
+        QueryMsg::ChannelDetails { channel_id } => {
+            to_json_binary(&query_channel_details(deps, channel_id)?)
+        }
         QueryMsg::Playlist {
             channel_id,
             playlist_name,
@@ -1138,23 +1189,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_channel_details(
-    deps: Deps,
-    channel_id: Option<String>,
-    user_name: Option<String>,
-) -> Result<ChannelDetails, ContractError> {
+fn query_channel_details(deps: Deps, channel_id: String) -> Result<ChannelDetails, ContractError> {
     let channels_manager = ChannelsManager::new();
-    // Match channels Id and user name
-    let channel_details = match (channel_id, user_name) {
-        (Some(channel_id), None) => {
-            channels_manager.get_channel_details(deps.storage, channel_id)?
-        }
-        (None, Some(user_name)) => {
-            let channel_id = channels_manager.get_channel_id(deps.storage, user_name)?;
-            channels_manager.get_channel_details(deps.storage, channel_id)?
-        }
-        _ => return Err(ContractError::InvalidChannelQuery {}),
-    };
+    let channel_details = channels_manager.get_channel_details(deps.storage, channel_id)?;
     Ok(channel_details)
 }
 
@@ -1295,6 +1332,24 @@ fn query_followers(
     let channels = ChannelsManager::new();
     let followers = channels.get_followers(deps.storage, channel_id, start_after, limit)?;
     Ok(followers)
+}
+
+fn query_channel(deps: Deps, channel_id: String) -> Result<ChannelResponse, ContractError> {
+    let channels_manager = ChannelsManager::new();
+    let channel_details = channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_metadata =
+        channels_manager.get_channel_metadata(deps.storage, channel_id.clone())?;
+    let channel_collaborators =
+        channels_manager.get_channel_collaborators(deps.storage, channel_id.clone(), None, None)?;
+    let channel_response = ChannelResponse {
+        channel_details,
+        channel_metadata,
+        channel_collaborators: channel_collaborators
+            .iter()
+            .map(|(addr, collaborator)| (addr.to_string(), collaborator.clone()))
+            .collect(),
+    };
+    Ok(channel_response)
 }
 
 #[cfg(test)]

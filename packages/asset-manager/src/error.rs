@@ -55,4 +55,10 @@ pub enum AssetError {
 
     #[error("Onft ID cannot be empty")]
     OnftIdCannotBeEmpty {},
+
+    #[error("Error saving flag")]
+    SaveFlagError {},
+
+    #[error("Error removing flags with limit")]
+    RemoveFlagsWithLimitError {},
 }

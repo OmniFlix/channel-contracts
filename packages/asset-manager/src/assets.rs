@@ -3,12 +3,13 @@ use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use omniflix_channel_types::{
-    asset::{Asset, AssetKey, PublishId},
+    asset::{Asset, AssetKey, Flag, FlagKey, PublishId},
     channel::ChannelId,
 };
 
 pub struct AssetsManager {
     pub assets: Map<AssetKey, Asset>,
+    pub flags: Map<FlagKey, u64>,
 }
 
 const PAGINATION_LIMIT: u32 = 50;
@@ -18,6 +19,7 @@ impl AssetsManager {
     pub const fn new() -> Self {
         AssetsManager {
             assets: Map::new("assets"),
+            flags: Map::new("flags"),
         }
     }
 
@@ -110,6 +112,96 @@ impl AssetsManager {
     ) -> Result<(), AssetError> {
         self.assets.prefix(channel_id).clear(store, None);
         Ok(())
+    }
+
+    pub fn add_flag(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+        flag: Flag,
+    ) -> Result<(), AssetError> {
+        let key = (flag.to_key(), (channel_id, publish_id));
+        let flagged_count = self.flags.load(store, key.clone()).unwrap_or(0);
+        // save the new count
+        self.flags
+            .save(store, key, &(flagged_count + 1))
+            .map_err(|_| AssetError::SaveFlagError {})?;
+        Ok(())
+    }
+
+    pub fn get_flag_count(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+        flag: Flag,
+    ) -> Result<u64, AssetError> {
+        // Check if the asset exists
+        if !self
+            .assets
+            .has(store, (channel_id.clone(), publish_id.clone()))
+        {
+            return Err(AssetError::AssetNotFound {});
+        }
+        let key = (flag.to_key(), (channel_id.clone(), publish_id.clone()));
+        let flag_count = self.flags.load(store, key).unwrap_or(0);
+        Ok(flag_count)
+    }
+
+    pub fn get_all_flags_for_asset(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+    ) -> Result<Vec<(Flag, u64)>, AssetError> {
+        let mut flags = Vec::new();
+        for flag in Flag::values() {
+            let flag_count =
+                self.get_flag_count(store, channel_id.clone(), publish_id.clone(), flag.clone())?;
+            flags.push((flag, flag_count));
+        }
+        Ok(flags)
+    }
+    pub fn remove_all_flags(&self, store: &mut dyn Storage) -> Result<(), AssetError> {
+        self.flags.clear(store);
+        Ok(())
+    }
+
+    pub fn remove_assets_by_flag_count(
+        &self,
+        store: &mut dyn Storage,
+        flags: Vec<(Flag, u64)>,
+    ) -> Result<(), AssetError> {
+        let mut asset_keys_to_remove: Vec<AssetKey> = Vec::new();
+        for (flag, limit) in flags {
+            asset_keys_to_remove.extend(
+                self.get_asset_keys_by_flag_count(store, limit, flag)
+                    .map_err(|_| AssetError::RemoveFlagsWithLimitError {})?,
+            );
+        }
+        self.delete_assets(store, asset_keys_to_remove)?;
+        Ok(())
+    }
+
+    /// Retrieve AssetKeys of assets with a flag count greater than the limit.
+    pub fn get_asset_keys_by_flag_count(
+        &self,
+        store: &dyn Storage,
+        limit: u64,
+        flag: Flag,
+    ) -> StdResult<Vec<AssetKey>> {
+        let asset_keys: Vec<AssetKey> = self
+            .flags
+            .prefix(flag.to_key())
+            .range(store, None, None, Order::Ascending)
+            .filter_map(|result| {
+                result
+                    .ok()
+                    .and_then(|(key, count)| if count > limit { Some(key) } else { None })
+            })
+            .collect();
+        Ok(asset_keys)
     }
 }
 
