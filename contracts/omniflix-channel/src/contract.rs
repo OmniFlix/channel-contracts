@@ -7,8 +7,8 @@ use crate::helpers::{
 };
 use crate::random::generate_random_id_with_prefix;
 use crate::state::CONFIG;
-use asset_manager::assets::Assets;
-use asset_manager::playlist::PlaylistsManager;
+use asset_manager::assets::AssetsManager;
+use asset_manager::playlists::PlaylistsManager;
 use channel_manager::channel::ChannelsManager;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -16,11 +16,11 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw_utils::must_pay;
-use omniflix_channel_types::asset::{Asset, AssetSource, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Playlist};
 use omniflix_channel_types::channel::{
     ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
-use omniflix_channel_types::config::ChannelConractConfig;
+use omniflix_channel_types::config::{AuthDetails, ChannelConractConfig};
 use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
 use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
@@ -33,10 +33,16 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     // Validate the admin address provided in the instantiation message
-    let admin = deps.api.addr_validate(&msg.clone().admin.into_string())?;
+    let protocol_admin = deps
+        .api
+        .addr_validate(&msg.clone().protocol_admin.into_string())?;
     //Initialize the pause state and set the initial pausers
     let pause_state = PauseState::new()?;
-    pause_state.set_pausers(deps.storage, info.sender.clone(), vec![admin.clone()])?;
+    pause_state.set_pausers(
+        deps.storage,
+        info.sender.clone(),
+        vec![protocol_admin.clone()],
+    )?;
 
     // Validate the fee collector address, or default to the admin address if validation fails
     let fee_collector = deps
@@ -45,8 +51,10 @@ pub fn instantiate(
 
     // Save channel CONFIG
     let channel_contract_config = ChannelConractConfig {
-        admin: admin.clone(),
-        fee_collector: fee_collector.clone(),
+        auth_details: AuthDetails {
+            protocol_admin: protocol_admin.clone(),
+            fee_collector: fee_collector.clone(),
+        },
         accepted_tip_denoms: msg.accepted_tip_denoms.clone(),
         channels_collection_id: msg.channels_collection_id.clone(),
         channels_collection_name: msg.channels_collection_name.clone(),
@@ -65,10 +73,10 @@ pub fn instantiate(
         info.funds.clone(),
     )?;
 
-    let channel_manager = ChannelsManager::new();
+    let channels_manager = ChannelsManager::new();
     let validated_reserved_usernames =
         validate_reserved_usernames(msg.reserved_usernames.clone(), deps.api)?;
-    channel_manager.add_reserved_usernames(deps.storage, validated_reserved_usernames)?;
+    channels_manager.add_reserved_usernames(deps.storage, validated_reserved_usernames)?;
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =
@@ -106,10 +114,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::AdminRemoveAssets { asset_keys } => remove_assets(deps, info, asset_keys),
         ExecuteMsg::Pause {} => pause(deps, info),
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
-        ExecuteMsg::Publish {
+        ExecuteMsg::AssetPublish {
             asset_source,
             salt,
             channel_id,
@@ -125,7 +134,7 @@ pub fn execute(
             playlist_name,
             is_visible,
         ),
-        ExecuteMsg::Unpublish {
+        ExecuteMsg::AssetUnpublish {
             publish_id,
             channel_id,
         } => unpublish(deps, info, publish_id, channel_id),
@@ -184,11 +193,17 @@ pub fn execute(
             channel_id,
             playlist_name,
         } => remove_asset_from_playlist(deps, info, publish_id, channel_id, playlist_name),
-        ExecuteMsg::SetConfig {
+        ExecuteMsg::AdminSetConfig {
             channel_creation_fee,
-            admin,
+            protocol_admin,
             fee_collector,
-        } => set_config(deps, info, channel_creation_fee, admin, fee_collector),
+        } => set_config(
+            deps,
+            info,
+            channel_creation_fee,
+            protocol_admin,
+            fee_collector,
+        ),
         ExecuteMsg::PlaylistAddAsset {
             publish_id,
             asset_channel_id,
@@ -208,12 +223,12 @@ pub fn execute(
             is_visible,
         } => update_asset_details(deps, info, publish_id, channel_id, is_visible),
         ExecuteMsg::ChannelDelete { channel_id } => delete_channel(deps, info, channel_id),
-        ExecuteMsg::ManageReservedUsernames {
+        ExecuteMsg::AdminManageReservedUsernames {
             add_usernames,
             remove_usernames,
         } => manage_reserved_usernames(deps, info, add_usernames, remove_usernames),
-        ExecuteMsg::TipCreator { channel_id, amount } => {
-            tip_creator(deps, info, channel_id, amount)
+        ExecuteMsg::ChannelTip { channel_id, amount } => {
+            tip_channel(deps, info, channel_id, amount)
         }
         ExecuteMsg::ChannelAddCollaborator {
             channel_id,
@@ -329,7 +344,10 @@ fn create_channel(
     .into();
 
     // Pay the channel creation fee to the fee collector
-    let bank_channel_fee_msg = bank_msg_wrapper(config.fee_collector, config.channel_creation_fee);
+    let bank_channel_fee_msg = bank_msg_wrapper(
+        config.auth_details.fee_collector,
+        config.channel_creation_fee,
+    );
 
     let response = Response::new()
         .add_message(mint_onft_msg)
@@ -379,8 +397,8 @@ fn delete_channel(
 
     let config = CONFIG.load(deps.storage)?;
 
-    let channels = ChannelsManager::new();
-    let asset_manager = Assets::new();
+    let channels_manager = ChannelsManager::new();
+    let assets_manager = AssetsManager::new();
     let playlist_manager = PlaylistsManager::new();
     // Check if the sender has admin permissions
     validate_permissions(
@@ -391,8 +409,8 @@ fn delete_channel(
         Role::Admin,
     )?;
 
-    channels.delete_channel(deps.storage, channel_id.clone())?;
-    asset_manager.delete_assets_by_channel_id(deps.storage, channel_id.clone())?;
+    channels_manager.delete_channel(deps.storage, channel_id.clone())?;
+    assets_manager.delete_assets_by_channel_id(deps.storage, channel_id.clone())?;
     playlist_manager.delete_playlists_by_channel_id(deps.storage, channel_id.clone());
 
     let response = Response::new()
@@ -438,14 +456,14 @@ fn publish(
     };
 
     // Add asset to the channel's asset list
-    let assets = Assets::new();
+    let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    assets.add_asset(deps.storage, asset_key.clone(), asset.clone())?;
+    assets_manager.add_asset(deps.storage, asset_key.clone(), asset.clone())?;
 
     if let Some(playlist_name) = playlist_name.clone() {
         if is_visible {
-            let playlist_manager = PlaylistsManager::new();
-            playlist_manager.add_asset_to_playlist(
+            let playlists_manager = PlaylistsManager::new();
+            playlists_manager.add_asset_to_playlist(
                 deps.storage,
                 channel_id.clone(),
                 playlist_name.clone(),
@@ -485,9 +503,9 @@ fn unpublish(
         Role::Publisher,
     )?;
 
-    let assets = Assets::new();
+    let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    assets.delete_asset(deps.storage, asset_key.clone())?;
+    assets_manager.delete_assets(deps.storage, vec![asset_key.clone()])?;
 
     let response = Response::new()
         .add_attribute("action", "unpublish")
@@ -516,13 +534,13 @@ fn refresh_playlist(
         Role::Publisher,
     )?;
 
-    let playlist_manager = PlaylistsManager::new();
-    let playlist_asset_keys = playlist_manager
+    let playlists_manager = PlaylistsManager::new();
+    let playlist_asset_keys = playlists_manager
         .get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?
         .assets;
     let asset_keys_to_remove = filter_assets_to_remove(deps.storage, playlist_asset_keys.clone());
 
-    playlist_manager.remove_assets_from_playlist(
+    playlists_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
         playlist_name.clone(),
@@ -561,8 +579,8 @@ fn create_playlist(
         Role::Publisher,
     )?;
 
-    let playlist_manager = PlaylistsManager::new();
-    playlist_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+    let playlists_manager = PlaylistsManager::new();
+    playlists_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "create_playlist")
@@ -634,10 +652,10 @@ fn add_collaborator(
 
     // Validate the collaborator address
     let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
-    let channel_manager = ChannelsManager::new();
+    let channels_manager = ChannelsManager::new();
 
     // Add the collaborator to the channel
-    channel_manager.add_collaborator(
+    channels_manager.add_collaborator(
         deps.storage,
         channel_id.clone(),
         collaborator_address.clone(),
@@ -673,8 +691,8 @@ fn remove_collaborator(
     let collaborator_address = deps.api.addr_validate(&collaborator_address)?;
 
     // Remove the collaborator from the channel
-    let channel_manager = ChannelsManager::new();
-    channel_manager.remove_collaborator(
+    let channels_manager = ChannelsManager::new();
+    channels_manager.remove_collaborator(
         deps.storage,
         channel_id.clone(),
         collaborator_address.clone(),
@@ -808,9 +826,9 @@ fn add_asset_to_playlist(
     let playlist_manager = PlaylistsManager::new();
 
     // Load the asset
-    let assets = Assets::new();
+    let assets_manager = AssetsManager::new();
     let asset_key = (asset_channel_id.clone(), publish_id.clone());
-    let asset = assets.get_asset(deps.storage, asset_key.clone())?;
+    let asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
 
     // Verify that the asset is visible
     if asset.is_visible == false {
@@ -853,10 +871,10 @@ fn remove_asset_from_playlist(
         Role::Publisher,
     )?;
 
-    let playlist_manager = PlaylistsManager::new();
+    let playlists_manager = PlaylistsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
     // Remove the asset from the playlist
-    playlist_manager.remove_assets_from_playlist(
+    playlists_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
         playlist_name.clone(),
@@ -892,12 +910,12 @@ fn update_asset_details(
         Role::Publisher,
     )?;
 
-    let assets = Assets::new();
+    let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    let mut asset = assets.get_asset(deps.storage, asset_key.clone())?;
+    let mut asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
     asset.is_visible = is_visible;
 
-    assets.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
+    assets_manager.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "update_asset_details")
@@ -912,23 +930,23 @@ fn set_config(
     deps: DepsMut,
     info: MessageInfo,
     channel_creation_fee: Option<Vec<Coin>>,
-    admin: Option<String>,
+    protocol_admin: Option<String>,
     fee_collector: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.admin {
+    if info.sender != config.auth_details.protocol_admin {
         return Err(ContractError::Unauthorized {});
     }
 
-    if let Some(admin) = admin {
-        let admin = deps.api.addr_validate(&admin)?;
-        config.admin = admin;
+    if let Some(protocol_admin) = protocol_admin {
+        let protocol_admin = deps.api.addr_validate(&protocol_admin)?;
+        config.auth_details.protocol_admin = protocol_admin;
     }
 
     if let Some(fee_collector) = fee_collector {
         let fee_collector = deps.api.addr_validate(&fee_collector)?;
-        config.fee_collector = fee_collector;
+        config.auth_details.fee_collector = fee_collector;
     }
 
     if let Some(channel_creation_fee) = channel_creation_fee {
@@ -939,8 +957,14 @@ fn set_config(
 
     let response = Response::new()
         .add_attribute("action", "set_config")
-        .add_attribute("admin", config.admin.to_string())
-        .add_attribute("fee_collector", config.fee_collector.to_string());
+        .add_attribute(
+            "protocol_admin",
+            config.auth_details.protocol_admin.to_string(),
+        )
+        .add_attribute(
+            "fee_collector",
+            config.auth_details.fee_collector.to_string(),
+        );
 
     Ok(response)
 }
@@ -956,11 +980,11 @@ fn manage_reserved_usernames(
 
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.admin {
+    if info.sender != config.auth_details.protocol_admin {
         return Err(ContractError::Unauthorized {});
     }
 
-    let channels = ChannelsManager::new();
+    let channels_manager = ChannelsManager::new();
 
     let mut attrs = vec![(
         "action".to_string(),
@@ -968,26 +992,28 @@ fn manage_reserved_usernames(
     )];
     if let Some(add_usernames) = add_usernames {
         let validated_reserved_usernames = validate_reserved_usernames(add_usernames, deps.api)?;
-        channels.add_reserved_usernames(deps.storage, validated_reserved_usernames.clone())?;
+        channels_manager
+            .add_reserved_usernames(deps.storage, validated_reserved_usernames.clone())?;
         for username in validated_reserved_usernames {
             attrs.push(("add_username".to_string(), username.0)); // Directly push owned username
         }
     }
     if let Some(remove_usernames) = remove_usernames {
         for username in remove_usernames {
-            channels.remove_reserved_usernames(deps.storage, vec![username.clone()])?;
+            channels_manager.remove_reserved_usernames(deps.storage, vec![username.clone()])?;
             attrs.push(("remove_username".to_string(), username)); // Directly push owned username
         }
     }
 
-    let response = Response::new()
-        .add_attributes(attrs)
-        .add_attribute("admin", config.admin.to_string());
+    let response = Response::new().add_attributes(attrs).add_attribute(
+        "protocol_admin",
+        config.auth_details.protocol_admin.to_string(),
+    );
 
     Ok(response)
 }
 
-fn tip_creator(
+fn tip_channel(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
@@ -1007,11 +1033,12 @@ fn tip_creator(
         return Err(ContractError::InvalidTipAmount {});
     }
 
-    let channels = ChannelsManager::new();
-    let channel_details = channels.get_channel_details(deps.storage, channel_id.clone())?;
+    let channels_manager = ChannelsManager::new();
+    let channel_details = channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
     let channel_payment_address = channel_details.payment_address.clone();
     // Calculates the shares of the collaborators
-    let collaborator_shares = channels.get_collaborator_shares(deps.storage, channel_id.clone())?;
+    let collaborator_shares =
+        channels_manager.get_collaborator_shares(deps.storage, channel_id.clone())?;
     // Distributes the funds to the collaborators and remaining to the channel payment address
     let (bank_msgs, attributes) =
         distribute_funds_with_shares(collaborator_shares, amount.clone(), channel_payment_address)?;
@@ -1026,6 +1053,23 @@ fn tip_creator(
     Ok(response)
 }
 
+fn remove_assets(
+    deps: DepsMut,
+    info: MessageInfo,
+    asset_keys: Vec<AssetKey>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.auth_details.protocol_admin {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let assets_manager = AssetsManager::new();
+    assets_manager.delete_assets(deps.storage, asset_keys)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "remove_assets")
+        .add_attribute("admin", config.auth_details.protocol_admin.to_string()))
+}
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
@@ -1099,13 +1143,15 @@ fn query_channel_details(
     channel_id: Option<String>,
     user_name: Option<String>,
 ) -> Result<ChannelDetails, ContractError> {
-    let channels = ChannelsManager::new();
+    let channels_manager = ChannelsManager::new();
     // Match channels Id and user name
     let channel_details = match (channel_id, user_name) {
-        (Some(channel_id), None) => channels.get_channel_details(deps.storage, channel_id)?,
+        (Some(channel_id), None) => {
+            channels_manager.get_channel_details(deps.storage, channel_id)?
+        }
         (None, Some(user_name)) => {
-            let channel_id = channels.get_channel_id(deps.storage, user_name)?;
-            channels.get_channel_details(deps.storage, channel_id)?
+            let channel_id = channels_manager.get_channel_id(deps.storage, user_name)?;
+            channels_manager.get_channel_details(deps.storage, channel_id)?
         }
         _ => return Err(ContractError::InvalidChannelQuery {}),
     };
@@ -1117,8 +1163,8 @@ fn query_channels(
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<ChannelDetails>, ContractError> {
-    let channels = ChannelsManager::new();
-    let channels_list = channels.get_channels_list(deps.storage, start_after, limit)?;
+    let channels_manager = ChannelsManager::new();
+    let channels_list = channels_manager.get_channels_list(deps.storage, start_after, limit)?;
     Ok(channels_list)
 }
 
@@ -1127,9 +1173,9 @@ fn query_playlist(
     channel_id: String,
     playlist_name: String,
 ) -> Result<Playlist, ContractError> {
-    let playlists = PlaylistsManager::new();
+    let playlists_manager = PlaylistsManager::new();
     let playlist =
-        playlists.get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+        playlists_manager.get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
     Ok(playlist)
 }
 
@@ -1139,9 +1185,13 @@ fn query_playlists(
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<Playlist>, ContractError> {
-    let playlists = PlaylistsManager::new();
-    let playlists_list =
-        playlists.get_all_playlists(deps.storage, channel_id.clone(), start_after, limit)?;
+    let playlists_manager = PlaylistsManager::new();
+    let playlists_list = playlists_manager.get_all_playlists(
+        deps.storage,
+        channel_id.clone(),
+        start_after,
+        limit,
+    )?;
     Ok(playlists_list)
 }
 
@@ -1169,15 +1219,16 @@ fn query_assets(
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<Asset>, ContractError> {
-    let assets = Assets::new();
-    let assets_list = assets.get_all_assets(deps.storage, channel_id, start_after, limit)?;
+    let assets_manager = AssetsManager::new();
+    let assets_list =
+        assets_manager.get_all_assets(deps.storage, channel_id, start_after, limit)?;
     Ok(assets_list)
 }
 
 fn query_asset(deps: Deps, channel_id: String, publish_id: String) -> Result<Asset, ContractError> {
-    let assets = Assets::new();
+    let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    let asset = assets.get_asset(deps.storage, asset_key)?;
+    let asset = assets_manager.get_asset(deps.storage, asset_key)?;
     Ok(asset)
 }
 fn query_reserved_usernames(

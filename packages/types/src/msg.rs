@@ -2,14 +2,14 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin};
 
 use crate::{
-    asset::{Asset, AssetSource, Playlist},
+    asset::{Asset, AssetKey, AssetSource, Playlist},
     channel::{ChannelCollaborator, ChannelDetails, ChannelMetadata},
     config::ChannelConractConfig,
 };
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub admin: Addr,
+    pub protocol_admin: Addr,
     pub fee_collector: Addr,
     pub channels_collection_id: String,
     pub channels_collection_name: String,
@@ -27,6 +27,33 @@ pub struct ReservedUsername {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    /// Updates the configuration of the contract, including the channel creation fee,
+    /// protocol admin, and fee collector. Only callable by the protocol admin.
+    AdminSetConfig {
+        /// (Optional) The new channel creation fee.
+        channel_creation_fee: Option<Vec<Coin>>,
+        /// (Optional) The new admin address.
+        protocol_admin: Option<String>,
+        /// (Optional) The new fee collector address.
+        fee_collector: Option<String>,
+    },
+    /// Removes assets from the contract.
+    /// Only callable by the protocol admin.    
+    AdminRemoveAssets {
+        /// The keys of the assets to be removed.
+        asset_keys: Vec<AssetKey>,
+    },
+    /// Manages reserved usernames.
+    /// Only callable by the protocol admin.
+    /// Can set an address as a reserved username
+    /// Can remove reserved usernames
+    /// Can add reserved usernames
+    AdminManageReservedUsernames {
+        /// (Optional) A list of addresses to be set as reserved usernames.
+        add_usernames: Option<Vec<ReservedUsername>>,
+        /// (Optional) A list of addresses to be removed from reserved usernames.
+        remove_usernames: Option<Vec<String>>,
+    },
     /// Pauses all channel-related operations. Only callable by a pauser.
     Pause {},
 
@@ -41,7 +68,7 @@ pub enum ExecuteMsg {
     },
     /// Publishes an asset to a channel. The contract will generate and store a publish ID.
     /// Only callable by the channel owner or a collaborator.
-    Publish {
+    AssetPublish {
         asset_source: AssetSource,
         /// A salt value used for unique identification.
         salt: Binary,
@@ -55,7 +82,7 @@ pub enum ExecuteMsg {
 
     /// Unpublishes an asset from a channel. The publish ID and related asset details will
     /// be removed from the contract state. Only callable by the channel owner or a collaborator.
-    Unpublish {
+    AssetUnpublish {
         /// The ID of the publish to be removed.
         publish_id: String,
         /// The ID of the channel where the asset is unpublished.
@@ -150,7 +177,6 @@ pub enum ExecuteMsg {
         /// The ID of the channel to be deleted.
         channel_id: String,
     },
-
     /// Updates the details of an existing channel. Only callable by the channel owner.
     ChannelUpdateDetails {
         /// The ID of the channel to be updated.
@@ -167,29 +193,8 @@ pub enum ExecuteMsg {
         /// (Optional) The new payment address of the channel.
         payment_address: Option<String>,
     },
-
-    /// Updates the configuration of the contract, including the channel creation fee,
-    /// admin, and fee collector. Only callable by the protocol admin.
-    SetConfig {
-        /// (Optional) The new channel creation fee.
-        channel_creation_fee: Option<Vec<Coin>>,
-        /// (Optional) The new admin address.
-        admin: Option<String>,
-        /// (Optional) The new fee collector address.
-        fee_collector: Option<String>,
-    },
-    /// Manages reserved usernames.
-    /// Only callable by the protocol admin.
-    /// Can set an address as a reserved username
-    /// Can remove reserved usernames
-    /// Can add reserved usernames
-    ManageReservedUsernames {
-        /// (Optional) A list of addresses to be set as reserved usernames.
-        add_usernames: Option<Vec<ReservedUsername>>,
-        /// (Optional) A list of addresses to be removed from reserved usernames.
-        remove_usernames: Option<Vec<String>>,
-    },
-    TipCreator {
+    /// Tipping a channel
+    ChannelTip {
         /// The ID of the channel to be tipped.
         channel_id: String,
         /// The amount of tokens to be tipped.

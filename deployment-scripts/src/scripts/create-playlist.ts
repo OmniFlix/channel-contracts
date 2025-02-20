@@ -12,7 +12,7 @@ const createPlaylist = async () => {
     // Instantiate new channel contract
     await channelHelper.InstantiateChannelContract(context);
 
-    let testingUserName = "creator" + Math.floor(Math.random() * 1000);
+    let testingUserName = "creator"
 
     // Create new channel
     let channelId = await channelHelper.CreateChannel(context, "creator", testingUserName);

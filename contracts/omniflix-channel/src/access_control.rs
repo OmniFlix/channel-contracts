@@ -77,7 +77,10 @@ pub fn get_onft_with_owner(
     let onft_querier = OnftQuerier::new(&deps.querier);
     let onft_response = onft_querier
         .onft(collection_id.clone(), onft_id.clone())
-        .map_err(|_| ContractError::OnftQueryFailed {})?;
+        .map_err(|_| ContractError::OnftNotFound {
+            collection_id: collection_id.clone(),
+            onft_id: onft_id.clone(),
+        })?;
 
     let onft = onft_response
         .onft

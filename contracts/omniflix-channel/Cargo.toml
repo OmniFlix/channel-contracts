@@ -33,7 +33,6 @@ omniflix-std = { workspace = true }
 cw-controllers = { workspace = true }
 cw2 = { workspace = true }
 cw4 = { workspace = true }
-cw4-group = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }

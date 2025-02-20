@@ -651,24 +651,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw4-group"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e60083d0aec9f6d6191c797bb3605835289fd3d875fe516ae5a164c7f8a0ba4e"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std 2.2.1",
- "cw-controllers",
- "cw-storage-plus",
- "cw-utils",
- "cw2",
- "cw4",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1045,7 +1027,6 @@ dependencies = [
  "cw-utils",
  "cw2",
  "cw4",
- "cw4-group",
  "hex",
  "omniflix-channel-types",
  "omniflix-std",

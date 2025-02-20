@@ -89,7 +89,7 @@ fn invalid_tipping_denom() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::TipCreator {
+            &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "different_denom"),
             },
@@ -145,7 +145,7 @@ fn invalid_tip_amount() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::TipCreator {
+            &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(1000, "uflix"),
             },
@@ -160,7 +160,7 @@ fn invalid_tip_amount() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::TipCreator {
+            &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(1000, "uflix"),
             },
@@ -219,7 +219,7 @@ fn happy_path() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::TipCreator {
+            &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "uflix"),
             },
@@ -252,7 +252,7 @@ fn happy_path() {
         .execute_contract(
             collector.clone(),
             channel_contract_addr.clone(),
-            &ExecuteMsg::TipCreator {
+            &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "uflix"),
             },

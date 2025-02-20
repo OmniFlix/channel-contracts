@@ -6,8 +6,13 @@ pub struct ChannelConractConfig {
     pub channels_collection_name: String,
     pub channels_collection_symbol: String,
     pub channels_collection_id: String,
-    pub admin: Addr,
-    pub fee_collector: Addr,
     pub channel_creation_fee: Vec<Coin>,
     pub accepted_tip_denoms: Vec<String>,
+    pub auth_details: AuthDetails,
+}
+
+#[cw_serde]
+pub struct AuthDetails {
+    pub protocol_admin: Addr,
+    pub fee_collector: Addr,
 }

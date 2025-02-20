@@ -3,7 +3,7 @@ use cw_storage_plus::{Bound, Map};
 
 use omniflix_channel_types::asset::{AssetKey, Playlist};
 
-use crate::assets::Assets;
+use crate::assets::AssetsManager;
 use crate::error::PlaylistError;
 
 type ChannelId = String;
@@ -168,7 +168,7 @@ impl PlaylistsManager {
             .load(store, (channel_id.clone(), playlist_name.clone()))
             .map_err(|_| PlaylistError::PlaylistNotFound {})?;
 
-        let asset_manager = Assets::new();
+        let asset_manager = AssetsManager::new();
         let mut removed_asset_keys = Vec::with_capacity(playlist.assets.len());
 
         playlist.assets.retain(|asset_key| {

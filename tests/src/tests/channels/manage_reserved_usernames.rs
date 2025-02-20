@@ -44,7 +44,7 @@ fn add_reserved_usernames() {
     assert_eq!(res.len(), 1);
 
     // Add a reserved username but dont set an address
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
             address: None,
@@ -69,7 +69,7 @@ fn add_reserved_usernames() {
     assert_eq!(res.len(), 2);
 
     // Add invalid reserved username
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "Admin".to_string(),
             address: None,
@@ -89,7 +89,7 @@ fn add_reserved_usernames() {
         })
     );
     // Add valid reserved username with invalid address
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "Admin".to_string(),
             address: Some(Addr::unchecked("").to_string()),
@@ -101,7 +101,7 @@ fn add_reserved_usernames() {
         .execute_contract(admin.clone(), channel_contract_addr.clone(), &msg, &[])
         .unwrap_err();
     // Username admin is already added but we want to sent an valid address
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
             address: Some(creator.to_string()),
@@ -127,7 +127,7 @@ fn add_reserved_usernames() {
     assert_eq!(res[0].address, Some(creator.clone().to_string()));
 
     // Remove designated address from reserved username
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
             address: None,
@@ -189,7 +189,7 @@ fn remove_reserved_usernames() {
     assert_eq!(res.len(), 1);
 
     // Remove a reserved username that does not exist
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: None,
         remove_usernames: vec!["admin".to_string()].into(),
     };
@@ -205,7 +205,7 @@ fn remove_reserved_usernames() {
     );
 
     // Remove a reserved username
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: None,
         remove_usernames: vec!["reserved".to_string()].into(),
     };
@@ -226,7 +226,7 @@ fn remove_reserved_usernames() {
     assert_eq!(res.len(), 0);
 
     // Remove usernames while adding
-    let msg = ExecuteMsg::ManageReservedUsernames {
+    let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
             address: None,

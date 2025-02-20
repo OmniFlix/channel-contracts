@@ -4,16 +4,16 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export type Addr = string;
 export type Uint128 = string;
+export type Addr = string;
 export interface InstantiateMsg {
   accepted_tip_denoms: string[];
-  admin: Addr;
   channel_creation_fee: Coin[];
   channels_collection_id: string;
   channels_collection_name: string;
   channels_collection_symbol: string;
   fee_collector: Addr;
+  protocol_admin: Addr;
   reserved_usernames: ReservedUsername[];
 }
 export interface Coin {
@@ -25,6 +25,21 @@ export interface ReservedUsername {
   username: string;
 }
 export type ExecuteMsg = {
+  admin_set_config: {
+    channel_creation_fee?: Coin[] | null;
+    fee_collector?: string | null;
+    protocol_admin?: string | null;
+  };
+} | {
+  admin_remove_assets: {
+    asset_keys: [string, string][];
+  };
+} | {
+  admin_manage_reserved_usernames: {
+    add_usernames?: ReservedUsername[] | null;
+    remove_usernames?: string[] | null;
+  };
+} | {
   pause: {};
 } | {
   unpause: {};
@@ -33,7 +48,7 @@ export type ExecuteMsg = {
     pausers: string[];
   };
 } | {
-  publish: {
+  asset_publish: {
     asset_source: AssetSource;
     channel_id: string;
     is_visible: boolean;
@@ -41,7 +56,7 @@ export type ExecuteMsg = {
     salt: Binary;
   };
 } | {
-  unpublish: {
+  asset_unpublish: {
     channel_id: string;
     publish_id: string;
   };
@@ -103,18 +118,7 @@ export type ExecuteMsg = {
     profile_picture?: string | null;
   };
 } | {
-  set_config: {
-    admin?: string | null;
-    channel_creation_fee?: Coin[] | null;
-    fee_collector?: string | null;
-  };
-} | {
-  manage_reserved_usernames: {
-    add_usernames?: ReservedUsername[] | null;
-    remove_usernames?: string[] | null;
-  };
-} | {
-  tip_creator: {
+  channel_tip: {
     amount: Coin;
     channel_id: string;
   };
@@ -253,12 +257,15 @@ export interface ChannelMetadata {
 export type ArrayOfChannelDetails = ChannelDetails[];
 export interface ChannelConractConfig {
   accepted_tip_denoms: string[];
-  admin: Addr;
+  auth_details: AuthDetails;
   channel_creation_fee: Coin[];
   channels_collection_id: string;
   channels_collection_name: string;
   channels_collection_symbol: string;
+}
+export interface AuthDetails {
   fee_collector: Addr;
+  protocol_admin: Addr;
 }
 export type ArrayOfAddr = Addr[];
 export type Uint64 = number;

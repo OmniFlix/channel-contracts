@@ -302,7 +302,7 @@ fn not_owned() {
     );
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),

@@ -2,7 +2,7 @@ import Context from '../helpers/context';
 import ChannelHelper from '../helpers/channel.helper';
 import { logger } from '../utils/logger';
 import OnftHelper from '../helpers/onft.helper';
-
+import { AssetSource } from '../types/OmniFlixChannel.types.ts';
 
 const publishNftAsset = async () => {
     let context = new Context;
@@ -31,7 +31,12 @@ const publishNftAsset = async () => {
 
     // Publish the asset to the channel
     logger.log(1, `Publishing asset with id: ${assetId} to channel with id: ${channelId}`);
-    await channelHelper.PublishAsset(context, "creator", channelId, collectionId, assetId, true);
+    await channelHelper.PublishAsset(context, "creator", channelId, {
+        nft: {
+            collection_id: collectionId,
+            onft_id: assetId
+        }
+    }, true);
 
     // Query Assets 
     logger.log(1, `Querying assets for channel with id: ${channelId}`);
@@ -52,10 +57,17 @@ const publishOffChainAsset = async () => {
 
     // Publish the asset to the channel
     logger.log(1, `Publishing off-chain asset to channel with id: ${channelId}`);
-    let assetName = "OmniflixTestingAsset" + Math.floor(Math.random() * 10000);
+    let assetName = "OmniflixTestingAsset";
     let assetDescription = "This is a test asset";
     let assetMediaUri = "https://ipfs.io/OmniFlixTestingAsset";
-    await channelHelper.PublishOffchainAsset(context, "creator", channelId, assetMediaUri, assetName, assetDescription, false);
+    let assetSource = {
+        off_chain: {
+            media_uri: assetMediaUri,
+            name: assetName,
+            description: assetDescription,
+        }
+    }
+    await channelHelper.PublishAsset(context, "creator", channelId, assetSource, false);
 
     // Query Assets 
     logger.log(1, `Querying assets for channel with id: ${channelId}`);

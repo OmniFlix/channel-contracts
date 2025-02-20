@@ -61,16 +61,13 @@ pub enum ContractError {
     #[error("Asset to be published not found")]
     AssetNotFound {},
 
-    #[error("Query ONFT failed")]
-    OnftQueryFailed {},
-
-    #[error("ONFT not found")]
+    #[error("ONFT not found collection_id: {collection_id} onft_id: {onft_id}")]
     OnftNotFound {
         collection_id: String,
         onft_id: String,
     },
 
-    #[error("ONFT not owned by the sender")]
+    #[error("ONFT not owned collection_id: {collection_id} onft_id: {onft_id}")]
     OnftNotOwned {
         collection_id: String,
         onft_id: String,
