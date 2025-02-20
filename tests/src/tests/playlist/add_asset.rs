@@ -66,7 +66,7 @@ fn asset_not_visible() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Publish the asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -207,7 +207,7 @@ fn asset_from_diffirent_channel() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Publish the asset under creator 1's channel
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),

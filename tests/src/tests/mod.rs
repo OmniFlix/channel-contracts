@@ -9,3 +9,6 @@ pub mod assets;
 
 #[cfg(test)]
 pub mod playlist;
+
+#[cfg(test)]
+pub mod admin;

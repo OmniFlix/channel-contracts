@@ -19,25 +19,25 @@ pub struct StringValidationConfig {
 // Define string validation errors
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum StringValidationError {
-    #[error("Invalid length")]
+    #[error("Invalid length sent: {sent} min_length: {min_length} max_length: {max_length}")]
     InvalidLength {
         sent: String,
         min_length: usize,
         max_length: usize,
     },
-    #[error("Invalid prefix")]
+    #[error("Invalid prefix sent: {sent} required: {required:?}")]
     InvalidPrefix { sent: String, required: Vec<String> },
-    #[error("Invalid suffix")]
+    #[error("Invalid suffix sent: {sent} required: {required:?}")]
     InvalidSuffix { sent: String, required: Vec<String> },
-    #[error("Invalid must contain")]
+    #[error("Invalid must contain sent: {sent} required: {required:?}")]
     InvalidMustContain { sent: String, required: Vec<String> },
-    #[error("Uppercase characters not allowed")]
+    #[error("Uppercase characters not allowed sent: {sent}")]
     UppercaseNotAllowed { sent: String },
-    #[error("Numbers not allowed")]
+    #[error("Numbers not allowed sent: {sent}")]
     NumbersNotAllowed { sent: String },
-    #[error("Spaces not allowed")]
+    #[error("Spaces not allowed sent: {sent}")]
     SpacesNotAllowed { sent: String },
-    #[error("Special characters not allowed")]
+    #[error("Special characters not allowed sent: {sent}")]
     SpecialCharsNotAllowed { sent: String },
 }
 

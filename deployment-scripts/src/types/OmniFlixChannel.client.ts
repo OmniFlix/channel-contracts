@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, AuthDetails, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -335,6 +335,27 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
 export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   sender: string;
+  adminSetConfig: ({
+    channelCreationFee,
+    feeCollector,
+    protocolAdmin
+  }: {
+    channelCreationFee?: Coin[];
+    feeCollector?: string;
+    protocolAdmin?: string;
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  adminRemoveAssets: ({
+    assetKeys
+  }: {
+    assetKeys: string[][];
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  adminManageReservedUsernames: ({
+    addUsernames,
+    removeUsernames
+  }: {
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
+  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   pause: (fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   unpause: (fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   setPausers: ({
@@ -342,7 +363,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }: {
     pausers: string[];
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  publish: ({
+  assetPublish: ({
     assetSource,
     channelId,
     isVisible,
@@ -355,7 +376,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     playlistName?: string;
     salt: Binary;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  unpublish: ({
+  assetUnpublish: ({
     channelId,
     publishId
   }: {
@@ -449,23 +470,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     paymentAddress?: string;
     profilePicture?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  setConfig: ({
-    admin,
-    channelCreationFee,
-    feeCollector
-  }: {
-    admin?: string;
-    channelCreationFee?: Coin[];
-    feeCollector?: string;
-  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  manageReservedUsernames: ({
-    addUsernames,
-    removeUsernames
-  }: {
-    addUsernames?: ReservedUsername[];
-    removeUsernames?: string[];
-  }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  tipCreator: ({
+  channelTip: ({
     amount,
     channelId
   }: {
@@ -509,11 +514,14 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.adminSetConfig = this.adminSetConfig.bind(this);
+    this.adminRemoveAssets = this.adminRemoveAssets.bind(this);
+    this.adminManageReservedUsernames = this.adminManageReservedUsernames.bind(this);
     this.pause = this.pause.bind(this);
     this.unpause = this.unpause.bind(this);
     this.setPausers = this.setPausers.bind(this);
-    this.publish = this.publish.bind(this);
-    this.unpublish = this.unpublish.bind(this);
+    this.assetPublish = this.assetPublish.bind(this);
+    this.assetUnpublish = this.assetUnpublish.bind(this);
     this.assetUpdateDetails = this.assetUpdateDetails.bind(this);
     this.playlistCreate = this.playlistCreate.bind(this);
     this.playlistDelete = this.playlistDelete.bind(this);
@@ -523,15 +531,55 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     this.channelCreate = this.channelCreate.bind(this);
     this.channelDelete = this.channelDelete.bind(this);
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
-    this.setConfig = this.setConfig.bind(this);
-    this.manageReservedUsernames = this.manageReservedUsernames.bind(this);
-    this.tipCreator = this.tipCreator.bind(this);
+    this.channelTip = this.channelTip.bind(this);
     this.channelAddCollaborator = this.channelAddCollaborator.bind(this);
     this.channelRemoveCollaborator = this.channelRemoveCollaborator.bind(this);
     this.channelFollow = this.channelFollow.bind(this);
     this.channelUnfollow = this.channelUnfollow.bind(this);
   }
 
+  adminSetConfig = async ({
+    channelCreationFee,
+    feeCollector,
+    protocolAdmin
+  }: {
+    channelCreationFee?: Coin[];
+    feeCollector?: string;
+    protocolAdmin?: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      admin_set_config: {
+        channel_creation_fee: channelCreationFee,
+        fee_collector: feeCollector,
+        protocol_admin: protocolAdmin
+      }
+    }, fee, memo, _funds);
+  };
+  adminRemoveAssets = async ({
+    assetKeys
+  }: {
+    assetKeys: string[][];
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      admin_remove_assets: {
+        asset_keys: assetKeys
+      }
+    }, fee, memo, _funds);
+  };
+  adminManageReservedUsernames = async ({
+    addUsernames,
+    removeUsernames
+  }: {
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      admin_manage_reserved_usernames: {
+        add_usernames: addUsernames,
+        remove_usernames: removeUsernames
+      }
+    }, fee, memo, _funds);
+  };
   pause = async (fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       pause: {}
@@ -553,7 +601,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  publish = async ({
+  assetPublish = async ({
     assetSource,
     channelId,
     isVisible,
@@ -567,7 +615,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     salt: Binary;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      publish: {
+      asset_publish: {
         asset_source: assetSource,
         channel_id: channelId,
         is_visible: isVisible,
@@ -576,7 +624,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  unpublish = async ({
+  assetUnpublish = async ({
     channelId,
     publishId
   }: {
@@ -584,7 +632,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      unpublish: {
+      asset_unpublish: {
         channel_id: channelId,
         publish_id: publishId
       }
@@ -752,38 +800,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       }
     }, fee, memo, _funds);
   };
-  setConfig = async ({
-    admin,
-    channelCreationFee,
-    feeCollector
-  }: {
-    admin?: string;
-    channelCreationFee?: Coin[];
-    feeCollector?: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      set_config: {
-        admin,
-        channel_creation_fee: channelCreationFee,
-        fee_collector: feeCollector
-      }
-    }, fee, memo, _funds);
-  };
-  manageReservedUsernames = async ({
-    addUsernames,
-    removeUsernames
-  }: {
-    addUsernames?: ReservedUsername[];
-    removeUsernames?: string[];
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      manage_reserved_usernames: {
-        add_usernames: addUsernames,
-        remove_usernames: removeUsernames
-      }
-    }, fee, memo, _funds);
-  };
-  tipCreator = async ({
+  channelTip = async ({
     amount,
     channelId
   }: {
@@ -791,7 +808,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     channelId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      tip_creator: {
+      channel_tip: {
         amount,
         channel_id: channelId
       }

@@ -50,7 +50,7 @@ fn asset_does_not_exist() {
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // Try publishing an asset without it existing
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: "id".to_string(),
             onft_id: "asset_id".to_string(),
@@ -138,7 +138,7 @@ fn channel_not_owned() {
     let _res = app.execute(collector.clone(), cosmos_msg);
 
     // Publish the asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -221,7 +221,7 @@ fn playlist_does_not_exist() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset with wrong playlist name
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -322,7 +322,7 @@ fn with_playlist() {
         .unwrap();
 
     // Publish the asset under the new playlist
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -418,7 +418,7 @@ fn asset_not_owned() {
 
     // Asset is owned by collector
     // Creator tries to publish the asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -487,7 +487,7 @@ fn publish_off_chain_asset() {
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // Publish an asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::OffChain {
             media_uri: "https://omniflix.network/".to_string(),
             name: "name".to_string(),
@@ -595,7 +595,7 @@ fn happy_path() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),

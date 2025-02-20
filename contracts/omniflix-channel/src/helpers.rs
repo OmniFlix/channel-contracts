@@ -1,7 +1,7 @@
 use crate::access_control::get_onft_with_owner;
 use crate::string_validation::{validate_string, StringValidationType};
 use crate::ContractError;
-use asset_manager::assets::Assets;
+use asset_manager::assets::AssetsManager;
 use cosmwasm_std::Storage;
 use cosmwasm_std::{Addr, Api, Coin, Deps, Uint128};
 use omniflix_channel_types::asset::{AssetKey, AssetSource};
@@ -29,7 +29,7 @@ pub fn get_collection_creation_fee(deps: Deps) -> Result<Coin, ContractError> {
 }
 /// Purpose: Filters out assets that do not exist in storage or are not visible
 pub fn filter_assets_to_remove(storage: &dyn Storage, asset_keys: Vec<AssetKey>) -> Vec<AssetKey> {
-    let asset_manager = Assets::new();
+    let asset_manager = AssetsManager::new();
 
     asset_keys
         .into_iter()

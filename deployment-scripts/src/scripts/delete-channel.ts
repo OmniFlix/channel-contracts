@@ -17,13 +17,13 @@ const channelDelete = async () => {
     let channelId = await channel_helper.CreateChannel(context, "creator", testingUserName);
 
     // Query channel
-    await channel_helper.GetChannelDetails(context, "creator", channelId);
+    await channel_helper.QueryChannelDetails(context, "creator", channelId);
 
     // Delete channel
     await channel_helper.DeleteChannel(context, "creator", channelId);
 
     // Query channel
-    await channel_helper.GetChannelDetails(context, "creator", channelId).catch((error) => {
+    await channel_helper.QueryChannelDetails(context, "creator", channelId).catch((error) => {
         logger.info("Channel not found");
     }
     );

@@ -71,7 +71,7 @@ fn channel_not_owned() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Publish an asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -95,7 +95,7 @@ fn channel_not_owned() {
     let publish_id = get_event_attribute(res.clone(), "wasm", "publish_id");
 
     // Unpublish the asset with a different user
-    let unpublish_msg = ExecuteMsg::Unpublish {
+    let unpublish_msg = ExecuteMsg::AssetUnpublish {
         publish_id: publish_id.clone(),
         channel_id: channel_id.clone(),
     };
@@ -154,7 +154,7 @@ fn asset_not_pubished() {
 
     // Unpublish the asset
     // Should return an error
-    let unpublish_msg = ExecuteMsg::Unpublish {
+    let unpublish_msg = ExecuteMsg::AssetUnpublish {
         publish_id: "publish_id".to_string(),
         channel_id: channel_id.clone(),
     };
@@ -235,7 +235,7 @@ fn happy_path() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Publish an asset
-    let publish_msg = ExecuteMsg::Publish {
+    let publish_msg = ExecuteMsg::AssetPublish {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
@@ -274,7 +274,7 @@ fn happy_path() {
     assert_eq!(asset.publish_id, publish_id.clone());
 
     // Unpublish the asset
-    let unpublish_msg = ExecuteMsg::Unpublish {
+    let unpublish_msg = ExecuteMsg::AssetUnpublish {
         publish_id: publish_id.clone(),
         channel_id: channel_id.clone(),
     };

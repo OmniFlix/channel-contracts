@@ -5,7 +5,7 @@ pub fn get_channel_instantiate_msg(admin: Addr) -> InstantiateMsg {
     InstantiateMsg {
         channel_creation_fee: vec![],
         fee_collector: admin.clone(),
-        admin: admin,
+        protocol_admin: admin.clone(),
         accepted_tip_denoms: vec!["uflix".to_string()],
         channels_collection_id: "Channels".to_string(),
         channels_collection_name: "Channels".to_string(),

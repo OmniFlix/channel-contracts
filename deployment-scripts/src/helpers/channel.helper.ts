@@ -6,7 +6,7 @@ import _, { random } from 'lodash'
 import assert from 'assert'
 import { CONTRACT_MAP } from './context.ts'
 import { logger } from '../utils/logger.ts'
-import { InstantiateMsg, Coin, ReservedUsername } from '../types/OmniFlixChannel.types.ts'
+import { InstantiateMsg, Coin, ReservedUsername, AssetSource } from '../types/OmniFlixChannel.types.ts'
 import { OmniFlixChannelClient } from '../types/OmniFlixChannel.client.ts'
 
 
@@ -24,7 +24,7 @@ export default class ChannelHelper {
         }
         let instantiateMsg: InstantiateMsg = {
             fee_collector: fee_collector_address,
-            admin: sender,
+            protocol_admin: sender,
             channel_creation_fee: [{
                 amount: deploymentConfig.channel_creation_fee,
                 denom: chainConfig.denom,
@@ -59,6 +59,7 @@ export default class ChannelHelper {
             'auto',
             instantiateOptions,
         )
+        logger.log(1, `Gas used: ${instantiateResult.gasUsed}`)
 
         _.forEach(instantiateResult.events, (event) => {
             if (event.type === 'instantiate') {
@@ -103,9 +104,10 @@ export default class ChannelHelper {
             executeMsg.set_config.fee_collector = fee_collector_address
         }
 
-        let res = await channel_client.setConfig(executeMsg.set_config)
+        let res = await channel_client.adminSetConfig(executeMsg.set_config)
         logger.log(1, `Channel config updated`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
         return res;
     }
 
@@ -117,8 +119,8 @@ export default class ChannelHelper {
             description: "OmniFlix Channel Testing",
             salt: context.generateRandomSalt(5),
             channelName: user_name,
-            bannerPicture: "link.com",
-            profilePicture: "link.com",
+            bannerPicture: "https://www.omniflix.network",
+            profilePicture: "https://www.omniflix.network",
             paymentAddress: senderAddress,
         }, "auto", "", [
             {
@@ -128,21 +130,17 @@ export default class ChannelHelper {
         ]);
         let channel_id = context.getEventAttribute(res, undefined, 'channel_id');
         logger.log(1, `Channel created with id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
         return channel_id;
     }
 
 
-    PublishAsset = async (context: Context, account_name: string, channel_id: string, asset_onft_collection_id: string, asset_onft_id: string, is_visible: boolean, playlist_name?: string) => {
+    PublishAsset = async (context: Context, account_name: string, channel_id: string, asset_source: AssetSource, is_visible: boolean, playlist_name?: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
-        let res = await channel_client.publish({
-            assetSource: {
-                nft: {
-                    collection_id: asset_onft_collection_id,
-                    onft_id: asset_onft_id,
-                }
-            },
+        let res = await channel_client.assetPublish({
+            assetSource: asset_source,
             channelId: channel_id,
             isVisible: is_visible,
             salt: context.generateRandomSalt(5),
@@ -150,31 +148,10 @@ export default class ChannelHelper {
         });
         let publishId = context.getEventAttribute(res, undefined, 'publish_id');
         logger.log(1, `Asset published with id: ${publishId}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
         return publishId;
     }
-    PublishOffchainAsset = async (context: Context, account_name: string, channel_id: string, asset_url: string, asset_name: string, asset_description: string, is_visible: boolean, playlist_name?: string) => {
-        let { client, address: senderAddress } = context.getTestUser(account_name);
-        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
-        let res = await channel_client.publish({
-            assetSource: {
-                off_chain: {
-                    media_uri: asset_url,
-                    name: asset_name,
-                    description: asset_description,
-                }
-            },
-            channelId: channel_id,
-            isVisible: is_visible,
-            salt: context.generateRandomSalt(5),
-            playlistName: playlist_name,
-        });
-        let publishId = context.getEventAttribute(res, undefined, 'publish_id');
-        logger.log(1, `Asset published with id: ${publishId}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
-        return publishId;
-    }
-
     CreatePlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
@@ -183,7 +160,8 @@ export default class ChannelHelper {
             playlistName: playlist_name,
         });
         logger.log(1, `Playlist created with name ${playlist_name} under channel id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     AddAssetToPlaylist = async (context: Context, account_name: string, channel_id: string, asset_channel_id: string, playlist_name: string, publish_id: string) => {
@@ -196,7 +174,8 @@ export default class ChannelHelper {
             publishId: publish_id,
         });
         logger.log(1, `Asset added to playlist: ${playlist_name} with id: ${publish_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     RefreshPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
@@ -207,7 +186,8 @@ export default class ChannelHelper {
             playlistName: playlist_name,
         });
         logger.log(1, `Playlist refreshed with name ${playlist_name} under channel id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     DeletePlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
@@ -218,7 +198,8 @@ export default class ChannelHelper {
             playlistName: playlist_name,
         });
         logger.log(1, `Playlist deleted with name ${playlist_name} under channel id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     RemoveAssetFromPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string, publish_id: string) => {
@@ -230,18 +211,20 @@ export default class ChannelHelper {
             publishId: publish_id,
         });
         logger.log(1, `Asset removed from playlist: ${playlist_name} with id: ${publish_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     UnpublishAsset = async (context: Context, account_name: string, channel_id: string, publish_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
-        let res = await channel_client.unpublish({
+        let res = await channel_client.assetUnpublish({
             channelId: channel_id,
             publishId: publish_id,
         });
         logger.log(1, `Asset unpublished with id: ${publish_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     UpdateChannelDetails = async (context: Context, account_name: string, channel_id: string, description?: string, channel_name?: string, banner_picture?: string, profile_picture?: string, collaborators?: string[]) => {
@@ -255,7 +238,8 @@ export default class ChannelHelper {
             profilePicture: profile_picture,
         });
         logger.log(1, `Channel details updated with id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     DeleteChannel = async (context: Context, account_name: string, channel_id: string) => {
@@ -265,18 +249,31 @@ export default class ChannelHelper {
             channelId: channel_id,
         });
         logger.log(1, `Channel deleted with id: ${channel_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
     // Reserved usernames type: [string, string][]
     AddReservedUsernames = async (context: Context, reserved_usernames: ReservedUsername[]) => {
         let { client, address: senderAddress } = context.getTestUser('admin');
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
 
-        let res = await channel_client.manageReservedUsernames({
+        let res = await channel_client.adminManageReservedUsernames({
             addUsernames: reserved_usernames,
         });
         logger.log(1, `Reserved usernames added: ${JSON.stringify(reserved_usernames)}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
+    }
+
+    AdminRemoveAssets = async (context: Context, account_name: string, asset_keys: string[][]) => {
+        let { client, address: senderAddress } = context.getTestUser(account_name);
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.adminRemoveAssets({
+            assetKeys: asset_keys,
+        });
+        logger.log(1, `Assets removed: ${JSON.stringify(asset_keys)}`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
     QueryChannelDetails = async (context: Context, account_name: string, channel_id: string) => {
@@ -306,7 +303,8 @@ export default class ChannelHelper {
             publishId: publish_id,
         });
         logger.log(1, `Asset updated with id: ${publish_id}`)
-        logger.log(1, `Tx_Hash: ${res.transactionHash}\n`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
     }
     QueryAssets = async (context: Context, channel_id: string) => {
         let { client, address: senderAddress } = context.getTestUser("admin");

@@ -7,10 +7,31 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Addr, Uint128, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, AuthDetails, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;
+  adminSetConfig: ({
+    channelCreationFee,
+    feeCollector,
+    protocolAdmin
+  }: {
+    channelCreationFee?: Coin[];
+    feeCollector?: string;
+    protocolAdmin?: string;
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  adminRemoveAssets: ({
+    assetKeys
+  }: {
+    assetKeys: string[][];
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  adminManageReservedUsernames: ({
+    addUsernames,
+    removeUsernames
+  }: {
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   pause: (_funds?: Coin[]) => MsgExecuteContractEncodeObject;
   unpause: (_funds?: Coin[]) => MsgExecuteContractEncodeObject;
   setPausers: ({
@@ -18,7 +39,7 @@ export interface OmniFlixChannelMsg {
   }: {
     pausers: string[];
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  publish: ({
+  assetPublish: ({
     assetSource,
     channelId,
     isVisible,
@@ -31,7 +52,7 @@ export interface OmniFlixChannelMsg {
     playlistName?: string;
     salt: Binary;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  unpublish: ({
+  assetUnpublish: ({
     channelId,
     publishId
   }: {
@@ -125,23 +146,7 @@ export interface OmniFlixChannelMsg {
     paymentAddress?: string;
     profilePicture?: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  setConfig: ({
-    admin,
-    channelCreationFee,
-    feeCollector
-  }: {
-    admin?: string;
-    channelCreationFee?: Coin[];
-    feeCollector?: string;
-  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  manageReservedUsernames: ({
-    addUsernames,
-    removeUsernames
-  }: {
-    addUsernames?: ReservedUsername[];
-    removeUsernames?: string[];
-  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  tipCreator: ({
+  channelTip: ({
     amount,
     channelId
   }: {
@@ -182,11 +187,14 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.adminSetConfig = this.adminSetConfig.bind(this);
+    this.adminRemoveAssets = this.adminRemoveAssets.bind(this);
+    this.adminManageReservedUsernames = this.adminManageReservedUsernames.bind(this);
     this.pause = this.pause.bind(this);
     this.unpause = this.unpause.bind(this);
     this.setPausers = this.setPausers.bind(this);
-    this.publish = this.publish.bind(this);
-    this.unpublish = this.unpublish.bind(this);
+    this.assetPublish = this.assetPublish.bind(this);
+    this.assetUnpublish = this.assetUnpublish.bind(this);
     this.assetUpdateDetails = this.assetUpdateDetails.bind(this);
     this.playlistCreate = this.playlistCreate.bind(this);
     this.playlistDelete = this.playlistDelete.bind(this);
@@ -196,15 +204,79 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     this.channelCreate = this.channelCreate.bind(this);
     this.channelDelete = this.channelDelete.bind(this);
     this.channelUpdateDetails = this.channelUpdateDetails.bind(this);
-    this.setConfig = this.setConfig.bind(this);
-    this.manageReservedUsernames = this.manageReservedUsernames.bind(this);
-    this.tipCreator = this.tipCreator.bind(this);
+    this.channelTip = this.channelTip.bind(this);
     this.channelAddCollaborator = this.channelAddCollaborator.bind(this);
     this.channelRemoveCollaborator = this.channelRemoveCollaborator.bind(this);
     this.channelFollow = this.channelFollow.bind(this);
     this.channelUnfollow = this.channelUnfollow.bind(this);
   }
 
+  adminSetConfig = ({
+    channelCreationFee,
+    feeCollector,
+    protocolAdmin
+  }: {
+    channelCreationFee?: Coin[];
+    feeCollector?: string;
+    protocolAdmin?: string;
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          admin_set_config: {
+            channel_creation_fee: channelCreationFee,
+            fee_collector: feeCollector,
+            protocol_admin: protocolAdmin
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  adminRemoveAssets = ({
+    assetKeys
+  }: {
+    assetKeys: string[][];
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          admin_remove_assets: {
+            asset_keys: assetKeys
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  adminManageReservedUsernames = ({
+    addUsernames,
+    removeUsernames
+  }: {
+    addUsernames?: ReservedUsername[];
+    removeUsernames?: string[];
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          admin_manage_reserved_usernames: {
+            add_usernames: addUsernames,
+            remove_usernames: removeUsernames
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
   pause = (_funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -250,7 +322,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  publish = ({
+  assetPublish = ({
     assetSource,
     channelId,
     isVisible,
@@ -269,7 +341,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          publish: {
+          asset_publish: {
             asset_source: assetSource,
             channel_id: channelId,
             is_visible: isVisible,
@@ -281,7 +353,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  unpublish = ({
+  assetUnpublish = ({
     channelId,
     publishId
   }: {
@@ -294,7 +366,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          unpublish: {
+          asset_unpublish: {
             channel_id: channelId,
             publish_id: publishId
           }
@@ -537,54 +609,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
       })
     };
   };
-  setConfig = ({
-    admin,
-    channelCreationFee,
-    feeCollector
-  }: {
-    admin?: string;
-    channelCreationFee?: Coin[];
-    feeCollector?: string;
-  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          set_config: {
-            admin,
-            channel_creation_fee: channelCreationFee,
-            fee_collector: feeCollector
-          }
-        })),
-        funds: _funds
-      })
-    };
-  };
-  manageReservedUsernames = ({
-    addUsernames,
-    removeUsernames
-  }: {
-    addUsernames?: ReservedUsername[];
-    removeUsernames?: string[];
-  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          manage_reserved_usernames: {
-            add_usernames: addUsernames,
-            remove_usernames: removeUsernames
-          }
-        })),
-        funds: _funds
-      })
-    };
-  };
-  tipCreator = ({
+  channelTip = ({
     amount,
     channelId
   }: {
@@ -597,7 +622,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          tip_creator: {
+          channel_tip: {
             amount,
             channel_id: channelId
           }

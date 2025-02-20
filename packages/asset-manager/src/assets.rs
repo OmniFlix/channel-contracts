@@ -7,16 +7,16 @@ use omniflix_channel_types::{
     channel::ChannelId,
 };
 
-pub struct Assets {
+pub struct AssetsManager {
     pub assets: Map<AssetKey, Asset>,
 }
 
 const PAGINATION_LIMIT: u32 = 50;
 
-impl Assets {
+impl AssetsManager {
     /// Create a new `Assets` instance.
     pub const fn new() -> Self {
-        Assets {
+        AssetsManager {
             assets: Map::new("assets"),
         }
     }
@@ -47,12 +47,17 @@ impl Assets {
     }
 
     /// Delete an asset by its key.
-    pub fn delete_asset(&self, store: &mut dyn Storage, key: AssetKey) -> Result<(), AssetError> {
-        if self.assets.load(store, key.clone()).is_err() {
-            return Err(AssetError::AssetNotFound {});
+    pub fn delete_assets(
+        &self,
+        store: &mut dyn Storage,
+        keys: Vec<AssetKey>,
+    ) -> Result<(), AssetError> {
+        for key in keys {
+            if self.assets.load(store, key.clone()).is_err() {
+                return Err(AssetError::AssetNotFound {});
+            }
+            self.assets.remove(store, key);
         }
-
-        self.assets.remove(store, key);
         Ok(())
     }
 
@@ -117,7 +122,7 @@ mod tests {
     #[test]
     fn test_get_all_assets_with_limit() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
 
@@ -165,7 +170,7 @@ mod tests {
     #[test]
     fn test_get_all_assets_with_start_after() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
 
@@ -204,7 +209,7 @@ mod tests {
     #[test]
     fn test_get_all_assets_with_limit_and_start_after() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
 
@@ -245,7 +250,7 @@ mod tests {
     #[test]
     fn test_add_asset() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id = "asset1".to_string();
@@ -276,7 +281,7 @@ mod tests {
     #[test]
     fn test_get_asset() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id = "asset1".to_string();
@@ -309,7 +314,7 @@ mod tests {
     #[test]
     fn test_delete_asset() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id = "asset1".to_string();
@@ -334,7 +339,7 @@ mod tests {
 
         // Delete the asset
         let delete_result =
-            assets.delete_asset(&mut storage, (channel_id.clone(), publish_id.clone()));
+            assets.delete_assets(&mut storage, vec![(channel_id.clone(), publish_id.clone())]);
         assert!(delete_result.is_ok());
 
         // Try to get the deleted asset (should fail)
@@ -345,7 +350,7 @@ mod tests {
     #[test]
     fn test_update_asset() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id = "asset1".to_string();
@@ -395,7 +400,7 @@ mod tests {
     #[test]
     fn test_delete_assets_by_channel_id() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id1 = "asset1".to_string();
@@ -449,7 +454,7 @@ mod tests {
     #[test]
     fn test_asset_exists() {
         let mut storage = MockStorage::new();
-        let assets = Assets::new();
+        let assets = AssetsManager::new();
 
         let channel_id = "channel1".to_string();
         let publish_id = "asset1".to_string();
