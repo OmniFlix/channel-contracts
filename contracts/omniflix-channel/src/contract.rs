@@ -125,7 +125,7 @@ pub fn execute(
             channel_id,
             publish_id,
             flag,
-        } => add_flag(deps, info, channel_id, publish_id, flag),
+        } => flag_asset(deps, info, channel_id, publish_id, flag),
         ExecuteMsg::Pause {} => pause(deps, info),
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
@@ -1097,7 +1097,7 @@ fn remove_assets(
         .add_attribute("admin", config.auth_details.protocol_admin.to_string()))
 }
 
-fn add_flag(
+fn flag_asset(
     deps: DepsMut,
     _info: MessageInfo,
     channel_id: String,
