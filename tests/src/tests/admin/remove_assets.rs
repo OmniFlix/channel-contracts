@@ -70,7 +70,6 @@ fn happy_path() {
     // Admin removes the asset
     let remove_assets_msg = ExecuteMsg::AdminRemoveAssets {
         asset_keys: vec![(channel_id.clone(), publish_id.clone())],
-        flags: None,
         refresh_flags: None,
     };
 
@@ -161,7 +160,6 @@ fn unauthorized() {
     // Asset creator can not remove the asset with admin remove assets.
     let remove_assets_msg = ExecuteMsg::AdminRemoveAssets {
         asset_keys: vec![(channel_id.clone(), publish_id.clone())],
-        flags: None,
         refresh_flags: None,
     };
 
@@ -217,7 +215,6 @@ fn asset_does_not_exist() {
     // Admin removes the asset that does not exist
     let remove_assets_msg = ExecuteMsg::AdminRemoveAssets {
         asset_keys: vec![(channel_id.clone(), "publish_id".to_string())],
-        flags: None,
         refresh_flags: None,
     };
 

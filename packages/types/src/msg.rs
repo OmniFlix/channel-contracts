@@ -42,8 +42,6 @@ pub enum ExecuteMsg {
     AdminRemoveAssets {
         /// The keys of the assets to be removed.
         asset_keys: Vec<AssetKey>,
-        /// The flags and the count of flag limits to be removed.
-        flags: Option<Vec<(Flag, u64)>>,
         /// Removes all flags from the assets if set to true.
         refresh_flags: Option<bool>,
     },

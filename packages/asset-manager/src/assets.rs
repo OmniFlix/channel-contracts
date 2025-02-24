@@ -167,42 +167,6 @@ impl AssetsManager {
         self.flags.clear(store);
         Ok(())
     }
-
-    pub fn remove_assets_by_flag_count(
-        &self,
-        store: &mut dyn Storage,
-        flags: Vec<(Flag, u64)>,
-    ) -> Result<(), AssetError> {
-        let mut asset_keys_to_remove: Vec<AssetKey> = Vec::new();
-        for (flag, limit) in flags {
-            asset_keys_to_remove.extend(
-                self.get_asset_keys_by_flag_count(store, limit, flag)
-                    .map_err(|_| AssetError::RemoveFlagsWithLimitError {})?,
-            );
-        }
-        self.delete_assets(store, asset_keys_to_remove)?;
-        Ok(())
-    }
-
-    /// Retrieve AssetKeys of assets with a flag count greater than the limit.
-    pub fn get_asset_keys_by_flag_count(
-        &self,
-        store: &dyn Storage,
-        limit: u64,
-        flag: Flag,
-    ) -> StdResult<Vec<AssetKey>> {
-        let asset_keys: Vec<AssetKey> = self
-            .flags
-            .prefix(flag.to_key())
-            .range(store, None, None, Order::Ascending)
-            .filter_map(|result| {
-                result
-                    .ok()
-                    .and_then(|(key, count)| if count > limit { Some(key) } else { None })
-            })
-            .collect();
-        Ok(asset_keys)
-    }
 }
 
 #[cfg(test)]

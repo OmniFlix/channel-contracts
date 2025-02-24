@@ -118,9 +118,8 @@ pub fn execute(
     match msg {
         ExecuteMsg::AdminRemoveAssets {
             asset_keys,
-            flags,
             refresh_flags,
-        } => remove_assets(deps, info, asset_keys, flags, refresh_flags),
+        } => remove_assets(deps, info, asset_keys, refresh_flags),
         ExecuteMsg::AssetFlag {
             channel_id,
             publish_id,
@@ -1068,7 +1067,6 @@ fn remove_assets(
     deps: DepsMut,
     info: MessageInfo,
     asset_keys: Vec<AssetKey>,
-    flags: Option<Vec<(Flag, u64)>>,
     refresh_flags: Option<bool>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -1076,16 +1074,15 @@ fn remove_assets(
         return Err(ContractError::Unauthorized {});
     }
 
-    // First remove the dirrect assets to be removed
+    let mut deleted_assets: Vec<AssetKey> = Vec::new();
+    deleted_assets.extend(asset_keys.clone());
+
+    // First remove the assets specified in the message
     let assets_manager = AssetsManager::new();
     assets_manager.delete_assets(deps.storage, asset_keys)?;
 
-    // Apply the flag limited deletion if set
-    if let Some(flags) = flags {
-        assets_manager.remove_assets_by_flag_count(deps.storage, flags)?;
-    }
-
     // Refresh the flags if set
+    // If the flag is set to true, all flags of all assets will be removed
     if let Some(refresh_flags) = refresh_flags {
         if refresh_flags {
             assets_manager.remove_all_flags(deps.storage)?;

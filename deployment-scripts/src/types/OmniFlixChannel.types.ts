@@ -33,6 +33,8 @@ export type ExecuteMsg = {
 } | {
   admin_remove_assets: {
     asset_keys: [string, string][];
+    flags?: FlagLimit[] | null;
+    refresh_flags?: boolean | null;
   };
 } | {
   admin_manage_reserved_usernames: {
@@ -64,6 +66,12 @@ export type ExecuteMsg = {
   asset_update_details: {
     channel_id: string;
     is_visible: boolean;
+    publish_id: string;
+  };
+} | {
+  asset_flag: {
+    channel_id: string;
+    flag: Flag;
     publish_id: string;
   };
 } | {
@@ -142,6 +150,9 @@ export type ExecuteMsg = {
     channel_id: string;
   };
 };
+export type Flag = ("n_s_f_w" | "explicit" | "spam" | "hateful") | {
+  other: string;
+};
 export type AssetSource = {
   nft: {
     collection_id: string;
@@ -157,6 +168,10 @@ export type AssetSource = {
 export type Binary = string;
 export type Role = "admin" | "publisher" | "moderator";
 export type Decimal = string;
+export interface FlagLimit {
+  flag: Flag;
+  limit: number;
+}
 export interface ChannelCollaborator {
   role: Role;
   share: Decimal;
@@ -167,11 +182,14 @@ export type QueryMsg = {
   pausers: {};
 } | {
   channel_details: {
-    channel_id?: string | null;
-    user_name?: string | null;
+    channel_id: string;
   };
 } | {
   channel_metadata: {
+    channel_id: string;
+  };
+} | {
+  channel: {
     channel_id: string;
   };
 } | {
@@ -234,27 +252,51 @@ export type QueryMsg = {
     start_after?: string | null;
   };
 };
+export interface AssetResponse {
+  asset: Asset;
+  flags: [Flag, number][];
+}
 export interface Asset {
   asset_source: AssetSource;
   channel_id: string;
   is_visible: boolean;
   publish_id: string;
 }
-export type ArrayOfAsset = Asset[];
+export interface AssetsResponse {
+  assets: AssetResponse[];
+}
+export interface ChannelResponse {
+  channel_collaborators: [string, ChannelCollaborator][];
+  channel_details: ChannelDetails;
+  channel_metadata: ChannelMetadata;
+}
 export interface ChannelDetails {
   channel_id: string;
   onft_id: string;
   payment_address: Addr;
   user_name: string;
 }
-export type String = string;
 export interface ChannelMetadata {
   banner_picture?: string | null;
   channel_name: string;
   description?: string | null;
   profile_picture?: string | null;
 }
-export type ArrayOfChannelDetails = ChannelDetails[];
+export interface ChannelDetailsResponse {
+  details: ChannelDetails;
+}
+export interface ChannelIdResponse {
+  channel_id: string;
+}
+export interface ChannelMetadataResponse {
+  metadata: ChannelMetadata;
+}
+export interface ChannelsResponse {
+  channels: ChannelResponse[];
+}
+export interface ConfigResponse {
+  config: ChannelConractConfig;
+}
 export interface ChannelConractConfig {
   accepted_tip_denoms: string[];
   auth_details: AuthDetails;
@@ -267,14 +309,34 @@ export interface AuthDetails {
   fee_collector: Addr;
   protocol_admin: Addr;
 }
-export type ArrayOfAddr = Addr[];
-export type Uint64 = number;
-export type ArrayOfTupleOfAddrAndChannelCollaborator = [Addr, ChannelCollaborator][];
-export type Boolean = boolean;
-export type ArrayOfString = string[];
+export interface FollowersResponse {
+  followers: Addr[];
+}
+export interface FollowersCountResponse {
+  count: number;
+}
+export interface GetChannelCollaboratorResponse {
+  collaborator: ChannelCollaborator;
+}
+export interface GetChannelCollaboratorsResponse {
+  collaborators: [Addr, ChannelCollaborator][];
+}
+export interface IsPausedResponse {
+  is_paused: boolean;
+}
+export interface PausersResponse {
+  pausers: string[];
+}
+export interface PlaylistResponse {
+  playlist: Playlist;
+}
 export interface Playlist {
   assets: [string, string][];
   playlist_name: string;
 }
-export type ArrayOfPlaylist = Playlist[];
-export type ArrayOfReservedUsername = ReservedUsername[];
+export interface PlaylistsResponse {
+  playlists: Playlist[];
+}
+export interface ReservedUsernamesResponse {
+  reserved_usernames: ReservedUsername[];
+}
