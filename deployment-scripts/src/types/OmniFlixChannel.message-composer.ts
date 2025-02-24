@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, Flag, AssetSource, Binary, Role, Decimal, FlagLimit, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;
@@ -22,11 +22,9 @@ export interface OmniFlixChannelMsg {
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   adminRemoveAssets: ({
     assetKeys,
-    flags,
     refreshFlags
   }: {
     assetKeys: string[][];
-    flags?: FlagLimit[];
     refreshFlags?: boolean;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   adminManageReservedUsernames: ({
@@ -252,11 +250,9 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   };
   adminRemoveAssets = ({
     assetKeys,
-    flags,
     refreshFlags
   }: {
     assetKeys: string[][];
-    flags?: FlagLimit[];
     refreshFlags?: boolean;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -267,7 +263,6 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         msg: toUtf8(JSON.stringify({
           admin_remove_assets: {
             asset_keys: assetKeys,
-            flags,
             refresh_flags: refreshFlags
           }
         })),

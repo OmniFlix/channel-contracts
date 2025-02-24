@@ -33,7 +33,6 @@ export type ExecuteMsg = {
 } | {
   admin_remove_assets: {
     asset_keys: [string, string][];
-    flags?: FlagLimit[] | null;
     refresh_flags?: boolean | null;
   };
 } | {
@@ -150,9 +149,6 @@ export type ExecuteMsg = {
     channel_id: string;
   };
 };
-export type Flag = ("n_s_f_w" | "explicit" | "spam" | "hateful") | {
-  other: string;
-};
 export type AssetSource = {
   nft: {
     collection_id: string;
@@ -166,12 +162,11 @@ export type AssetSource = {
   };
 };
 export type Binary = string;
+export type Flag = ("n_s_f_w" | "explicit" | "spam" | "hateful") | {
+  other: string;
+};
 export type Role = "admin" | "publisher" | "moderator";
 export type Decimal = string;
-export interface FlagLimit {
-  flag: Flag;
-  limit: number;
-}
 export interface ChannelCollaborator {
   role: Role;
   share: Decimal;

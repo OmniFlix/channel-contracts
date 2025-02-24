@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, Flag, AssetSource, Binary, Role, Decimal, FlagLimit, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<IsPausedResponse>;
@@ -358,11 +358,9 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   adminRemoveAssets: ({
     assetKeys,
-    flags,
     refreshFlags
   }: {
     assetKeys: string[][];
-    flags?: FlagLimit[];
     refreshFlags?: boolean;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   adminManageReservedUsernames: ({
@@ -583,17 +581,14 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   };
   adminRemoveAssets = async ({
     assetKeys,
-    flags,
     refreshFlags
   }: {
     assetKeys: string[][];
-    flags?: FlagLimit[];
     refreshFlags?: boolean;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       admin_remove_assets: {
         asset_keys: assetKeys,
-        flags,
         refresh_flags: refreshFlags
       }
     }, fee, memo, _funds);
