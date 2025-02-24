@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "asset-manager"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std 2.2.1",
@@ -263,7 +263,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "channel-manager"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std 2.2.1",
@@ -897,7 +897,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "asset-manager",
@@ -1044,7 +1044,7 @@ dependencies = [
 
 [[package]]
 name = "omniflix-channel-types"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std 2.2.1",
@@ -1118,7 +1118,7 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "pauser"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std 2.2.1",
@@ -1572,7 +1572,7 @@ dependencies = [
 
 [[package]]
 name = "testing"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",

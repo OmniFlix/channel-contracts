@@ -1,12 +1,10 @@
 [package]
-name        = "testing"
-authors     = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
+name = "testing"
+authors = ["Adnan Deniz Corlu <adenizcorlu@gmail.com>"]
 description = "A unique testing package designed to execute and query Stargate in multi-test environment."
-version     = { workspace = true }
-edition     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-license     = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -25,11 +23,15 @@ library = []
 
 [dependencies]
 cosmwasm-storage = { workspace = true }
-omniflix-std = { workspace=true }
-cosmwasm-schema      = { workspace = true }
-cosmwasm-std = { version = "2.0.0", features = ["iterator", "staking", "stargate"] }
-cw-controllers       = { workspace = true }
-cw2                  = { workspace = true }
+omniflix-std = { workspace = true }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { version = "2.0.0", features = [
+  "iterator",
+  "staking",
+  "stargate",
+] }
+cw-controllers = { workspace = true }
+cw2 = { workspace = true }
 cw-storage-plus = "2.0.0"
 cw-utils = "2.0.0"
 schemars = "0.8.16"
@@ -38,5 +40,7 @@ anyhow = "1.0.79"
 itertools = "0.12.0"
 serde = "1.0.195"
 thiserror = "1.0.56"
-prost = {version = "0.13.3", default-features = false, features = ["prost-derive"]}
-omniflix-channel = { path = "../../contracts/omniflix-channel"}
+prost = { version = "0.13.3", default-features = false, features = [
+  "prost-derive",
+] }
+omniflix-channel = { path = "../../contracts/omniflix-channel" }
