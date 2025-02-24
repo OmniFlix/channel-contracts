@@ -353,16 +353,12 @@ impl ChannelsManager {
             return Err(ChannelError::ChannelIdNotFound {});
         }
 
-        let channel_collaborators: Vec<(Addr, ChannelCollaborator)> = self
+        let shares: Vec<(Addr, Decimal)> = self
             .channel_collaborators
             .prefix(channel_id)
             .range(store, None, None, Order::Ascending)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap_or_default();
-
-        let shares = channel_collaborators
-            .iter()
-            .map(|(addr, collaborator)| (addr.clone(), collaborator.share))
+            .filter_map(|item| item.ok())
+            .map(|(addr, collaborator)| (addr, collaborator.share))
             .collect();
         Ok(shares)
     }
