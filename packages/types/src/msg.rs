@@ -1,8 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Coin};
+use cosmwasm_std::{Addr, Binary, Coin, Decimal};
 
 use crate::{
-    asset::{Asset, AssetKey, AssetSource, Playlist},
+    asset::{Asset, AssetKey, AssetSource, Flag, Playlist},
     channel::{ChannelCollaborator, ChannelDetails, ChannelMetadata},
     config::ChannelConractConfig,
 };
@@ -22,7 +22,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub struct ReservedUsername {
     pub username: String,
-    pub address: Option<String>,
+    pub address: Option<Addr>,
 }
 
 #[cw_serde]
@@ -42,6 +42,8 @@ pub enum ExecuteMsg {
     AdminRemoveAssets {
         /// The keys of the assets to be removed.
         asset_keys: Vec<AssetKey>,
+        /// Removes all flags from the assets if set to true.
+        refresh_flags: Option<bool>,
     },
     /// Manages reserved usernames.
     /// Only callable by the protocol admin.
@@ -99,7 +101,14 @@ pub enum ExecuteMsg {
         /// The new visibility status of the asset.
         is_visible: bool,
     },
-
+    AssetFlag {
+        /// The ID of the channel where the asset is published.
+        channel_id: String,
+        /// The ID of the publish to be flagged.
+        publish_id: String,
+        /// The flag value.
+        flag: Flag,
+    },
     /// Creates a new playlist in the specified channel. The playlist name must be unique
     /// within the channel. Only callable by the channel owner or a collaborator.
     PlaylistCreate {
@@ -237,68 +246,116 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(bool)]
     IsPaused {},
+
     #[returns(Vec<String>)]
     Pausers {},
+
     #[returns(ChannelDetails)]
-    ChannelDetails {
-        channel_id: Option<String>,
-        user_name: Option<String>,
-    },
+    ChannelDetails { channel_id: String },
+
     #[returns(ChannelMetadata)]
     ChannelMetadata { channel_id: String },
-    #[returns(Vec<ChannelDetails>)]
+
+    #[returns(ChannelResponse)]
+    Channel { channel_id: String },
+
+    #[returns(Vec<ChannelResponse>)]
     Channels {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+
     #[returns(String)]
     ChannelId { user_name: String },
+
     #[returns(Playlist)]
     Playlist {
         channel_id: String,
         playlist_name: String,
     },
+
     #[returns(Vec<Playlist>)]
     Playlists {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+
     #[returns(ChannelConractConfig)]
     Config {},
-    #[returns(Vec<Asset>)]
+
+    #[returns(Vec<AssetResponse>)]
     Assets {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(Asset)]
+
+    #[returns(AssetResponse)]
     Asset {
         channel_id: String,
         publish_id: String,
     },
+
     #[returns(Vec<ReservedUsername>)]
     ReservedUsernames {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(ChannelCollaborator)]
+
+    #[returns(CollaboratorInfo)]
     GetChannelCollaborator {
         channel_id: String,
         collaborator_address: Addr,
     },
-    #[returns(Vec<(Addr, ChannelCollaborator)>)]
+
+    #[returns(Vec<CollaboratorInfo>)]
     GetChannelCollaborators {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+
     #[returns(u64)]
     FollowersCount { channel_id: String },
-    #[returns(Vec<Addr>)]
+
+    #[returns(Vec<String>)]
     Followers {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+}
+// Response for Channel query
+#[cw_serde]
+pub struct ChannelResponse {
+    pub channel_id: String,
+    pub user_name: String,
+    pub onft_id: String,
+    pub payment_address: String,
+    pub channel_name: String,
+    pub description: Option<String>,
+    pub profile_picture: Option<String>,
+    pub banner_picture: Option<String>,
+    pub collaborators: Vec<CollaboratorInfo>,
+    pub follower_count: u64,
+}
+
+#[cw_serde]
+pub struct AssetResponse {
+    pub asset: Asset,
+    pub flags: Vec<FlagInfo>,
+}
+#[cw_serde]
+pub struct CollaboratorInfo {
+    pub address: String,
+    pub role: String,
+    pub share: Decimal,
+}
+
+// Create this new type to avoid tuples
+#[cw_serde]
+pub struct FlagInfo {
+    pub flag: Flag,
+    pub count: u64,
 }

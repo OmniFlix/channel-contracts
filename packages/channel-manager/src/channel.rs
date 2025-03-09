@@ -2,8 +2,9 @@ use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use crate::error::ChannelError;
-use omniflix_channel_types::channel::{
-    ChannelCollaborator, ChannelDetails, ChannelId, ChannelMetadata, UserName,
+use omniflix_channel_types::{
+    channel::{ChannelCollaborator, ChannelDetails, ChannelId, ChannelMetadata, UserName},
+    msg::{CollaboratorInfo, ReservedUsername},
 };
 
 const CHANNEL_DETAILS: &str = "cd"; // channel_details
@@ -25,7 +26,7 @@ pub struct ChannelsManager {
     pub channel_metadata: Map<ChannelId, ChannelMetadata>,
     pub username_to_channel_id: Map<UserName, ChannelId>,
     pub channel_id_to_username: Map<ChannelId, UserName>,
-    pub reserved_usernames: Map<UserName, Addr>,
+    pub reserved_usernames: Map<UserName, Option<Addr>>,
     pub channel_collaborators: Map<(ChannelId, Addr), ChannelCollaborator>,
     pub total_collaborator_shares: Map<ChannelId, Decimal>,
     pub followers: Map<(ChannelId, Addr), bool>,
@@ -50,11 +51,11 @@ impl ChannelsManager {
     pub fn add_reserved_usernames(
         &self,
         store: &mut dyn Storage,
-        usernames: Vec<(UserName, Addr)>,
+        usernames: Vec<ReservedUsername>,
     ) -> Result<(), ChannelError> {
         for username in usernames {
             self.reserved_usernames
-                .save(store, username.0.clone(), &username.1)
+                .save(store, username.username.clone(), &username.address)
                 .map_err(|_| ChannelError::SaveReservedUsernamesFailed {})?;
         }
         Ok(())
@@ -79,26 +80,37 @@ impl ChannelsManager {
         store: &dyn Storage,
         start_after: Option<UserName>,
         limit: Option<u32>,
-    ) -> StdResult<Vec<(UserName, Addr)>> {
+    ) -> StdResult<Vec<ReservedUsername>> {
         let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(Bound::exclusive);
 
-        self.reserved_usernames
+        let reserved_usernames: Vec<ReservedUsername> = self
+            .reserved_usernames
             .range(store, start, None, Order::Ascending)
             .take(limit)
-            .collect()
+            .map(|item| {
+                item.map(|(username, address)| ReservedUsername {
+                    username,
+                    address: address.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap_or_default();
+        Ok(reserved_usernames)
     }
 
     pub fn get_reserved_status(
         &self,
         store: &dyn Storage,
         username: UserName,
-    ) -> StdResult<Option<Addr>> {
-        let reserved_address = self.reserved_usernames.load(store, username);
-        if reserved_address.is_err() {
-            return Ok(None);
+    ) -> StdResult<Option<Option<Addr>>> {
+        // Check if the username exists in the map
+        if !self.reserved_usernames.has(store, username.clone()) {
+            return Ok(None); // Username doesn't exist
         }
-        Ok(Some(reserved_address.unwrap()))
+        // Username exists, get its value (which might be None)
+        let reserved_address = self.reserved_usernames.load(store, username)?;
+        Ok(Some(reserved_address)) // Return Some(None) or Some(Some(addr))
     }
 
     pub fn add_channel(
@@ -353,16 +365,12 @@ impl ChannelsManager {
             return Err(ChannelError::ChannelIdNotFound {});
         }
 
-        let channel_collaborators: Vec<(Addr, ChannelCollaborator)> = self
+        let shares: Vec<(Addr, Decimal)> = self
             .channel_collaborators
             .prefix(channel_id)
             .range(store, None, None, Order::Ascending)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap_or_default();
-
-        let shares = channel_collaborators
-            .iter()
-            .map(|(addr, collaborator)| (addr.clone(), collaborator.share))
+            .filter_map(|item| item.ok())
+            .map(|(addr, collaborator)| (addr, collaborator.share))
             .collect();
         Ok(shares)
     }
@@ -409,7 +417,7 @@ impl ChannelsManager {
         channel_id: ChannelId,
         start_after: Option<String>,
         limit: Option<u32>,
-    ) -> Result<Vec<(Addr, ChannelCollaborator)>, ChannelError> {
+    ) -> Result<Vec<CollaboratorInfo>, ChannelError> {
         // Check if channel exists
         if !self.channel_details.has(store, channel_id.clone()) {
             return Err(ChannelError::ChannelIdNotFound {});
@@ -423,9 +431,15 @@ impl ChannelsManager {
             .prefix(channel_id)
             .range(store, start, None, Order::Ascending)
             .take(limit)
+            .map(|item| {
+                item.map(|(addr, collab)| CollaboratorInfo {
+                    address: addr.to_string(),
+                    role: collab.role.to_string(),
+                    share: collab.share,
+                })
+            })
             .collect::<Result<Vec<_>, _>>()
             .unwrap_or_default();
-
         Ok(channel_collaborators)
     }
 

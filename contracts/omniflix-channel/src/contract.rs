@@ -16,12 +16,15 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw_utils::must_pay;
-use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Flag, Playlist};
 use omniflix_channel_types::channel::{
     ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
 use omniflix_channel_types::config::{AuthDetails, ChannelConractConfig};
-use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReservedUsername};
+use omniflix_channel_types::msg::{
+    AssetResponse, ChannelResponse, CollaboratorInfo, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ReservedUsername,
+};
 use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
 
@@ -74,9 +77,8 @@ pub fn instantiate(
     )?;
 
     let channels_manager = ChannelsManager::new();
-    let validated_reserved_usernames =
-        validate_reserved_usernames(msg.reserved_usernames.clone(), deps.api)?;
-    channels_manager.add_reserved_usernames(deps.storage, validated_reserved_usernames)?;
+    validate_reserved_usernames(msg.reserved_usernames.clone(), deps.api)?;
+    channels_manager.add_reserved_usernames(deps.storage, msg.reserved_usernames.clone())?;
 
     // Prepare the message to create a new ONFT denom (collection)
     let onft_creation_message: CosmosMsg =
@@ -114,7 +116,15 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AdminRemoveAssets { asset_keys } => remove_assets(deps, info, asset_keys),
+        ExecuteMsg::AdminRemoveAssets {
+            asset_keys,
+            refresh_flags,
+        } => remove_assets(deps, info, asset_keys, refresh_flags),
+        ExecuteMsg::AssetFlag {
+            channel_id,
+            publish_id,
+            flag,
+        } => flag_asset(deps, info, channel_id, publish_id, flag),
         ExecuteMsg::Pause {} => pause(deps, info),
         ExecuteMsg::Unpause {} => unpause(deps, info),
         ExecuteMsg::SetPausers { pausers } => set_pausers(deps, info, pausers),
@@ -293,16 +303,24 @@ fn create_channel(
     validate_channel_details(channel_details.clone())?;
     validate_channel_metadata(channel_metadata.clone())?;
 
-    // Check if the username is reserved and if the sender is the reserver
-    if let Some(reserved_addr) =
-        channels_manager.get_reserved_status(deps.storage, user_name.clone())?
-    {
-        if reserved_addr != info.sender {
-            return Err(ContractError::UserNameReserved {});
+    // Check if the username is reserved
+    match channels_manager.get_reserved_status(deps.storage, user_name.clone())? {
+        None => {
+            // Username is not reserved, proceed with channel creation
         }
-        channels_manager.remove_reserved_usernames(deps.storage, vec![user_name.clone()])?;
+        Some(reserved_addr) => {
+            if reserved_addr != Some(info.sender.clone()) {
+                // Username is reserved but not assigned to anyone
+                return Err(ContractError::UserNameReserved {});
+            }
+            // Username is reserved for a specific address
+            if reserved_addr != Some(info.sender.clone()) {
+                return Err(ContractError::UserNameReserved {});
+            }
+            // Sender matches the reserved address, remove the reservation
+            channels_manager.remove_reserved_usernames(deps.storage, vec![user_name.clone()])?;
+        }
     }
-
     // Add the new channel to the collection
     // Checks for uniqueness of the channel ID and username
     channels_manager.add_channel(
@@ -991,11 +1009,10 @@ fn manage_reserved_usernames(
         "manage_reserved_usernames".to_string(),
     )];
     if let Some(add_usernames) = add_usernames {
-        let validated_reserved_usernames = validate_reserved_usernames(add_usernames, deps.api)?;
-        channels_manager
-            .add_reserved_usernames(deps.storage, validated_reserved_usernames.clone())?;
-        for username in validated_reserved_usernames {
-            attrs.push(("add_username".to_string(), username.0)); // Directly push owned username
+        validate_reserved_usernames(add_usernames.clone(), deps.api)?;
+        channels_manager.add_reserved_usernames(deps.storage, add_usernames.clone())?;
+        for username in add_usernames {
+            attrs.push(("add_username".to_string(), username.username)); // Directly push owned username
         }
     }
     if let Some(remove_usernames) = remove_usernames {
@@ -1005,10 +1022,7 @@ fn manage_reserved_usernames(
         }
     }
 
-    let response = Response::new().add_attributes(attrs).add_attribute(
-        "protocol_admin",
-        config.auth_details.protocol_admin.to_string(),
-    );
+    let response = Response::new().add_attributes(attrs);
 
     Ok(response)
 }
@@ -1057,28 +1071,69 @@ fn remove_assets(
     deps: DepsMut,
     info: MessageInfo,
     asset_keys: Vec<AssetKey>,
+    refresh_flags: Option<bool>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.auth_details.protocol_admin {
         return Err(ContractError::Unauthorized {});
     }
 
+    let mut deleted_assets: Vec<AssetKey> = Vec::new();
+    deleted_assets.extend(asset_keys.clone());
+
+    // First remove the assets specified in the message
     let assets_manager = AssetsManager::new();
     assets_manager.delete_assets(deps.storage, asset_keys)?;
+
+    // Refresh the flags if set
+    // If the flag is set to true, all flags of all assets will be removed
+    if let Some(refresh_flags) = refresh_flags {
+        if refresh_flags {
+            assets_manager.remove_all_flags(deps.storage)?;
+        }
+    }
 
     Ok(Response::new()
         .add_attribute("action", "remove_assets")
         .add_attribute("admin", config.auth_details.protocol_admin.to_string()))
 }
+
+fn flag_asset(
+    deps: DepsMut,
+    _info: MessageInfo,
+    channel_id: String,
+    publish_id: String,
+    flag: Flag,
+) -> Result<Response, ContractError> {
+    let pause_state = PauseState::new()?;
+    pause_state.error_if_paused(deps.storage)?;
+
+    let assets_manager = AssetsManager::new();
+    assets_manager.add_flag(
+        deps.storage,
+        channel_id.clone(),
+        publish_id.clone(),
+        flag.clone(),
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("action", "add_flag")
+        .add_attribute("channel_id", channel_id)
+        .add_attribute("publish_id", publish_id)
+        .add_attribute("flag", flag.to_string()))
+}
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Channel { channel_id } => to_json_binary(&query_channel(deps, channel_id)?),
         QueryMsg::IsPaused {} => to_json_binary(&query_is_paused(deps)?),
         QueryMsg::Pausers {} => to_json_binary(&query_pausers(deps)?),
-        QueryMsg::ChannelDetails {
-            channel_id,
-            user_name,
-        } => to_json_binary(&query_channel_details(deps, channel_id, user_name)?),
+        QueryMsg::ChannelDetails { channel_id } => {
+            to_json_binary(&query_channel_details(deps, channel_id)?)
+        }
+        QueryMsg::ChannelMetadata { channel_id } => {
+            to_json_binary(&query_channel_metadata(deps, channel_id)?)
+        }
         QueryMsg::Playlist {
             channel_id,
             playlist_name,
@@ -1092,7 +1147,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         } => to_json_binary(&query_playlists(deps, channel_id, start_after, limit)?),
-
         QueryMsg::Config {} => to_json_binary(&CONFIG.load(deps.storage)?),
         QueryMsg::Assets {
             channel_id,
@@ -1105,9 +1159,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_json_binary(&query_asset(deps, channel_id, publish_id)?),
         QueryMsg::ReservedUsernames { start_after, limit } => {
             to_json_binary(&query_reserved_usernames(deps, start_after, limit)?)
-        }
-        QueryMsg::ChannelMetadata { channel_id } => {
-            to_json_binary(&query_channel_metadata(deps, channel_id)?)
         }
         QueryMsg::GetChannelCollaborator {
             channel_id,
@@ -1138,34 +1189,57 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_channel_details(
-    deps: Deps,
-    channel_id: Option<String>,
-    user_name: Option<String>,
-) -> Result<ChannelDetails, ContractError> {
+fn query_channel_details(deps: Deps, channel_id: String) -> Result<ChannelDetails, ContractError> {
     let channels_manager = ChannelsManager::new();
-    // Match channels Id and user name
-    let channel_details = match (channel_id, user_name) {
-        (Some(channel_id), None) => {
-            channels_manager.get_channel_details(deps.storage, channel_id)?
-        }
-        (None, Some(user_name)) => {
-            let channel_id = channels_manager.get_channel_id(deps.storage, user_name)?;
-            channels_manager.get_channel_details(deps.storage, channel_id)?
-        }
-        _ => return Err(ContractError::InvalidChannelQuery {}),
-    };
+    let channel_details = channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
     Ok(channel_details)
+}
+
+fn query_channel_metadata(
+    deps: Deps,
+    channel_id: String,
+) -> Result<ChannelMetadata, ContractError> {
+    let channels_manager = ChannelsManager::new();
+    let channel_metadata =
+        channels_manager.get_channel_metadata(deps.storage, channel_id.clone())?;
+    Ok(channel_metadata)
+}
+
+fn query_channel(deps: Deps, channel_id: String) -> Result<ChannelResponse, ContractError> {
+    let channels_manager = ChannelsManager::new();
+    let channel_details = channels_manager.get_channel_details(deps.storage, channel_id.clone())?;
+    let channel_metadata =
+        channels_manager.get_channel_metadata(deps.storage, channel_id.clone())?;
+    let channel_collaborators =
+        channels_manager.get_channel_collaborators(deps.storage, channel_id.clone(), None, None)?;
+    let follower_count = channels_manager.get_followers_count(deps.storage, channel_id.clone())?;
+
+    Ok(ChannelResponse {
+        channel_id: channel_details.channel_id,
+        user_name: channel_details.user_name,
+        onft_id: channel_details.onft_id,
+        payment_address: channel_details.payment_address.to_string(),
+        channel_name: channel_metadata.channel_name,
+        description: channel_metadata.description,
+        profile_picture: channel_metadata.profile_picture,
+        banner_picture: channel_metadata.banner_picture,
+        collaborators: channel_collaborators,
+        follower_count,
+    })
 }
 
 fn query_channels(
     deps: Deps,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> Result<Vec<ChannelDetails>, ContractError> {
+) -> Result<Vec<ChannelResponse>, ContractError> {
     let channels_manager = ChannelsManager::new();
     let channels_list = channels_manager.get_channels_list(deps.storage, start_after, limit)?;
-    Ok(channels_list)
+    let channels = channels_list
+        .iter()
+        .map(|channel| query_channel(deps, channel.channel_id.clone()))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(channels)
 }
 
 fn query_playlist(
@@ -1186,13 +1260,13 @@ fn query_playlists(
     limit: Option<u32>,
 ) -> Result<Vec<Playlist>, ContractError> {
     let playlists_manager = PlaylistsManager::new();
-    let playlists_list = playlists_manager.get_all_playlists(
+    let playlists = playlists_manager.get_all_playlists(
         deps.storage,
         channel_id.clone(),
         start_after,
         limit,
     )?;
-    Ok(playlists_list)
+    Ok(playlists)
 }
 
 fn query_channel_id(deps: Deps, user_name: String) -> Result<String, ContractError> {
@@ -1207,10 +1281,11 @@ fn query_is_paused(deps: Deps) -> Result<bool, ContractError> {
     Ok(is_paused)
 }
 
-fn query_pausers(deps: Deps) -> Result<Vec<Addr>, ContractError> {
+fn query_pausers(deps: Deps) -> Result<Vec<String>, ContractError> {
     let pause_state = PauseState::new()?;
     let pausers = pause_state.get_pausers(deps.storage)?;
-    Ok(pausers)
+    let pauser_strings = pausers.iter().map(|addr| addr.to_string()).collect();
+    Ok(pauser_strings)
 }
 
 fn query_assets(
@@ -1218,18 +1293,24 @@ fn query_assets(
     channel_id: String,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> Result<Vec<Asset>, ContractError> {
+) -> Result<Vec<AssetResponse>, ContractError> {
     let assets_manager = AssetsManager::new();
     let assets_list =
-        assets_manager.get_all_assets(deps.storage, channel_id, start_after, limit)?;
+        assets_manager.get_all_assets(deps.storage, channel_id.clone(), start_after, limit)?;
     Ok(assets_list)
 }
 
-fn query_asset(deps: Deps, channel_id: String, publish_id: String) -> Result<Asset, ContractError> {
+fn query_asset(
+    deps: Deps,
+    channel_id: String,
+    publish_id: String,
+) -> Result<AssetResponse, ContractError> {
     let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
     let asset = assets_manager.get_asset(deps.storage, asset_key)?;
-    Ok(asset)
+    let flags = assets_manager.get_all_flags_for_asset(deps.storage, channel_id, publish_id)?;
+
+    Ok(AssetResponse { asset, flags })
 }
 fn query_reserved_usernames(
     deps: Deps,
@@ -1237,35 +1318,23 @@ fn query_reserved_usernames(
     limit: Option<u32>,
 ) -> Result<Vec<ReservedUsername>, ContractError> {
     let channels = ChannelsManager::new();
-    let reserved_usernames: Vec<ReservedUsername> = channels
-        .get_reserved_usernames(deps.storage, start_after, limit)?
-        .iter()
-        .map(|username| ReservedUsername {
-            username: username.clone().0,
-            address: Some(username.clone().1.to_string()),
-        })
-        .collect();
+    let reserved_usernames = channels.get_reserved_usernames(deps.storage, start_after, limit)?;
     Ok(reserved_usernames)
-}
-
-fn query_channel_metadata(
-    deps: Deps,
-    channel_id: String,
-) -> Result<ChannelMetadata, ContractError> {
-    let channels = ChannelsManager::new();
-    let channel_metadata = channels.get_channel_metadata(deps.storage, channel_id)?;
-    Ok(channel_metadata)
 }
 
 fn query_channel_collaborator(
     deps: Deps,
     channel_id: String,
     collaborator_address: Addr,
-) -> Result<ChannelCollaborator, ContractError> {
+) -> Result<CollaboratorInfo, ContractError> {
     let channels = ChannelsManager::new();
-    let channel_collaborator =
-        channels.get_collaborator(deps.storage, channel_id, collaborator_address)?;
-    Ok(channel_collaborator)
+    let collaborator =
+        channels.get_collaborator(deps.storage, channel_id, collaborator_address.clone())?;
+    Ok(CollaboratorInfo {
+        address: collaborator_address.to_string(),
+        role: collaborator.role.to_string(),
+        share: collaborator.share,
+    })
 }
 
 fn query_channel_collaborators(
@@ -1273,17 +1342,17 @@ fn query_channel_collaborators(
     channel_id: String,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> Result<Vec<(Addr, ChannelCollaborator)>, ContractError> {
+) -> Result<Vec<CollaboratorInfo>, ContractError> {
     let channels = ChannelsManager::new();
-    let channel_collaborators =
+    let collaborators =
         channels.get_channel_collaborators(deps.storage, channel_id, start_after, limit)?;
-    Ok(channel_collaborators)
+    Ok(collaborators)
 }
 
 fn query_followers_count(deps: Deps, channel_id: String) -> Result<u64, ContractError> {
     let channels = ChannelsManager::new();
-    let followers_count = channels.get_followers_count(deps.storage, channel_id)?;
-    Ok(followers_count)
+    let count = channels.get_followers_count(deps.storage, channel_id)?;
+    Ok(count)
 }
 
 fn query_followers(

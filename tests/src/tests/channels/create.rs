@@ -5,8 +5,7 @@ use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::channel::ChannelDetails;
-use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg, ReservedUsername};
+use omniflix_channel_types::msg::{ChannelResponse, ExecuteMsg, QueryMsg, ReservedUsername};
 
 #[test]
 fn missing_creation_fee() {
@@ -227,7 +226,7 @@ fn happy_path() {
     let onft_id = get_event_attribute(res.clone(), "wasm", "onft_id");
 
     // Query channels
-    let channels: Vec<ChannelDetails> = app
+    let channels: Vec<ChannelResponse> = app
         .wrap()
         .query_wasm_smart(
             channel_contract_addr.clone(),
@@ -259,7 +258,7 @@ fn create_reserved_channel() {
     instantiate_msg.reserved_usernames = vec![
         ReservedUsername {
             username: "admin".to_string(),
-            address: Some(admin.clone().to_string()),
+            address: Some(admin.clone()),
         },
         ReservedUsername {
             username: "reserved".to_string(),

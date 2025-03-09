@@ -25,7 +25,8 @@
     "admin-create": "ts-node src/scripts/admin-create-channel.ts",
     "add-usernames": "ts-node src/scripts/add-reserved-usernames.ts",
     "follow": "ts-node src/scripts/follow.ts",
-    "admin-remove": "ts-node src/scripts/admin-remove-assets.ts"
+    "admin-remove": "ts-node src/scripts/admin-remove-assets.ts",
+    "flag": "ts-node src/scripts/flag-asset.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.32.3",

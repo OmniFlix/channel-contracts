@@ -1,8 +1,8 @@
 use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{Asset, AssetSource};
-use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
+use omniflix_channel_types::asset::AssetSource;
+use omniflix_channel_types::msg::{AssetResponse, ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
@@ -265,13 +265,13 @@ fn happy_path() {
         limit: None,
     };
 
-    let assets: Vec<Asset> = app
+    let assets: Vec<AssetResponse> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    let asset = assets.first().unwrap();
-    assert_eq!(asset.publish_id, publish_id.clone());
+    assert_eq!(assets.len(), 1);
+    assert_eq!(assets[0].asset.publish_id, publish_id.clone());
 
     // Unpublish the asset
     let unpublish_msg = ExecuteMsg::AssetUnpublish {
@@ -295,7 +295,7 @@ fn happy_path() {
         limit: None,
     };
 
-    let assets: Vec<Asset> = app
+    let assets: Vec<AssetResponse> = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();

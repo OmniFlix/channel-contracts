@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Role, Decimal, ChannelCollaborator, QueryMsg, Asset, ArrayOfAsset, ChannelDetails, String, ChannelMetadata, ArrayOfChannelDetails, ChannelConractConfig, AuthDetails, ArrayOfAddr, Uint64, ArrayOfTupleOfAddrAndChannelCollaborator, Boolean, ArrayOfString, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, FlagInfo, ArrayOfAssetResponse, ChannelResponse, CollaboratorInfo, ChannelDetails, String, ChannelMetadata, ArrayOfChannelResponse, ChannelConractConfig, AuthDetails, ArrayOfString, Uint64, ArrayOfCollaboratorInfo, Boolean, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;
@@ -21,9 +21,11 @@ export interface OmniFlixChannelMsg {
     protocolAdmin?: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   adminRemoveAssets: ({
-    assetKeys
+    assetKeys,
+    refreshFlags
   }: {
     assetKeys: string[][];
+    refreshFlags?: boolean;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   adminManageReservedUsernames: ({
     addUsernames,
@@ -66,6 +68,15 @@ export interface OmniFlixChannelMsg {
   }: {
     channelId: string;
     isVisible: boolean;
+    publishId: string;
+  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  assetFlag: ({
+    channelId,
+    flag,
+    publishId
+  }: {
+    channelId: string;
+    flag: Flag;
     publishId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistCreate: ({
@@ -196,6 +207,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     this.assetPublish = this.assetPublish.bind(this);
     this.assetUnpublish = this.assetUnpublish.bind(this);
     this.assetUpdateDetails = this.assetUpdateDetails.bind(this);
+    this.assetFlag = this.assetFlag.bind(this);
     this.playlistCreate = this.playlistCreate.bind(this);
     this.playlistDelete = this.playlistDelete.bind(this);
     this.playlistAddAsset = this.playlistAddAsset.bind(this);
@@ -237,9 +249,11 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     };
   };
   adminRemoveAssets = ({
-    assetKeys
+    assetKeys,
+    refreshFlags
   }: {
     assetKeys: string[][];
+    refreshFlags?: boolean;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -248,7 +262,8 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           admin_remove_assets: {
-            asset_keys: assetKeys
+            asset_keys: assetKeys,
+            refresh_flags: refreshFlags
           }
         })),
         funds: _funds
@@ -393,6 +408,31 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
           asset_update_details: {
             channel_id: channelId,
             is_visible: isVisible,
+            publish_id: publishId
+          }
+        })),
+        funds: _funds
+      })
+    };
+  };
+  assetFlag = ({
+    channelId,
+    flag,
+    publishId
+  }: {
+    channelId: string;
+    flag: Flag;
+    publishId: string;
+  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          asset_flag: {
+            channel_id: channelId,
+            flag,
             publish_id: publishId
           }
         })),

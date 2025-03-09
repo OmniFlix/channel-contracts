@@ -3,12 +3,14 @@ use cosmwasm_std::{Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Map};
 
 use omniflix_channel_types::{
-    asset::{Asset, AssetKey, PublishId},
+    asset::{Asset, AssetKey, Flag, FlagKey, PublishId},
     channel::ChannelId,
+    msg::{AssetResponse, FlagInfo},
 };
 
 pub struct AssetsManager {
     pub assets: Map<AssetKey, Asset>,
+    pub flags: Map<FlagKey, u64>,
 }
 
 const PAGINATION_LIMIT: u32 = 50;
@@ -18,6 +20,7 @@ impl AssetsManager {
     pub const fn new() -> Self {
         AssetsManager {
             assets: Map::new("assets"),
+            flags: Map::new("flags"),
         }
     }
 
@@ -67,16 +70,35 @@ impl AssetsManager {
         channel_id: ChannelId,
         start_after: Option<PublishId>,
         limit: Option<u32>,
-    ) -> StdResult<Vec<Asset>> {
+    ) -> StdResult<Vec<AssetResponse>> {
         let limit = limit.unwrap_or(PAGINATION_LIMIT).min(PAGINATION_LIMIT) as usize;
         let start = start_after.map(Bound::exclusive);
 
-        self.assets
-            .prefix(channel_id)
+        let assets = self
+            .assets
+            .prefix(channel_id.clone())
             .range(store, start, None, Order::Ascending)
             .take(limit)
-            .map(|result| result.map(|(_, asset)| asset))
-            .collect()
+            .map(|result| {
+                result.map(|(_, asset)| {
+                    let flags = self
+                        .get_all_flags_for_asset(
+                            store,
+                            channel_id.clone(),
+                            asset.publish_id.clone(),
+                        )
+                        .unwrap_or_default();
+
+                    AssetResponse {
+                        asset: asset.clone(),
+                        flags,
+                    }
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap_or_default();
+
+        Ok(assets)
     }
 
     /// Check if an asset exists by its key.
@@ -109,6 +131,63 @@ impl AssetsManager {
         channel_id: ChannelId,
     ) -> Result<(), AssetError> {
         self.assets.prefix(channel_id).clear(store, None);
+        Ok(())
+    }
+
+    pub fn add_flag(
+        &self,
+        store: &mut dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+        flag: Flag,
+    ) -> Result<(), AssetError> {
+        let key = (flag.to_key(), (channel_id, publish_id));
+        let flagged_count = self.flags.load(store, key.clone()).unwrap_or(0);
+        // save the new count
+        self.flags
+            .save(store, key, &(flagged_count + 1))
+            .map_err(|_| AssetError::SaveFlagError {})?;
+        Ok(())
+    }
+
+    pub fn get_flag_count(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+        flag: Flag,
+    ) -> Result<u64, AssetError> {
+        // Check if the asset exists
+        if !self
+            .assets
+            .has(store, (channel_id.clone(), publish_id.clone()))
+        {
+            return Err(AssetError::AssetNotFound {});
+        }
+        let key = (flag.to_key(), (channel_id.clone(), publish_id.clone()));
+        let flag_count = self.flags.load(store, key).unwrap_or(0);
+        Ok(flag_count)
+    }
+
+    pub fn get_all_flags_for_asset(
+        &self,
+        store: &dyn Storage,
+        channel_id: ChannelId,
+        publish_id: PublishId,
+    ) -> Result<Vec<FlagInfo>, AssetError> {
+        let mut flags = Vec::new();
+        for flag in Flag::values() {
+            let flag_count =
+                self.get_flag_count(store, channel_id.clone(), publish_id.clone(), flag.clone())?;
+            flags.push(FlagInfo {
+                flag: flag.clone(),
+                count: flag_count,
+            });
+        }
+        Ok(flags)
+    }
+    pub fn remove_all_flags(&self, store: &mut dyn Storage) -> Result<(), AssetError> {
+        self.flags.clear(store);
         Ok(())
     }
 }
@@ -203,7 +282,10 @@ mod tests {
         assert_eq!(assets_start_after.len(), 20); // Should return assets starting after "asset50"
 
         // Ensure the first asset in the result is "asset51"
-        assert_eq!(assets_start_after[0].publish_id, "asset51".to_string());
+        assert_eq!(
+            assets_start_after[0].asset.publish_id,
+            "asset51".to_string()
+        );
     }
 
     #[test]
@@ -243,7 +325,7 @@ mod tests {
 
         // Ensure the first asset in the result is "asset41"
         assert_eq!(
-            assets_with_start_after_and_limit[0].publish_id,
+            assets_with_start_after_and_limit[0].asset.publish_id,
             "asset41".to_string()
         );
     }

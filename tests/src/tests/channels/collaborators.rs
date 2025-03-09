@@ -3,7 +3,7 @@ use cosmwasm_std::{coin, Decimal, Uint128};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::channel::{ChannelCollaborator, Role};
-use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
+use omniflix_channel_types::msg::{CollaboratorInfo, ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
@@ -265,11 +265,11 @@ fn happy_path() {
         collaborator_address: collector.clone(),
     };
 
-    let collaborator: ChannelCollaborator = app
+    let collaborator: CollaboratorInfo = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(collaborator.role, Role::Moderator);
+    assert_eq!(collaborator.role, Role::Moderator.to_string());
     assert_eq!(collaborator.share, Decimal::percent(30));
 }

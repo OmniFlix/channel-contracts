@@ -6,7 +6,7 @@ import _, { random } from 'lodash'
 import assert from 'assert'
 import { CONTRACT_MAP } from './context.ts'
 import { logger } from '../utils/logger.ts'
-import { InstantiateMsg, Coin, ReservedUsername, AssetSource } from '../types/OmniFlixChannel.types.ts'
+import { InstantiateMsg, Coin, ReservedUsername, AssetSource, Flag } from '../types/OmniFlixChannel.types.ts'
 import { OmniFlixChannelClient } from '../types/OmniFlixChannel.client.ts'
 
 
@@ -265,13 +265,27 @@ export default class ChannelHelper {
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
-    AdminRemoveAssets = async (context: Context, account_name: string, asset_keys: string[][]) => {
+    AdminRemoveAssets = async (context: Context, account_name: string, asset_keys: string[][], refresh_flags?: boolean) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.adminRemoveAssets({
             assetKeys: asset_keys,
+            refreshFlags: refresh_flags
         });
         logger.log(1, `Assets removed: ${JSON.stringify(asset_keys)}`)
+        logger.log(1, `Tx_Hash: ${res.transactionHash}`)
+        logger.log(1, `Gas used: ${res.gasUsed}`)
+    }
+
+    FlagAsset = async (context: Context, account_name: string, channel_id: string, publish_id: string, flag: Flag) => {
+        let { client, address: senderAddress } = context.getTestUser(account_name);
+        let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
+        let res = await channel_client.assetFlag({
+            channelId: channel_id,
+            publishId: publish_id,
+            flag: flag,
+        });
+        logger.log(1, `Asset flagged with id: ${publish_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
