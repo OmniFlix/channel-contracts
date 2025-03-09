@@ -21,7 +21,7 @@ export interface Coin {
   denom: string;
 }
 export interface ReservedUsername {
-  address?: string | null;
+  address?: Addr | null;
   username: string;
 }
 export type ExecuteMsg = {
@@ -249,7 +249,7 @@ export type QueryMsg = {
 };
 export interface AssetResponse {
   asset: Asset;
-  flags: [Flag, number][];
+  flags: FlagInfo[];
 }
 export interface Asset {
   asset_source: AssetSource;
@@ -257,13 +257,27 @@ export interface Asset {
   is_visible: boolean;
   publish_id: string;
 }
-export interface AssetsResponse {
-  assets: AssetResponse[];
+export interface FlagInfo {
+  count: number;
+  flag: Flag;
 }
+export type ArrayOfAssetResponse = AssetResponse[];
 export interface ChannelResponse {
-  channel_collaborators: [string, ChannelCollaborator][];
-  channel_details: ChannelDetails;
-  channel_metadata: ChannelMetadata;
+  banner_picture?: string | null;
+  channel_id: string;
+  channel_name: string;
+  collaborators: CollaboratorInfo[];
+  description?: string | null;
+  follower_count: number;
+  onft_id: string;
+  payment_address: string;
+  profile_picture?: string | null;
+  user_name: string;
+}
+export interface CollaboratorInfo {
+  address: string;
+  role: string;
+  share: Decimal;
 }
 export interface ChannelDetails {
   channel_id: string;
@@ -271,27 +285,14 @@ export interface ChannelDetails {
   payment_address: Addr;
   user_name: string;
 }
+export type String = string;
 export interface ChannelMetadata {
   banner_picture?: string | null;
   channel_name: string;
   description?: string | null;
   profile_picture?: string | null;
 }
-export interface ChannelDetailsResponse {
-  details: ChannelDetails;
-}
-export interface ChannelIdResponse {
-  channel_id: string;
-}
-export interface ChannelMetadataResponse {
-  metadata: ChannelMetadata;
-}
-export interface ChannelsResponse {
-  channels: ChannelResponse[];
-}
-export interface ConfigResponse {
-  config: ChannelConractConfig;
-}
+export type ArrayOfChannelResponse = ChannelResponse[];
 export interface ChannelConractConfig {
   accepted_tip_denoms: string[];
   auth_details: AuthDetails;
@@ -304,34 +305,13 @@ export interface AuthDetails {
   fee_collector: Addr;
   protocol_admin: Addr;
 }
-export interface FollowersResponse {
-  followers: Addr[];
-}
-export interface FollowersCountResponse {
-  count: number;
-}
-export interface GetChannelCollaboratorResponse {
-  collaborator: ChannelCollaborator;
-}
-export interface GetChannelCollaboratorsResponse {
-  collaborators: [Addr, ChannelCollaborator][];
-}
-export interface IsPausedResponse {
-  is_paused: boolean;
-}
-export interface PausersResponse {
-  pausers: string[];
-}
-export interface PlaylistResponse {
-  playlist: Playlist;
-}
+export type ArrayOfString = string[];
+export type Uint64 = number;
+export type ArrayOfCollaboratorInfo = CollaboratorInfo[];
+export type Boolean = boolean;
 export interface Playlist {
   assets: [string, string][];
   playlist_name: string;
 }
-export interface PlaylistsResponse {
-  playlists: Playlist[];
-}
-export interface ReservedUsernamesResponse {
-  reserved_usernames: ReservedUsername[];
-}
+export type ArrayOfPlaylist = Playlist[];
+export type ArrayOfReservedUsername = ReservedUsername[];

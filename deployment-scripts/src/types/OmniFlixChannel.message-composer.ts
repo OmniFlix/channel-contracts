@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, FlagInfo, ArrayOfAssetResponse, ChannelResponse, CollaboratorInfo, ChannelDetails, String, ChannelMetadata, ArrayOfChannelResponse, ChannelConractConfig, AuthDetails, ArrayOfString, Uint64, ArrayOfCollaboratorInfo, Boolean, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelMsg {
   contractAddress: string;
   sender: string;

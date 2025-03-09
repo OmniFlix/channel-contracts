@@ -6,21 +6,21 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, AssetsResponse, ChannelResponse, ChannelDetails, ChannelMetadata, ChannelDetailsResponse, ChannelIdResponse, ChannelMetadataResponse, ChannelsResponse, ConfigResponse, ChannelConractConfig, AuthDetails, FollowersResponse, FollowersCountResponse, GetChannelCollaboratorResponse, GetChannelCollaboratorsResponse, IsPausedResponse, PausersResponse, PlaylistResponse, Playlist, PlaylistsResponse, ReservedUsernamesResponse } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, FlagInfo, ArrayOfAssetResponse, ChannelResponse, CollaboratorInfo, ChannelDetails, String, ChannelMetadata, ArrayOfChannelResponse, ChannelConractConfig, AuthDetails, ArrayOfString, Uint64, ArrayOfCollaboratorInfo, Boolean, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
-  isPaused: () => Promise<IsPausedResponse>;
-  pausers: () => Promise<PausersResponse>;
+  isPaused: () => Promise<Boolean>;
+  pausers: () => Promise<ArrayOfString>;
   channelDetails: ({
     channelId
   }: {
     channelId: string;
-  }) => Promise<ChannelDetailsResponse>;
+  }) => Promise<ChannelDetails>;
   channelMetadata: ({
     channelId
   }: {
     channelId: string;
-  }) => Promise<ChannelMetadataResponse>;
+  }) => Promise<ChannelMetadata>;
   channel: ({
     channelId
   }: {
@@ -32,19 +32,19 @@ export interface OmniFlixChannelReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: string;
-  }) => Promise<ChannelsResponse>;
+  }) => Promise<ArrayOfChannelResponse>;
   channelId: ({
     userName
   }: {
     userName: string;
-  }) => Promise<ChannelIdResponse>;
+  }) => Promise<String>;
   playlist: ({
     channelId,
     playlistName
   }: {
     channelId: string;
     playlistName: string;
-  }) => Promise<PlaylistResponse>;
+  }) => Promise<Playlist>;
   playlists: ({
     channelId,
     limit,
@@ -53,8 +53,8 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }) => Promise<PlaylistsResponse>;
-  config: () => Promise<ConfigResponse>;
+  }) => Promise<ArrayOfPlaylist>;
+  config: () => Promise<ChannelConractConfig>;
   assets: ({
     channelId,
     limit,
@@ -63,7 +63,7 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }) => Promise<AssetsResponse>;
+  }) => Promise<ArrayOfAssetResponse>;
   asset: ({
     channelId,
     publishId
@@ -77,14 +77,14 @@ export interface OmniFlixChannelReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: string;
-  }) => Promise<ReservedUsernamesResponse>;
+  }) => Promise<ArrayOfReservedUsername>;
   getChannelCollaborator: ({
     channelId,
     collaboratorAddress
   }: {
     channelId: string;
     collaboratorAddress: Addr;
-  }) => Promise<GetChannelCollaboratorResponse>;
+  }) => Promise<CollaboratorInfo>;
   getChannelCollaborators: ({
     channelId,
     limit,
@@ -93,12 +93,12 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }) => Promise<GetChannelCollaboratorsResponse>;
+  }) => Promise<ArrayOfCollaboratorInfo>;
   followersCount: ({
     channelId
   }: {
     channelId: string;
-  }) => Promise<FollowersCountResponse>;
+  }) => Promise<Uint64>;
   followers: ({
     channelId,
     limit,
@@ -107,7 +107,7 @@ export interface OmniFlixChannelReadOnlyInterface {
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }) => Promise<FollowersResponse>;
+  }) => Promise<ArrayOfString>;
 }
 export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterface {
   client: CosmWasmClient;
@@ -135,12 +135,12 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     this.followers = this.followers.bind(this);
   }
 
-  isPaused = async (): Promise<IsPausedResponse> => {
+  isPaused = async (): Promise<Boolean> => {
     return this.client.queryContractSmart(this.contractAddress, {
       is_paused: {}
     });
   };
-  pausers = async (): Promise<PausersResponse> => {
+  pausers = async (): Promise<ArrayOfString> => {
     return this.client.queryContractSmart(this.contractAddress, {
       pausers: {}
     });
@@ -149,7 +149,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId
   }: {
     channelId: string;
-  }): Promise<ChannelDetailsResponse> => {
+  }): Promise<ChannelDetails> => {
     return this.client.queryContractSmart(this.contractAddress, {
       channel_details: {
         channel_id: channelId
@@ -160,7 +160,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId
   }: {
     channelId: string;
-  }): Promise<ChannelMetadataResponse> => {
+  }): Promise<ChannelMetadata> => {
     return this.client.queryContractSmart(this.contractAddress, {
       channel_metadata: {
         channel_id: channelId
@@ -184,7 +184,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   }: {
     limit?: number;
     startAfter?: string;
-  }): Promise<ChannelsResponse> => {
+  }): Promise<ArrayOfChannelResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       channels: {
         limit,
@@ -196,7 +196,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     userName
   }: {
     userName: string;
-  }): Promise<ChannelIdResponse> => {
+  }): Promise<String> => {
     return this.client.queryContractSmart(this.contractAddress, {
       channel_id: {
         user_name: userName
@@ -209,7 +209,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   }: {
     channelId: string;
     playlistName: string;
-  }): Promise<PlaylistResponse> => {
+  }): Promise<Playlist> => {
     return this.client.queryContractSmart(this.contractAddress, {
       playlist: {
         channel_id: channelId,
@@ -225,7 +225,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }): Promise<PlaylistsResponse> => {
+  }): Promise<ArrayOfPlaylist> => {
     return this.client.queryContractSmart(this.contractAddress, {
       playlists: {
         channel_id: channelId,
@@ -234,7 +234,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
       }
     });
   };
-  config = async (): Promise<ConfigResponse> => {
+  config = async (): Promise<ChannelConractConfig> => {
     return this.client.queryContractSmart(this.contractAddress, {
       config: {}
     });
@@ -247,7 +247,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }): Promise<AssetsResponse> => {
+  }): Promise<ArrayOfAssetResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       assets: {
         channel_id: channelId,
@@ -276,7 +276,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   }: {
     limit?: number;
     startAfter?: string;
-  }): Promise<ReservedUsernamesResponse> => {
+  }): Promise<ArrayOfReservedUsername> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reserved_usernames: {
         limit,
@@ -290,7 +290,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   }: {
     channelId: string;
     collaboratorAddress: Addr;
-  }): Promise<GetChannelCollaboratorResponse> => {
+  }): Promise<CollaboratorInfo> => {
     return this.client.queryContractSmart(this.contractAddress, {
       get_channel_collaborator: {
         channel_id: channelId,
@@ -306,7 +306,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }): Promise<GetChannelCollaboratorsResponse> => {
+  }): Promise<ArrayOfCollaboratorInfo> => {
     return this.client.queryContractSmart(this.contractAddress, {
       get_channel_collaborators: {
         channel_id: channelId,
@@ -319,7 +319,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId
   }: {
     channelId: string;
-  }): Promise<FollowersCountResponse> => {
+  }): Promise<Uint64> => {
     return this.client.queryContractSmart(this.contractAddress, {
       followers_count: {
         channel_id: channelId
@@ -334,7 +334,7 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
     channelId: string;
     limit?: number;
     startAfter?: string;
-  }): Promise<FollowersResponse> => {
+  }): Promise<ArrayOfString> => {
     return this.client.queryContractSmart(this.contractAddress, {
       followers: {
         channel_id: channelId,
