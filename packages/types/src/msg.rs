@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Coin};
+use cosmwasm_std::{Addr, Binary, Coin, Decimal};
 
 use crate::{
     asset::{Asset, AssetKey, AssetSource, Flag, Playlist},
@@ -22,7 +22,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub struct ReservedUsername {
     pub username: String,
-    pub address: Option<String>,
+    pub address: Option<Addr>,
 }
 
 #[cw_serde]
@@ -244,174 +244,118 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(IsPausedResponse)]
+    #[returns(bool)]
     IsPaused {},
-    #[returns(PausersResponse)]
+
+    #[returns(Vec<String>)]
     Pausers {},
-    #[returns(ChannelDetailsResponse)]
+
+    #[returns(ChannelDetails)]
     ChannelDetails { channel_id: String },
-    #[returns(ChannelMetadataResponse)]
+
+    #[returns(ChannelMetadata)]
     ChannelMetadata { channel_id: String },
+
     #[returns(ChannelResponse)]
     Channel { channel_id: String },
-    #[returns(ChannelsResponse)]
+
+    #[returns(Vec<ChannelResponse>)]
     Channels {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(ChannelIdResponse)]
+
+    #[returns(String)]
     ChannelId { user_name: String },
-    #[returns(PlaylistResponse)]
+
+    #[returns(Playlist)]
     Playlist {
         channel_id: String,
         playlist_name: String,
     },
-    #[returns(PlaylistsResponse)]
+
+    #[returns(Vec<Playlist>)]
     Playlists {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(ConfigResponse)]
+
+    #[returns(ChannelConractConfig)]
     Config {},
-    #[returns(AssetsResponse)]
+
+    #[returns(Vec<AssetResponse>)]
     Assets {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+
     #[returns(AssetResponse)]
     Asset {
         channel_id: String,
         publish_id: String,
     },
-    #[returns(ReservedUsernamesResponse)]
+
+    #[returns(Vec<ReservedUsername>)]
     ReservedUsernames {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(GetChannelCollaboratorResponse)]
+
+    #[returns(CollaboratorInfo)]
     GetChannelCollaborator {
         channel_id: String,
         collaborator_address: Addr,
     },
-    #[returns(GetChannelCollaboratorsResponse)]
+
+    #[returns(Vec<CollaboratorInfo>)]
     GetChannelCollaborators {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    #[returns(FollowersCountResponse)]
+
+    #[returns(u64)]
     FollowersCount { channel_id: String },
-    #[returns(FollowersResponse)]
+
+    #[returns(Vec<String>)]
     Followers {
         channel_id: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
 }
-
-// Response for IsPaused query
-#[cw_serde]
-pub struct IsPausedResponse {
-    pub is_paused: bool,
-}
-
-// Response for Pausers query
-#[cw_serde]
-pub struct PausersResponse {
-    pub pausers: Vec<String>,
-}
-
-// Response for ChannelDetails query
-#[cw_serde]
-pub struct ChannelDetailsResponse {
-    pub details: ChannelDetails,
-}
-
-// Response for ChannelMetadata query
-#[cw_serde]
-pub struct ChannelMetadataResponse {
-    pub metadata: ChannelMetadata,
-}
-
-// Response for Channels query
-#[cw_serde]
-pub struct ChannelsResponse {
-    pub channels: Vec<ChannelResponse>,
-}
-
-// Response for ChannelId query
-#[cw_serde]
-pub struct ChannelIdResponse {
-    pub channel_id: String,
-}
-
-// Response for Playlist query
-#[cw_serde]
-pub struct PlaylistResponse {
-    pub playlist: Playlist,
-}
-
-// Response for Playlists query
-#[cw_serde]
-pub struct PlaylistsResponse {
-    pub playlists: Vec<Playlist>,
-}
-
-// Response for Config query
-#[cw_serde]
-pub struct ConfigResponse {
-    pub config: ChannelConractConfig,
-}
-
-// Response for Assets query
-#[cw_serde]
-pub struct AssetsResponse {
-    pub assets: Vec<AssetResponse>,
-}
-
-// Response for Asset query
-#[cw_serde]
-pub struct AssetResponse {
-    pub asset: Asset,
-    pub flags: Vec<(Flag, u64)>,
-}
-
-// Response for ReservedUsernames query
-#[cw_serde]
-pub struct ReservedUsernamesResponse {
-    pub reserved_usernames: Vec<ReservedUsername>,
-}
-
-// Response for GetChannelCollaborator query
-#[cw_serde]
-pub struct GetChannelCollaboratorResponse {
-    pub collaborator: ChannelCollaborator,
-}
-
-// Response for GetChannelCollaborators query
-#[cw_serde]
-pub struct GetChannelCollaboratorsResponse {
-    pub collaborators: Vec<(Addr, ChannelCollaborator)>,
-}
-
-// Response for FollowersCount query
-#[cw_serde]
-pub struct FollowersCountResponse {
-    pub count: u64,
-}
-
-// Response for Followers query
-#[cw_serde]
-pub struct FollowersResponse {
-    pub followers: Vec<Addr>,
-}
-
 // Response for Channel query
 #[cw_serde]
 pub struct ChannelResponse {
-    pub channel_details: ChannelDetails,
-    pub channel_metadata: ChannelMetadata,
-    pub channel_collaborators: Vec<(String, ChannelCollaborator)>,
+    pub channel_id: String,
+    pub user_name: String,
+    pub onft_id: String,
+    pub payment_address: String,
+    pub channel_name: String,
+    pub description: Option<String>,
+    pub profile_picture: Option<String>,
+    pub banner_picture: Option<String>,
+    pub collaborators: Vec<CollaboratorInfo>,
+    pub follower_count: u64,
+}
+
+#[cw_serde]
+pub struct AssetResponse {
+    pub asset: Asset,
+    pub flags: Vec<FlagInfo>,
+}
+#[cw_serde]
+pub struct CollaboratorInfo {
+    pub address: String,
+    pub role: String,
+    pub share: Decimal,
+}
+
+// Create this new type to avoid tuples
+#[cw_serde]
+pub struct FlagInfo {
+    pub flag: Flag,
+    pub count: u64,
 }

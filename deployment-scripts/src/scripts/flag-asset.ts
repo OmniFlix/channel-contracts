@@ -31,13 +31,11 @@ const testFlaggingLogic = async () => {
     await channelHelper.FlagAsset(context, "viewer", channelId, publishId, flag);
     logger.log(1, `Asset flagged as hateful with id: ${publishId}`);
 
-    // Step 4: Admin removes the asset with the flag not publish id and channel id
-    await channelHelper.AdminRemoveAssets(context, "admin", [[channelId, publishId]], true);
-    logger.log(1, `Asset removed with id: ${publishId}`);
-
-    // Step 5 : Query the asset
+    // Step 4: Query the asset
     let asset = await channelHelper.QueryAsset(context, "viewer", channelId, publishId);
-    logger.log(1, `Asset: ${JSON.stringify(asset)}`);
+    logger.log(1, `Asset Flags: ${JSON.stringify(asset
+    )}`);
+
 };
 
 testFlaggingLogic().catch((error) => {

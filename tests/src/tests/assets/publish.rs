@@ -2,8 +2,8 @@ use asset_manager::error::PlaylistError;
 use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{Asset, AssetSource, Playlist};
-use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
+use omniflix_channel_types::asset::{AssetSource, Playlist};
+use omniflix_channel_types::msg::{AssetResponse, ExecuteMsg, QueryMsg};
 
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
@@ -516,14 +516,14 @@ fn publish_off_chain_asset() {
         publish_id: publish_id.clone(),
     };
 
-    let asset: Asset = app
+    let asset: AssetResponse = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(asset.publish_id, publish_id);
+    assert_eq!(asset.asset.publish_id, publish_id);
     assert_eq!(
-        asset.asset_source,
+        asset.asset.asset_source,
         AssetSource::OffChain {
             media_uri: "https://omniflix.network/".to_string(),
             name: "name".to_string(),
@@ -531,9 +531,6 @@ fn publish_off_chain_asset() {
         }
     );
 }
-
-#[test]
-fn failed_validations_off_chain_asset() {}
 
 #[test]
 fn happy_path() {
@@ -623,14 +620,14 @@ fn happy_path() {
         publish_id: publish_id.clone(),
     };
 
-    let asset: Asset = app
+    let asset: AssetResponse = app
         .wrap()
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(asset.publish_id, publish_id);
+    assert_eq!(asset.asset.publish_id, publish_id);
     assert_eq!(
-        asset.asset_source,
+        asset.asset.asset_source,
         AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),

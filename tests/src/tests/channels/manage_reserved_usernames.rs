@@ -92,7 +92,7 @@ fn add_reserved_usernames() {
     let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "Admin".to_string(),
-            address: Some(Addr::unchecked("").to_string()),
+            address: Some(Addr::unchecked("")),
         }]),
         remove_usernames: None,
     };
@@ -104,7 +104,7 @@ fn add_reserved_usernames() {
     let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
-            address: Some(creator.to_string()),
+            address: Some(creator.clone()),
         }]),
         remove_usernames: None,
     };
@@ -124,7 +124,7 @@ fn add_reserved_usernames() {
         .unwrap();
 
     assert_eq!(res.len(), 2);
-    assert_eq!(res[0].address, Some(creator.clone().to_string()));
+    assert_eq!(res[0].address, Some(creator.clone()));
 
     // Remove designated address from reserved username
     let msg = ExecuteMsg::AdminManageReservedUsernames {
@@ -149,7 +149,7 @@ fn add_reserved_usernames() {
         .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
         .unwrap();
     assert_eq!(res.len(), 2);
-    assert_eq!(res[0].address, Some(Addr::unchecked("").to_string()));
+    assert_eq!(res[0].address, None);
 }
 
 #[test]

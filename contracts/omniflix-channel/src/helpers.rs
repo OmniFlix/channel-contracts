@@ -68,16 +68,18 @@ pub fn validate_channel_details(details: ChannelDetails) -> Result<(), ContractE
 pub fn validate_reserved_usernames(
     reserved_usernames: Vec<ReservedUsername>,
     api: &dyn Api,
-) -> Result<Vec<(String, Addr)>, ContractError> {
+) -> Result<Vec<ReservedUsername>, ContractError> {
     reserved_usernames
         .into_iter()
         .map(|reserved_username| {
-            validate_string(&reserved_username.username, StringValidationType::Username)?;
-            let addr = match reserved_username.address {
-                Some(address) => api.addr_validate(&address)?,
-                None => Addr::unchecked(""),
-            };
-            Ok((reserved_username.username, addr))
+            validate_string(
+                &reserved_username.username.clone(),
+                StringValidationType::Username,
+            )?;
+            if let Some(address) = &reserved_username.address {
+                api.addr_validate(&address.to_string())?;
+            }
+            Ok(reserved_username)
         })
         .collect()
 }

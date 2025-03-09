@@ -52,4 +52,12 @@ impl Role {
     pub fn has_sufficient_privileges(&self, required_role: &Role) -> bool {
         self.privilege_level() >= required_role.privilege_level()
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Role::Admin => "admin".to_string(),
+            Role::Moderator => "moderator".to_string(),
+            Role::Publisher => "publisher".to_string(),
+        }
+    }
 }

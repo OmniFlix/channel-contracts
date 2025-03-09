@@ -146,7 +146,7 @@ fn unauthorized() {
         .unwrap();
     let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
-    // Query Channel
+    // Query Channel Details
     let channel: ChannelDetails = app
         .wrap()
         .query_wasm_smart(
@@ -283,7 +283,7 @@ fn invalid() {
         .unwrap();
     let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
-    // Query Channel
+    // Query Channel Details
     let channel: ChannelDetails = app
         .wrap()
         .query_wasm_smart(
