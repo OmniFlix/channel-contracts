@@ -1,8 +1,7 @@
 use asset_manager::error::AssetError;
-use cosmwasm_std::{coin, CosmosMsg};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{AssetSource, Playlist};
 use omniflix_channel_types::channel::Role;
 use omniflix_channel_types::msg::{AssetResponse, ExecuteMsg, QueryMsg};
 
@@ -10,7 +9,7 @@ use crate::helpers::msg_wrapper::AssetPublishMsgBuilder;
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
-    utils::{create_denom_msg, get_event_attribute, mint_onft_msg},
+    utils::get_event_attribute,
 };
 
 #[test]

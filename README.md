@@ -7,15 +7,15 @@ The OmniFlix Channel Contract is a CosmWasm-based smart contract deployed on the
 ## Features
 
 ### Channel Management
-- **Channel Creation**: Create a personalized channel with a unique username, channel name, description, and visual assets
-- **Channel Ownership**: Each channel is represented by an NFT (ONFT) that proves ownership
-- **Channel Metadata**: Update channel details including name, description, profile picture, and banner
-
+- **Channel Creation**: Create your own personalized channel with a unique username that becomes your digital identity in the OmniFlix ecosystem. Customize with channel name, description, profile picture, and banner image.
+- **Channel Ownership**: Each channel is represented by a non-fungible token (ONFT) that proves ownership and enables seamless transfers between accounts.
+- **Channel Metadata**: Easily update your channel's appearance and information at any time, including name, description, profile picture, and banner.
+- **Channel Deletion**: Full control over your content with the ability to remove a channel and all associated content when needed.
 
 ### Content Publishing
-- **Asset Publishing**: Publish content in multiple formats - either as NFTs with ownership rights or as off-chain media hosted on decentralized storage like IPFS.
+- **Asset Publishing**: Publish content in multiple formats with comprehensive metadata support. Add titles, descriptions, and media URIs for your content, whether as NFTs with ownership rights or as off-chain media hosted on decentralized storage.
 - **Asset Visibility**: Granular control over content visibility, allowing you to make specific assets public or private with a simple toggle.
-- **Asset Management**: Comprehensive tools to update metadata or completely remove published content from your channel.
+- **Asset Management**: Comprehensive tools to update all aspects of your content including titles, descriptions, media URIs, and visibility settings - or completely remove published content from your channel.
 
 ### Collaboration
 - **Collaborator Management**: Add team members to your channel with specific roles (Moderator, Publisher) to help manage content and operations.
@@ -102,16 +102,30 @@ omniflixhubd tx wasm execute <contract-address> '{
 omniflixhubd tx wasm execute <contract-address> '{
   "asset_publish": {
     "asset_source": {
-      "off_chain": {
-        "media_uri": "ipfs://Qm...",
-        "name": "My Video",
-        "description": "An awesome video"
-      }
+      "off_chain": {}
     },
     "salt": "<random-binary>",
     "channel_id": "<channel-id>",
     "playlist_name": "My Playlist",
-    "is_visible": true
+    "is_visible": true,
+    "name": "My Video",
+    "description": "An awesome video",
+    "media_uri": "ipfs://Qm..."
+  }
+}' --from <your-key>
+```
+
+### Updating Asset Details
+
+```bash
+omniflixhubd tx wasm execute <contract-address> '{
+  "asset_update_details": {
+    "publish_id": "<publish-id>",
+    "channel_id": "<channel-id>",
+    "is_visible": true,
+    "name": "Updated Title",
+    "description": "Updated description",
+    "media_uri": "ipfs://Qm..."
   }
 }' --from <your-key>
 ```
@@ -176,9 +190,31 @@ omniflixhubd query wasm contract-state smart <contract-address> '{
 }'
 ```
 
+### Channel Followers
+
+```bash
+omniflixhubd query wasm contract-state smart <contract-address> '{
+  "followers": {
+    "channel_id": "<channel-id>",
+    "limit": 10
+  }
+}'
+```
+
+### Channel Collaborators
+
+```bash
+omniflixhubd query wasm contract-state smart <contract-address> '{
+  "get_channel_collaborators": {
+    "channel_id": "<channel-id>",
+    "limit": 10
+  }
+}'
+```
+
 ## Username Reservation System
 
-The contract includes a username reservation system that allows specific usernames to be reserved for particular addresses or marked as generally reserved. This system ensures that premium or brand-specific usernames can be protected.
+The contract includes a sophisticated username reservation system that allows specific usernames to be reserved for particular addresses or marked as generally reserved. This system ensures that premium or brand-specific usernames can be protected.
 
 - Usernames can be reserved with or without a specific address assignment
 - Reserved usernames without an address assignment cannot be claimed by anyone
@@ -186,9 +222,9 @@ The contract includes a username reservation system that allows specific usernam
 
 ## Security Features
 
-- **Ownership Verification**: All operations verify the sender is authorized
-- **Pause Mechanism**: Contract can be paused in case of emergencies
-- **Role-Based Access**: Different permissions for owners, collaborators, and admins
+- **Ownership Verification**: All operations verify the sender is authorized through multiple validation layers
+- **Pause Mechanism**: Contract can be paused in case of emergencies by designated pausers
+- **Role-Based Access**: Different permissions for owners, collaborators, and admins ensure proper access control
 
 ## License
 
