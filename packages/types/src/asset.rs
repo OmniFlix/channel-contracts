@@ -17,17 +17,10 @@ pub struct Playlist {
 #[cw_serde]
 pub enum AssetSource {
     Nft {
-        name: String,
-        description: String,
-        media_uri: String,
         collection_id: String,
         onft_id: String,
     },
-    OffChain {
-        media_uri: String,
-        name: String,
-        description: String,
-    },
+    OffChain {},
 }
 
 // Implement to string for AssetSource
@@ -37,19 +30,8 @@ impl std::fmt::Display for AssetSource {
             AssetSource::Nft {
                 collection_id,
                 onft_id,
-                name,
-                description,
-                media_uri,
-            } => write!(
-                f,
-                "NFT: {} {} {} {} {}",
-                collection_id, onft_id, name, description, media_uri
-            ),
-            AssetSource::OffChain {
-                media_uri,
-                name,
-                description,
-            } => write!(f, "OffChain: {} {} {}", media_uri, name, description),
+            } => write!(f, "ONFT: {} {}", collection_id, onft_id),
+            AssetSource::OffChain {} => write!(f, "OffChain"),
         }
     }
 }
@@ -60,6 +42,9 @@ pub struct Asset {
     pub publish_id: String,
     pub asset_source: AssetSource,
     pub is_visible: bool,
+    pub name: String,
+    pub description: String,
+    pub media_uri: String,
 }
 
 #[cw_serde]

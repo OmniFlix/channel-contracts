@@ -12,6 +12,7 @@ pub fn setup() -> SetupResponse {
     let creator = api.addr_make("creator");
     let creator2 = api.addr_make("creator2");
     let collector = api.addr_make("collector");
+    let collaborator = api.addr_make("collaborator");
 
     app.set_block(BlockInfo {
         chain_id: "test_1".to_string(),
@@ -56,6 +57,11 @@ pub fn setup() -> SetupResponse {
             coin(1_000_000_000_000, "incorrect_denom"),
         ],
     );
+    mint_to_address(
+        &mut app,
+        collaborator.to_string(),
+        vec![coin(1_000_000_000, "uflix")],
+    );
 
     let channel_contract = Box::new(ContractWrapper::new(
         omniflix_channel::contract::execute,
@@ -71,6 +77,7 @@ pub fn setup() -> SetupResponse {
             admin,
             creator,
             creator2,
+            collaborator,
             collector,
         },
         channel_contract_code_id,
@@ -87,5 +94,6 @@ pub struct TestAccounts {
     pub admin: Addr,
     pub creator: Addr,
     pub creator2: Addr,
+    pub collaborator: Addr,
     pub collector: Addr,
 }

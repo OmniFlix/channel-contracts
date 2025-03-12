@@ -1,10 +1,12 @@
-use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
+use cosmwasm_std::{coin, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
-use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
+use crate::helpers::msg_wrapper::{
+    get_channel_instantiate_msg, AssetPublishMsgBuilder, CreateChannelMsgBuilder,
+};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 
@@ -59,26 +61,18 @@ fn asset_not_visible() {
     );
     let _res = app.execute(creator.clone(), create_denom_msg);
     let mint_onft_msg = mint_onft_msg(
-        "id".to_string(),
-        "asset_id".to_string(),
+        asset_collection_id.clone(),
+        asset_id.clone(),
         creator.clone().to_string(),
     );
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
-    // Publish the asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: false,
-    };
+        })
+        .build();
 
     let _res = app
         .execute_contract(
@@ -209,20 +203,13 @@ fn asset_from_diffirent_channel() {
     );
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
-    // Publish the asset under creator 1's channel
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(creator1_channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: creator1_channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
+
     let res = app
         .execute_contract(
             creator.clone(),

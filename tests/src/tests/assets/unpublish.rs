@@ -1,9 +1,10 @@
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::AssetSource;
 use omniflix_channel_types::msg::{AssetResponse, ExecuteMsg, QueryMsg};
 
+use crate::helpers::msg_wrapper::AssetPublishMsgBuilder;
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
@@ -71,19 +72,13 @@ fn channel_not_owned() {
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Publish an asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(
@@ -236,21 +231,12 @@ fn happy_path() {
     );
 
     let _res = app.execute(creator.clone(), mint_onft_msg);
-
-    // Publish an asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(

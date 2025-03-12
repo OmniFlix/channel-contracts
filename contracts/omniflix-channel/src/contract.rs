@@ -7,6 +7,7 @@ use crate::helpers::{
 };
 use crate::random::generate_random_id_with_prefix;
 use crate::state::CONFIG;
+use crate::string_validation::{validate_string, StringValidationType};
 use asset_manager::assets::AssetsManager;
 use asset_manager::playlists::PlaylistsManager;
 use channel_manager::channel::ChannelsManager;
@@ -134,6 +135,9 @@ pub fn execute(
             channel_id,
             playlist_name,
             is_visible,
+            name,
+            description,
+            media_uri,
         } => publish(
             deps,
             env,
@@ -143,6 +147,9 @@ pub fn execute(
             channel_id,
             playlist_name,
             is_visible,
+            name,
+            description,
+            media_uri,
         ),
         ExecuteMsg::AssetUnpublish {
             publish_id,
@@ -231,7 +238,19 @@ pub fn execute(
             publish_id,
             channel_id,
             is_visible,
-        } => update_asset_details(deps, info, publish_id, channel_id, is_visible),
+            name,
+            description,
+            media_uri,
+        } => update_asset_details(
+            deps,
+            info,
+            publish_id,
+            channel_id,
+            is_visible,
+            name,
+            description,
+            media_uri,
+        ),
         ExecuteMsg::ChannelDelete { channel_id } => delete_channel(deps, info, channel_id),
         ExecuteMsg::AdminManageReservedUsernames {
             add_usernames,
@@ -447,6 +466,9 @@ fn publish(
     channel_id: String,
     playlist_name: Option<String>,
     is_visible: bool,
+    name: String,
+    description: String,
+    media_uri: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -463,7 +485,14 @@ fn publish(
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
-    validate_asset_source(deps.as_ref(), asset_source.clone(), info.sender.clone())?;
+    validate_asset_source(
+        deps.as_ref(),
+        asset_source.clone(),
+        info.sender.clone(),
+        name.clone(),
+        description.clone(),
+        media_uri.clone(),
+    )?;
 
     // Define the asset to be published
     let asset = Asset {
@@ -471,6 +500,9 @@ fn publish(
         publish_id: publish_id.clone(),
         asset_source: asset_source.clone(),
         is_visible: is_visible,
+        name: name.clone(),
+        description: description.clone(),
+        media_uri: media_uri.clone(),
     };
 
     // Add asset to the channel's asset list
@@ -913,7 +945,10 @@ fn update_asset_details(
     info: MessageInfo,
     publish_id: String,
     channel_id: String,
-    is_visible: bool,
+    is_visible: Option<bool>,
+    name: Option<String>,
+    description: Option<String>,
+    media_uri: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -931,7 +966,25 @@ fn update_asset_details(
     let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
     let mut asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
-    asset.is_visible = is_visible;
+
+    // Validate the asset name
+    if let Some(name) = name {
+        validate_string(&name, StringValidationType::AssetName)?;
+        asset.name = name;
+    }
+    // Validate the asset description
+    if let Some(description) = description {
+        validate_string(&description, StringValidationType::Description)?;
+        asset.description = description;
+    }
+    // Validate the asset media URI
+    if let Some(media_uri) = media_uri {
+        validate_string(&media_uri, StringValidationType::Link)?;
+        asset.media_uri = media_uri;
+    }
+    if let Some(is_visible) = is_visible {
+        asset.is_visible = is_visible;
+    }
 
     assets_manager.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
 
@@ -939,7 +992,10 @@ fn update_asset_details(
         .add_attribute("action", "update_asset_details")
         .add_attribute("channel_id", channel_id)
         .add_attribute("publish_id", publish_id)
-        .add_attribute("is_visible", is_visible.to_string());
+        .add_attribute("is_visible", asset.is_visible.to_string())
+        .add_attribute("name", asset.name.clone())
+        .add_attribute("description", asset.description.clone())
+        .add_attribute("media_uri", asset.media_uri.clone());
 
     Ok(response)
 }

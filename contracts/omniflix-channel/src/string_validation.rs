@@ -14,6 +14,7 @@ pub struct StringValidationConfig {
     required_prefixes: Vec<String>, // Required prefixes for the string
     required_suffixes: Vec<String>, // Required suffixes for the string
     must_contain: Vec<String>,      // Substrings that must be present
+    allow_empty: bool,              // Whether empty strings are allowed
 }
 
 // Define string validation errors
@@ -54,6 +55,7 @@ impl Default for StringValidationConfig {
             required_prefixes: vec![],
             required_suffixes: vec![],
             must_contain: vec![],
+            allow_empty: false,
         }
     }
 }
@@ -96,6 +98,7 @@ impl StringValidationType {
                 allow_uppercase: true,
                 allow_spaces: true,
                 allow_special_chars: true,
+                allow_empty: true,
                 ..Default::default()
             },
             StringValidationType::Link => StringValidationConfig {
@@ -132,6 +135,10 @@ pub fn validate_string(
     validation_type: StringValidationType,
 ) -> Result<(), ContractError> {
     let config = validation_type.get_config();
+
+    if config.allow_empty && input.is_empty() {
+        return Ok(());
+    }
 
     // Check length
     if !(config.min_length..=config.max_length).contains(&input.len()) {

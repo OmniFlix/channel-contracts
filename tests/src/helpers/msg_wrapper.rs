@@ -1,5 +1,8 @@
 use cosmwasm_std::{Addr, Binary};
-use omniflix_channel_types::msg::{ExecuteMsg, InstantiateMsg, ReservedUsername};
+use omniflix_channel_types::{
+    asset::AssetSource,
+    msg::{ExecuteMsg, InstantiateMsg, ReservedUsername},
+};
 
 pub fn get_channel_instantiate_msg(admin: Addr) -> InstantiateMsg {
     InstantiateMsg {
@@ -74,6 +77,75 @@ impl CreateChannelMsgBuilder {
             profile_picture: self.profile_picture,
             channel_name: self.channel_name,
             payment_address: self.payment_address,
+        }
+    }
+}
+
+pub struct AssetPublishMsgBuilder {
+    asset_source: AssetSource,
+    salt: Binary,
+    channel_id: String,
+    playlist_name: Option<String>,
+    is_visible: bool,
+    name: String,
+    description: String,
+    media_uri: String,
+}
+
+impl AssetPublishMsgBuilder {
+    pub fn new(channel_id: String) -> Self {
+        Self {
+            asset_source: AssetSource::OffChain {},
+            salt: Binary::from("salt".as_bytes()),
+            channel_id: channel_id,
+            playlist_name: None,
+            is_visible: true,
+            name: "validassetname".to_string(),
+            description: "validassetdescription".to_string(),
+            media_uri: "https://example.com/media.png".to_string(),
+        }
+    }
+
+    pub fn asset_source(mut self, asset_source: AssetSource) -> Self {
+        self.asset_source = asset_source;
+        self
+    }
+
+    pub fn playlist_name(mut self, playlist_name: String) -> Self {
+        self.playlist_name = Some(playlist_name);
+        self
+    }
+
+    pub fn is_visible(mut self, is_visible: bool) -> Self {
+        self.is_visible = is_visible;
+        self
+    }
+
+    pub fn name(mut self, name: String) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn description(mut self, description: String) -> Self {
+        self.description = description;
+        self
+    }
+
+    pub fn media_uri(mut self, media_uri: String) -> Self {
+        self.media_uri = media_uri;
+        self
+    }
+
+    pub fn build(self) -> ExecuteMsg {
+        ExecuteMsg::AssetPublish {
+            asset_source: self.asset_source,
+            salt: self.salt,
+            channel_id: self.channel_id,
+            playlist_name: self.playlist_name,
+            is_visible: self.is_visible,
+            name: self.name,
+            description: self.description,
+            media_uri: self.media_uri,
         }
     }
 }

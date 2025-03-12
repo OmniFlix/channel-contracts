@@ -1,10 +1,11 @@
 use asset_manager::error::PlaylistError;
-use cosmwasm_std::{coin, Binary, CosmosMsg};
+use cosmwasm_std::{coin, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
 use omniflix_channel_types::msg::{AssetResponse, ExecuteMsg, QueryMsg};
 
+use crate::helpers::msg_wrapper::AssetPublishMsgBuilder;
 use crate::helpers::{
     msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder},
     setup::setup,
@@ -50,19 +51,12 @@ fn asset_does_not_exist() {
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
     // Try publishing an asset without it existing
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: "id".to_string(),
             onft_id: "asset_id".to_string(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(
@@ -133,27 +127,20 @@ fn channel_not_owned() {
     );
     let _res = app.execute(creator.clone(), create_denom_msg);
     let mint_onft_msg = mint_onft_msg(
-        "id".to_string(),
-        "asset_id".to_string(),
+        asset_collection_id.clone(),
+        asset_id.clone(),
         collector.clone().to_string(),
     );
     let cosmos_msg: CosmosMsg = mint_onft_msg.into();
     let _res = app.execute(collector.clone(), cosmos_msg);
 
     // Publish the asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(
@@ -219,27 +206,21 @@ fn playlist_does_not_exist() {
     );
     let _res = app.execute(creator.clone(), create_denom_msg);
     let mint_onft_msg = mint_onft_msg(
-        "id".to_string(),
-        "asset_id".to_string(),
+        asset_collection_id.clone(),
+        asset_id.clone(),
         creator.clone().to_string(),
     );
     let cosmos_msg: CosmosMsg = mint_onft_msg.into();
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset with wrong playlist name
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: Some("Wrong playlist".to_string()),
-        is_visible: true,
-    };
+        })
+        .playlist_name("Wrong playlist".to_string())
+        .build();
 
     let res = app
         .execute_contract(
@@ -308,8 +289,8 @@ fn with_playlist() {
     );
     let _res = app.execute(creator.clone(), create_denom_msg);
     let mint_onft_msg = mint_onft_msg(
-        "id".to_string(),
-        "asset_id".to_string(),
+        asset_collection_id.clone(),
+        asset_id.clone(),
         creator.clone().to_string(),
     );
     let cosmos_msg: CosmosMsg = mint_onft_msg.into();
@@ -331,19 +312,13 @@ fn with_playlist() {
         .unwrap();
 
     // Publish the asset under the new playlist
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: Some("My Videos".to_string()),
-        is_visible: true,
-    };
+        })
+        .playlist_name("My Videos".to_string())
+        .build();
 
     let res = app
         .execute_contract(
@@ -422,27 +397,20 @@ fn asset_not_owned() {
     );
     let _res = app.execute(creator.clone(), create_denom_msg);
     let mint_onft_msg = mint_onft_msg(
-        "id".to_string(),
-        "asset_id".to_string(),
+        asset_collection_id.clone(),
+        asset_id.clone(),
         collector.clone().to_string(),
     );
     let _res = app.execute(creator.clone(), mint_onft_msg);
 
     // Asset is owned by collector
     // Creator tries to publish the asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(
@@ -501,18 +469,12 @@ fn publish_off_chain_asset() {
     // Get the channel_id from the event
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
-    // Publish an asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::OffChain {
-            media_uri: "https://omniflix.network/".to_string(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::OffChain {})
+        .name("name".to_string())
+        .description("description".to_string())
+        .media_uri("https://omniflix.network/".to_string())
+        .build();
 
     let res = app
         .execute_contract(
@@ -537,14 +499,7 @@ fn publish_off_chain_asset() {
         .unwrap();
 
     assert_eq!(asset.asset.publish_id, publish_id);
-    assert_eq!(
-        asset.asset.asset_source,
-        AssetSource::OffChain {
-            media_uri: "https://omniflix.network/".to_string(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-        }
-    );
+    assert_eq!(asset.asset.asset_source, AssetSource::OffChain {});
 }
 
 #[test]
@@ -607,19 +562,12 @@ fn happy_path() {
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::Nft {
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
+        .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+        })
+        .build();
 
     let res = app
         .execute_contract(
@@ -649,9 +597,6 @@ fn happy_path() {
         AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
-            name: "name".to_string(),
-            description: "description".to_string(),
-            media_uri: "http://www.media.com".to_string(),
         }
     );
 }

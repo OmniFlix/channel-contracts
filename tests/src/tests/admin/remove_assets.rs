@@ -1,10 +1,10 @@
-use cosmwasm_std::{coin, Binary};
+use cosmwasm_std::coin;
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
-use omniflix_channel_types::asset::{Asset, AssetSource};
+use omniflix_channel_types::asset::Asset;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
 
-use crate::helpers::msg_wrapper::CreateChannelMsgBuilder;
+use crate::helpers::msg_wrapper::{AssetPublishMsgBuilder, CreateChannelMsgBuilder};
 use crate::helpers::utils::get_event_attribute;
 use crate::helpers::{msg_wrapper::get_channel_instantiate_msg, setup::setup};
 
@@ -45,17 +45,7 @@ fn happy_path() {
 
     let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::OffChain {
-            media_uri: "https://example.com/media.png".to_string(),
-            name: "Media Asset".to_string(),
-            description: "This is a media asset".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone()).build();
 
     let res = app
         .execute_contract(
@@ -135,17 +125,7 @@ fn unauthorized() {
     let channel_id = get_event_attribute(res, "wasm", "channel_id");
 
     // Publish an asset
-    let publish_msg = ExecuteMsg::AssetPublish {
-        asset_source: AssetSource::OffChain {
-            media_uri: "https://example.com/media.png".to_string(),
-            name: "Media Asset".to_string(),
-            description: "This is a media asset".to_string(),
-        },
-        salt: Binary::from("salt".as_bytes()),
-        channel_id: channel_id.clone(),
-        playlist_name: None,
-        is_visible: true,
-    };
+    let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone()).build();
 
     let res = app
         .execute_contract(

@@ -215,10 +215,10 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
-                    name: "name".to_string(),
-                    description: "description".to_string(),
-                    media_uri: "http://www.media.com".to_string(),
                 },
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             };
             assets
                 .add_asset(&mut storage, (channel_id.clone(), publish_id), asset)
@@ -266,10 +266,10 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
-                    name: "name".to_string(),
-                    description: "description".to_string(),
-                    media_uri: "http://www.media.com".to_string(),
                 },
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             };
             assets
                 .add_asset(&mut storage, (channel_id.clone(), publish_id), asset)
@@ -311,10 +311,10 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
-                    name: "name".to_string(),
-                    description: "description".to_string(),
-                    media_uri: "http://www.media.com".to_string(),
                 },
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             };
             assets
                 .add_asset(&mut storage, (channel_id.clone(), publish_id), asset)
@@ -352,10 +352,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the asset
@@ -386,10 +386,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the asset to storage
@@ -422,10 +422,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the asset
@@ -461,10 +461,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the asset
@@ -484,10 +484,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "new_collection".to_string(),
                 onft_id: "new_onft_id".to_string(),
-                name: "new_name".to_string(),
-                description: "new_description".to_string(),
-                media_uri: "new_media_uri".to_string(),
             },
+            name: "new_name".to_string(),
+            description: "new_description".to_string(),
+            media_uri: "http://www.media1.com".to_string(),
         };
         let update_result = assets.update_asset(
             &mut storage,
@@ -518,10 +518,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
         let asset2 = Asset {
             publish_id: publish_id2.clone(),
@@ -530,10 +530,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the assets
@@ -577,10 +577,10 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
-                name: "name".to_string(),
-                description: "description".to_string(),
-                media_uri: "http://www.media.com".to_string(),
             },
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         };
 
         // Add the asset

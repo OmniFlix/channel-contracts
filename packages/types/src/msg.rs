@@ -80,6 +80,12 @@ pub enum ExecuteMsg {
         playlist_name: Option<String>,
         /// A flag indicating if the asset is visible to the public.
         is_visible: bool,
+        /// The name of the asset.
+        name: String,
+        /// The description of the asset.
+        description: String,
+        /// The media URI of the asset.
+        media_uri: String,
     },
 
     /// Unpublishes an asset from a channel. The publish ID and related asset details will
@@ -99,7 +105,13 @@ pub enum ExecuteMsg {
         /// The ID of the channel where the asset is published.
         channel_id: String,
         /// The new visibility status of the asset.
-        is_visible: bool,
+        is_visible: Option<bool>,
+        /// The new name of the asset.
+        name: Option<String>,
+        /// The new description of the asset.
+        description: Option<String>,
+        /// The new media URI of the asset.
+        media_uri: Option<String>,
     },
     AssetFlag {
         /// The ID of the channel where the asset is published.
