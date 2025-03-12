@@ -206,6 +206,9 @@ fn happy_path() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),

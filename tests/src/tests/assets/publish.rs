@@ -54,6 +54,9 @@ fn asset_does_not_exist() {
         asset_source: AssetSource::Nft {
             collection_id: "id".to_string(),
             onft_id: "asset_id".to_string(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -142,6 +145,9 @@ fn channel_not_owned() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -225,6 +231,9 @@ fn playlist_does_not_exist() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -326,6 +335,9 @@ fn with_playlist() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -422,6 +434,9 @@ fn asset_not_owned() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -596,6 +611,9 @@ fn happy_path() {
         asset_source: AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         },
         salt: Binary::from("salt".as_bytes()),
         channel_id: channel_id.clone(),
@@ -631,6 +649,9 @@ fn happy_path() {
         AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
+            name: "name".to_string(),
+            description: "description".to_string(),
+            media_uri: "http://www.media.com".to_string(),
         }
     );
 }

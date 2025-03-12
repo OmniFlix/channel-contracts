@@ -215,6 +215,9 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
+                    name: "name".to_string(),
+                    description: "description".to_string(),
+                    media_uri: "http://www.media.com".to_string(),
                 },
             };
             assets
@@ -263,6 +266,9 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
+                    name: "name".to_string(),
+                    description: "description".to_string(),
+                    media_uri: "http://www.media.com".to_string(),
                 },
             };
             assets
@@ -305,6 +311,9 @@ mod tests {
                 asset_source: AssetSource::Nft {
                     collection_id: "collection_id".to_string(),
                     onft_id: "onft_id".to_string(),
+                    name: "name".to_string(),
+                    description: "description".to_string(),
+                    media_uri: "http://www.media.com".to_string(),
                 },
             };
             assets
@@ -343,6 +352,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 
@@ -374,6 +386,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 
@@ -407,6 +422,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 
@@ -443,6 +461,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 
@@ -463,6 +484,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "new_collection".to_string(),
                 onft_id: "new_onft_id".to_string(),
+                name: "new_name".to_string(),
+                description: "new_description".to_string(),
+                media_uri: "new_media_uri".to_string(),
             },
         };
         let update_result = assets.update_asset(
@@ -494,6 +518,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
         let asset2 = Asset {
@@ -503,6 +530,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 
@@ -547,6 +577,9 @@ mod tests {
             asset_source: AssetSource::Nft {
                 collection_id: "collection_id".to_string(),
                 onft_id: "onft_id".to_string(),
+                name: "name".to_string(),
+                description: "description".to_string(),
+                media_uri: "http://www.media.com".to_string(),
             },
         };
 

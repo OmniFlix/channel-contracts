@@ -93,8 +93,14 @@ pub fn validate_asset_source(
         AssetSource::Nft {
             collection_id,
             onft_id,
+            name,
+            description,
+            media_uri,
         } => {
             get_onft_with_owner(deps, collection_id, onft_id, owner.to_string())?;
+            validate_string(&name, StringValidationType::AssetName)?;
+            validate_string(&description, StringValidationType::Description)?;
+            validate_string(&media_uri, StringValidationType::Link)?;
             Ok(())
         }
         AssetSource::OffChain {
