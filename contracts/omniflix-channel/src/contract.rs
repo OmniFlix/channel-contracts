@@ -2,8 +2,9 @@ use crate::access_control::validate_permissions;
 use crate::bank_helpers::{bank_msg_wrapper, check_payment, distribute_funds_with_shares};
 use crate::error::ContractError;
 use crate::helpers::{
-    filter_assets_to_remove, get_collection_creation_fee, validate_asset_source,
-    validate_channel_details, validate_channel_metadata, validate_reserved_usernames,
+    filter_assets_to_remove, generate_mint_onft_msg, get_collection_creation_fee,
+    validate_asset_source, validate_channel_details, validate_channel_metadata,
+    validate_reserved_usernames,
 };
 use crate::random::generate_random_id_with_prefix;
 use crate::state::CONFIG;
@@ -26,7 +27,6 @@ use omniflix_channel_types::msg::{
     AssetResponse, ChannelResponse, CollaboratorInfo, ExecuteMsg, InstantiateMsg, QueryMsg,
     ReservedUsername,
 };
-use omniflix_std::types::omniflix::onft::v1beta1::Metadata;
 use pauser::PauseState;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -359,26 +359,15 @@ fn create_channel(
     let string_onft_data =
         serde_json::to_string(&onft_data).map_err(|_| ContractError::InvalidOnftData {})?;
 
-    let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
-        id: onft_id.clone(),
-        denom_id: config.channels_collection_id.clone(),
-        sender: env.contract.address.clone().to_string(),
-        recipient: info.sender.clone().to_string(),
-        data: string_onft_data,
-        // TODO: Check if this is correct
-        metadata: Some(Metadata {
-            media_uri: "mediauri.com".to_string(),
-            name: user_name.clone(),
-            description: description.unwrap_or("".to_string()),
-            preview_uri: "previewuri.com".to_string(),
-            uri_hash: "urihash".to_string(),
-        }),
-        nsfw: false,
-        extensible: false,
-        royalty_share: "1000000".to_string(),
-        transferable: true,
-    }
-    .into();
+    // Generate the mint message and its attributes
+    let (mint_onft_msg, nft_attributes) = generate_mint_onft_msg(
+        onft_id.clone(),
+        config.channels_collection_id.clone(),
+        env.contract.address.clone().to_string(),
+        info.sender.clone().to_string(),
+        string_onft_data,
+        user_name.clone(),
+    );
 
     // Pay the channel creation fee to the fee collector
     let bank_channel_fee_msg = bank_msg_wrapper(
@@ -390,9 +379,7 @@ fn create_channel(
         .add_message(mint_onft_msg)
         .add_messages(bank_channel_fee_msg)
         .add_attribute("action", "register_channel")
-        .add_attribute("channel_id", channel_id)
-        .add_attribute("user_name", user_name)
-        .add_attribute("onft_id", onft_id);
+        .add_attributes(nft_attributes);
     Ok(response)
 }
 

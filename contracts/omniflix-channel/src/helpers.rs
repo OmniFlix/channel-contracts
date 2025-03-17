@@ -2,12 +2,12 @@ use crate::access_control::get_onft_with_owner;
 use crate::string_validation::{validate_string, StringValidationType};
 use crate::ContractError;
 use asset_manager::assets::AssetsManager;
-use cosmwasm_std::Storage;
 use cosmwasm_std::{Addr, Api, Coin, Deps, Uint128};
+use cosmwasm_std::{CosmosMsg, Storage};
 use omniflix_channel_types::asset::{AssetKey, AssetSource};
 use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
 use omniflix_channel_types::msg::ReservedUsername;
-use omniflix_std::types::omniflix::onft::v1beta1::OnftQuerier;
+use omniflix_std::types::omniflix::onft::v1beta1::{Metadata, OnftQuerier};
 use std::str::FromStr;
 
 pub fn get_collection_creation_fee(deps: Deps) -> Result<Coin, ContractError> {
@@ -105,4 +105,57 @@ pub fn validate_asset_source(
         }
         AssetSource::OffChain {} => Ok(()),
     }
+}
+
+pub fn generate_mint_onft_msg(
+    onft_id: String,
+    denom_id: String,
+    contract_address: String,
+    recipient: String,
+    onft_data: String,
+    user_name: String,
+) -> (CosmosMsg, Vec<(String, String)>) {
+    // Create the mint message
+    let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
+        id: onft_id.clone(),
+        denom_id: denom_id.clone(),
+        sender: contract_address,
+        recipient: recipient.clone(),
+        data: onft_data.clone(),
+        metadata: Some(Metadata {
+            media_uri: "".to_string(),
+            name: user_name.clone(),
+            description: "".to_string(),
+            preview_uri: "".to_string(),
+            uri_hash: "".to_string(),
+        }),
+        nsfw: false,
+        extensible: false,
+        royalty_share: "0".to_string(),
+        transferable: true,
+    }
+    .into();
+
+    // Generate detailed attributes
+    let attributes = vec![
+        // ONFT
+        ("denom_id".to_string(), denom_id.clone()),
+        ("onft_id".to_string(), onft_id.clone()),
+        ("owner".to_string(), recipient.clone()),
+        // Metadata
+        ("name".to_string(), user_name.clone()),
+        ("description".to_string(), "".to_string()),
+        ("media_uri".to_string(), "".to_string()),
+        ("preview_uri".to_string(), "".to_string()),
+        ("uri_hash".to_string(), "".to_string()),
+        // Other
+        ("nsfw".to_string(), "false".to_string()),
+        ("data".to_string(), onft_data.clone()),
+        ("extensible".to_string(), "false".to_string()),
+        ("royalty_share".to_string(), "0".to_string()),
+        ("transferable".to_string(), "true".to_string()),
+        ("created_at".to_string(), "".to_string()),
+    ];
+
+    (mint_onft_msg, attributes)
 }
