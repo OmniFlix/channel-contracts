@@ -247,9 +247,9 @@ fn partial_update() {
         .unwrap();
 
     // Verify that only the name was updated
-    assert_eq!(asset_response.asset.name, new_name);
-    assert_eq!(asset_response.asset.description, original_description);
-    assert_eq!(asset_response.asset.media_uri, original_media_uri);
+    assert_eq!(asset_response.metadata.name, new_name);
+    assert_eq!(asset_response.metadata.description, original_description);
+    assert_eq!(asset_response.metadata.media_uri, original_media_uri);
     assert_eq!(asset_response.asset.is_visible, true);
 }
 
@@ -349,9 +349,9 @@ fn full_update() {
         .unwrap();
 
     // Verify that all fields were updated
-    assert_eq!(asset_response.asset.name, new_name);
-    assert_eq!(asset_response.asset.description, new_description);
-    assert_eq!(asset_response.asset.media_uri, new_media_uri);
+    assert_eq!(asset_response.metadata.name, new_name);
+    assert_eq!(asset_response.metadata.description, new_description);
+    assert_eq!(asset_response.metadata.media_uri, new_media_uri);
     assert_eq!(asset_response.asset.is_visible, false);
 }
 
@@ -468,8 +468,8 @@ fn collaborator_update() {
         .unwrap();
 
     // Verify that the name was updated and visibility changed
-    assert_eq!(asset_response.asset.name, new_name);
-    assert_eq!(asset_response.asset.description, original_description);
-    assert_eq!(asset_response.asset.media_uri, original_media_uri);
+    assert_eq!(asset_response.metadata.name, new_name);
+    assert_eq!(asset_response.metadata.description, original_description);
+    assert_eq!(asset_response.metadata.media_uri, original_media_uri);
     assert_eq!(asset_response.asset.is_visible, false);
 }

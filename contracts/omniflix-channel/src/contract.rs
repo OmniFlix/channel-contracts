@@ -3,9 +3,9 @@ use crate::bank_helpers::{bank_msg_wrapper, check_payment, distribute_funds_with
 use crate::error::ContractError;
 use crate::helpers::{
     filter_assets_to_remove, generate_create_denom_msg, generate_mint_onft_msg,
-    get_collection_creation_fee, validate_asset_source, validate_channel_collection_details,
-    validate_channel_details, validate_channel_metadata, validate_channel_token_details,
-    validate_reserved_usernames,
+    get_collection_creation_fee, validate_asset_metadata, validate_asset_source,
+    validate_channel_collection_details, validate_channel_details, validate_channel_metadata,
+    validate_channel_token_details, validate_reserved_usernames,
 };
 use crate::random::generate_random_id_with_prefix;
 use crate::state::{CHANNEL_TOKEN_DETAILS, CONFIG};
@@ -19,7 +19,7 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw_utils::must_pay;
-use omniflix_channel_types::asset::{Asset, AssetKey, AssetSource, Flag, Playlist};
+use omniflix_channel_types::asset::{Asset, AssetKey, AssetMetadata, AssetSource, Flag, Playlist};
 use omniflix_channel_types::channel::{
     ChannelCollaborator, ChannelDetails, ChannelMetadata, ChannelOnftData, Role,
 };
@@ -141,9 +141,7 @@ pub fn execute(
             channel_id,
             playlist_name,
             is_visible,
-            name,
-            description,
-            media_uri,
+            metadata,
         } => publish(
             deps,
             env,
@@ -153,9 +151,7 @@ pub fn execute(
             channel_id,
             playlist_name,
             is_visible,
-            name,
-            description,
-            media_uri,
+            metadata,
         ),
         ExecuteMsg::AssetUnpublish {
             publish_id,
@@ -462,9 +458,7 @@ fn publish(
     channel_id: String,
     playlist_name: Option<String>,
     is_visible: bool,
-    name: String,
-    description: String,
-    media_uri: String,
+    metadata: AssetMetadata,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -481,14 +475,9 @@ fn publish(
 
     let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
-    validate_asset_source(
-        deps.as_ref(),
-        asset_source.clone(),
-        info.sender.clone(),
-        name.clone(),
-        description.clone(),
-        media_uri.clone(),
-    )?;
+    validate_asset_source(deps.as_ref(), asset_source.clone(), info.sender.clone())?;
+
+    validate_asset_metadata(metadata.clone())?;
 
     // Define the asset to be published
     let asset = Asset {
@@ -496,15 +485,12 @@ fn publish(
         publish_id: publish_id.clone(),
         asset_source: asset_source.clone(),
         is_visible: is_visible,
-        name: name.clone(),
-        description: description.clone(),
-        media_uri: media_uri.clone(),
     };
 
     // Add asset to the channel's asset list
     let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    assets_manager.add_asset(deps.storage, asset_key.clone(), asset.clone())?;
+    assets_manager.add_asset(deps.storage, asset_key.clone(), asset.clone(), metadata)?;
 
     if let Some(playlist_name) = playlist_name.clone() {
         if is_visible {
@@ -962,36 +948,37 @@ fn update_asset_details(
     let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
     let mut asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
-
+    let mut metadata = assets_manager.get_asset_metadata(deps.storage, asset_key.clone())?;
     // Validate the asset name
     if let Some(name) = name {
         validate_string(&name, StringValidationType::AssetName)?;
-        asset.name = name;
+        metadata.name = name;
     }
     // Validate the asset description
     if let Some(description) = description {
         validate_string(&description, StringValidationType::Description)?;
-        asset.description = description;
+        metadata.description = description;
     }
     // Validate the asset media URI
     if let Some(media_uri) = media_uri {
         validate_string(&media_uri, StringValidationType::Link)?;
-        asset.media_uri = media_uri;
+        metadata.media_uri = media_uri;
     }
     if let Some(is_visible) = is_visible {
         asset.is_visible = is_visible;
     }
 
     assets_manager.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
+    assets_manager.update_asset_metadata(deps.storage, asset_key.clone(), metadata.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "update_asset_details")
         .add_attribute("channel_id", channel_id)
         .add_attribute("publish_id", publish_id)
         .add_attribute("is_visible", asset.is_visible.to_string())
-        .add_attribute("name", asset.name.clone())
-        .add_attribute("description", asset.description.clone())
-        .add_attribute("media_uri", asset.media_uri.clone());
+        .add_attribute("name", metadata.name.clone())
+        .add_attribute("description", metadata.description.clone())
+        .add_attribute("media_uri", metadata.media_uri.clone());
 
     Ok(response)
 }
@@ -1359,10 +1346,14 @@ fn query_asset(
 ) -> Result<AssetResponse, ContractError> {
     let assets_manager = AssetsManager::new();
     let asset_key = (channel_id.clone(), publish_id.clone());
-    let asset = assets_manager.get_asset(deps.storage, asset_key)?;
+    let asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
     let flags = assets_manager.get_all_flags_for_asset(deps.storage, channel_id, publish_id)?;
-
-    Ok(AssetResponse { asset, flags })
+    let metadata = assets_manager.get_asset_metadata(deps.storage, asset_key.clone())?;
+    Ok(AssetResponse {
+        asset,
+        flags,
+        metadata,
+    })
 }
 fn query_reserved_usernames(
     deps: Deps,

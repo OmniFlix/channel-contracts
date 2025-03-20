@@ -42,9 +42,23 @@ pub struct Asset {
     pub publish_id: String,
     pub asset_source: AssetSource,
     pub is_visible: bool,
+}
+
+#[cw_serde]
+pub struct AssetMetadata {
     pub name: String,
     pub description: String,
     pub media_uri: String,
+}
+
+impl Default for AssetMetadata {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: String::new(),
+            media_uri: String::new(),
+        }
+    }
 }
 
 #[cw_serde]

@@ -4,7 +4,7 @@ use crate::ContractError;
 use asset_manager::assets::AssetsManager;
 use cosmwasm_std::{Addr, Api, Coin, Deps, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
-use omniflix_channel_types::asset::{AssetKey, AssetSource};
+use omniflix_channel_types::asset::{AssetKey, AssetMetadata, AssetSource};
 use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
 use omniflix_channel_types::msg::{
     ChannelTokenDetails, ChannelsCollectionDetails, ReservedUsername,
@@ -90,13 +90,7 @@ pub fn validate_asset_source(
     deps: Deps,
     asset_source: AssetSource,
     owner: Addr,
-    name: String,
-    description: String,
-    media_uri: String,
 ) -> Result<(), ContractError> {
-    validate_string(&name, StringValidationType::AssetName)?;
-    validate_string(&description, StringValidationType::Description)?;
-    validate_string(&media_uri, StringValidationType::Link)?;
     match asset_source {
         AssetSource::Nft {
             collection_id,
@@ -107,6 +101,13 @@ pub fn validate_asset_source(
         }
         AssetSource::OffChain {} => Ok(()),
     }
+}
+
+pub fn validate_asset_metadata(metadata: AssetMetadata) -> Result<(), ContractError> {
+    validate_string(&metadata.name, StringValidationType::AssetName)?;
+    validate_string(&metadata.description, StringValidationType::Description)?;
+    validate_string(&metadata.media_uri, StringValidationType::Link)?;
+    Ok(())
 }
 
 pub fn validate_channel_token_details(

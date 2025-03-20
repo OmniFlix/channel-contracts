@@ -13,7 +13,7 @@
   "scripts": {
     "deploy": "ts-node src/scripts/deploy-channel-contract.ts",
     "create-ch": "ts-node src/scripts/create-channel.ts",
-    "publish": "ts-node src/scripts/publish-asset.ts",
+    "publish-asset": "ts-node src/scripts/publish-asset.ts",
     "create-pl": "ts-node src/scripts/create-playlist.ts",
     "add-asset": "ts-node src/scripts/add-asset-to-playlist.ts",
     "manage-assets": "ts-node src/scripts/manage-assets-in-playlist.ts",

@@ -61,4 +61,10 @@ pub enum AssetError {
 
     #[error("Error removing flags with limit")]
     RemoveFlagsWithLimitError {},
+
+    #[error("Error saving asset metadata")]
+    SaveAssetMetadataError {},
+
+    #[error("Asset metadata not found")]
+    AssetMetadataNotFound {},
 }

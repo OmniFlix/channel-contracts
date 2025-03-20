@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, Binary};
 use omniflix_channel_types::{
-    asset::AssetSource,
+    asset::{AssetMetadata, AssetSource},
     msg::{
         ChannelTokenDetails, ChannelsCollectionDetails, ExecuteMsg, InstantiateMsg,
         ReservedUsername,
@@ -164,9 +164,11 @@ impl AssetPublishMsgBuilder {
             channel_id: self.channel_id,
             playlist_name: self.playlist_name,
             is_visible: self.is_visible,
-            name: self.name,
-            description: self.description,
-            media_uri: self.media_uri,
+            metadata: AssetMetadata {
+                name: self.name,
+                description: self.description,
+                media_uri: self.media_uri,
+            },
         }
     }
 }

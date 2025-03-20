@@ -2,7 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin, Decimal};
 
 use crate::{
-    asset::{Asset, AssetKey, AssetSource, Flag, Playlist},
+    asset::{Asset, AssetKey, AssetMetadata, AssetSource, Flag, Playlist},
     channel::{ChannelCollaborator, ChannelDetails, ChannelMetadata},
     config::ChannelConractConfig,
 };
@@ -95,6 +95,7 @@ pub enum ExecuteMsg {
     /// Publishes an asset to a channel. The contract will generate and store a publish ID.
     /// Only callable by the channel owner or a collaborator.
     AssetPublish {
+        /// The source of the asset.
         asset_source: AssetSource,
         /// A salt value used for unique identification.
         salt: Binary,
@@ -104,12 +105,8 @@ pub enum ExecuteMsg {
         playlist_name: Option<String>,
         /// A flag indicating if the asset is visible to the public.
         is_visible: bool,
-        /// The name of the asset.
-        name: String,
-        /// The description of the asset.
-        description: String,
-        /// The media URI of the asset.
-        media_uri: String,
+        /// The metadata of the asset.
+        metadata: AssetMetadata,
     },
 
     /// Unpublishes an asset from a channel. The publish ID and related asset details will
@@ -383,6 +380,7 @@ pub struct ChannelResponse {
 pub struct AssetResponse {
     pub asset: Asset,
     pub flags: Vec<FlagInfo>,
+    pub metadata: AssetMetadata,
 }
 #[cw_serde]
 pub struct CollaboratorInfo {

@@ -29,9 +29,27 @@ export default class ChannelHelper {
                 amount: deploymentConfig.channel_creation_fee,
                 denom: chainConfig.denom,
             }],
-            channels_collection_id: deploymentConfig.channels_collection_id + random(10000000).toString(),
-            channels_collection_name: deploymentConfig.channels_collection_name,
-            channels_collection_symbol: deploymentConfig.channels_collection_symbol,
+            channels_collection_details: {
+                collection_id: deploymentConfig.channels_collection_id + random(10000000).toString(),
+                collection_name: deploymentConfig.channels_collection_name,
+                collection_symbol: deploymentConfig.channels_collection_symbol,
+                data: "test".toString(),
+                description: "test".toString(),
+                preview_uri: "https://www.omniflix.network",
+                schema: "test".toString(),
+                uri: "https://www.omniflix.network",
+                uri_hash: "test".toString(),
+            },
+            channel_token_details: {
+                media_uri: "https://www.omniflix.network",
+                preview_uri: "https://www.omniflix.network",
+                description: "test".toString(),
+                extensible: false,
+                nsfw: false,
+                royalty_share: "0".toString(),
+                transferable: true,
+                uri_hash: "test".toString(),
+            },
             reserved_usernames: [
                 // Set admin as reserved username but set address as empty string
                 {
@@ -145,6 +163,9 @@ export default class ChannelHelper {
             isVisible: is_visible,
             salt: context.generateRandomSalt(5),
             playlistName: playlist_name,
+            description: "test".toString(),
+            mediaUri: "https://www.omniflix.network",
+            name: "test".toString(),
         });
         let publishId = context.getEventAttribute(res, undefined, 'publish_id');
         logger.log(1, `Asset published with id: ${publishId}`)
