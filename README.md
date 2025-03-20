@@ -8,7 +8,7 @@ The OmniFlix Channel Contract is a CosmWasm-based smart contract deployed on the
 
 ### Channel Management
 - **Channel Creation**: Create your own personalized channel with a unique username that becomes your digital identity in the OmniFlix ecosystem. Customize with channel name, description, profile picture, and banner image.
-- **Channel Ownership**: Each channel is represented by a non-fungible token (ONFT) that proves ownership and enables seamless transfers between accounts.
+- **Channel Ownership**: Each channel is represented by an ONFT (OmniFlix Non-Fungible Token) that proves ownership and enables seamless transfers between accounts.
 - **Channel Metadata**: Easily update your channel's appearance and information at any time, including name, description, profile picture, and banner.
 - **Channel Deletion**: Full control over your content with the ability to remove a channel and all associated content when needed.
 
@@ -69,9 +69,27 @@ Initialize the contract with the following parameters:
 {
   "protocol_admin": "<admin-address>",
   "fee_collector": "<fee-collector-address>",
-  "channels_collection_id": "<collection-id>",
-  "channels_collection_name": "OmniFlix Channels",
-  "channels_collection_symbol": "OFXC",
+  "channels_collection_details": {
+    "collection_id": "<collection-id>",
+    "collection_name": "OmniFlix Channels",
+    "collection_symbol": "OFXC",
+    "description": "Collection of OmniFlix channels",
+    "preview_uri": "https://example.com/preview.jpg",
+    "schema": "https://example.com/schema.json",
+    "uri": "https://example.com/metadata.json",
+    "uri_hash": "",
+    "data": ""
+  },
+  "channel_token_details": {
+    "description": "OmniFlix channel token",
+    "media_uri": "https://example.com/media.jpg",
+    "preview_uri": "https://example.com/preview.jpg",
+    "uri_hash": "",
+    "transferable": true,
+    "extensible": true,
+    "nsfw": false,
+    "royalty_share": "0"
+  },
   "channel_creation_fee": [{"denom": "uflix", "amount": "1000000"}],
   "accepted_tip_denoms": ["uflix"],
   "reserved_usernames": []

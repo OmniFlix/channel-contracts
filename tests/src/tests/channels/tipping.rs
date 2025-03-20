@@ -92,6 +92,7 @@ fn invalid_tipping_denom() {
             &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "different_denom"),
+                asset_id: None,
             },
             &[coin(1000000, "different_denom")],
         )
@@ -148,6 +149,7 @@ fn invalid_tip_amount() {
             &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(1000, "uflix"),
+                asset_id: None,
             },
             &[coin(100, "uflix")],
         )
@@ -163,6 +165,7 @@ fn invalid_tip_amount() {
             &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(1000, "uflix"),
+                asset_id: None,
             },
             &[coin(1000, "different_denom")],
         )
@@ -222,6 +225,7 @@ fn happy_path() {
             &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "uflix"),
+                asset_id: None,
             },
             &[coin(100000, "uflix")],
         )
@@ -255,6 +259,7 @@ fn happy_path() {
             &ExecuteMsg::ChannelTip {
                 channel_id: channel_id.clone(),
                 amount: coin(100000, "uflix"),
+                asset_id: None,
             },
             &[coin(100000, "uflix")],
         )

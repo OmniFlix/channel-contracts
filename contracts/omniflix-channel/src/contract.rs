@@ -262,9 +262,9 @@ pub fn execute(
             add_usernames,
             remove_usernames,
         } => manage_reserved_usernames(deps, info, add_usernames, remove_usernames),
-        ExecuteMsg::ChannelTip { channel_id, amount } => {
-            tip_channel(deps, info, channel_id, amount)
-        }
+        ExecuteMsg::ChannelTip {
+            channel_id, amount, ..
+        } => tip_channel(deps, info, channel_id, amount),
         ExecuteMsg::ChannelAddCollaborator {
             channel_id,
             collaborator_address,

@@ -244,6 +244,8 @@ pub enum ExecuteMsg {
         channel_id: String,
         /// The amount of tokens to be tipped.
         amount: Coin,
+        /// The asset id to be tipped. Only for indexing purposes. Not used for anything else.
+        asset_id: Option<String>,
     },
     /// Adds a collaborator to a channel.
     /// Only callable by the channel owner.
