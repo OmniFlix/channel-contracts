@@ -9,9 +9,8 @@ export type Addr = string;
 export interface InstantiateMsg {
   accepted_tip_denoms: string[];
   channel_creation_fee: Coin[];
-  channels_collection_id: string;
-  channels_collection_name: string;
-  channels_collection_symbol: string;
+  channel_token_details: ChannelTokenDetails;
+  channels_collection_details: ChannelsCollectionDetails;
   fee_collector: Addr;
   protocol_admin: Addr;
   reserved_usernames: ReservedUsername[];
@@ -19,6 +18,27 @@ export interface InstantiateMsg {
 export interface Coin {
   amount: Uint128;
   denom: string;
+}
+export interface ChannelTokenDetails {
+  description: string;
+  extensible: boolean;
+  media_uri: string;
+  nsfw: boolean;
+  preview_uri: string;
+  royalty_share: string;
+  transferable: boolean;
+  uri_hash: string;
+}
+export interface ChannelsCollectionDetails {
+  collection_id: string;
+  collection_name: string;
+  collection_symbol: string;
+  data: string;
+  description: string;
+  preview_uri: string;
+  schema: string;
+  uri: string;
+  uri_hash: string;
 }
 export interface ReservedUsername {
   address?: Addr | null;
@@ -52,7 +72,10 @@ export type ExecuteMsg = {
   asset_publish: {
     asset_source: AssetSource;
     channel_id: string;
+    description: string;
     is_visible: boolean;
+    media_uri: string;
+    name: string;
     playlist_name?: string | null;
     salt: Binary;
   };
@@ -64,7 +87,10 @@ export type ExecuteMsg = {
 } | {
   asset_update_details: {
     channel_id: string;
-    is_visible: boolean;
+    description?: string | null;
+    is_visible?: boolean | null;
+    media_uri?: string | null;
+    name?: string | null;
     publish_id: string;
   };
 } | {
@@ -155,11 +181,7 @@ export type AssetSource = {
     onft_id: string;
   };
 } | {
-  off_chain: {
-    description: string;
-    media_uri: string;
-    name: string;
-  };
+  off_chain: {};
 };
 export type Binary = string;
 export type Flag = ("n_s_f_w" | "explicit" | "spam" | "hateful") | {
@@ -254,7 +276,10 @@ export interface AssetResponse {
 export interface Asset {
   asset_source: AssetSource;
   channel_id: string;
+  description: string;
   is_visible: boolean;
+  media_uri: string;
+  name: string;
   publish_id: string;
 }
 export interface FlagInfo {
@@ -298,8 +323,6 @@ export interface ChannelConractConfig {
   auth_details: AuthDetails;
   channel_creation_fee: Coin[];
   channels_collection_id: string;
-  channels_collection_name: string;
-  channels_collection_symbol: string;
 }
 export interface AuthDetails {
   fee_collector: Addr;

@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Addr, InstantiateMsg, Coin, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, FlagInfo, ArrayOfAssetResponse, ChannelResponse, CollaboratorInfo, ChannelDetails, String, ChannelMetadata, ArrayOfChannelResponse, ChannelConractConfig, AuthDetails, ArrayOfString, Uint64, ArrayOfCollaboratorInfo, Boolean, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
+import { Uint128, Addr, InstantiateMsg, Coin, ChannelTokenDetails, ChannelsCollectionDetails, ReservedUsername, ExecuteMsg, AssetSource, Binary, Flag, Role, Decimal, ChannelCollaborator, QueryMsg, AssetResponse, Asset, FlagInfo, ArrayOfAssetResponse, ChannelResponse, CollaboratorInfo, ChannelDetails, String, ChannelMetadata, ArrayOfChannelResponse, ChannelConractConfig, AuthDetails, ArrayOfString, Uint64, ArrayOfCollaboratorInfo, Boolean, Playlist, ArrayOfPlaylist, ArrayOfReservedUsername } from "./OmniFlixChannel.types";
 export interface OmniFlixChannelReadOnlyInterface {
   contractAddress: string;
   isPaused: () => Promise<Boolean>;
@@ -380,13 +380,19 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   assetPublish: ({
     assetSource,
     channelId,
+    description,
     isVisible,
+    mediaUri,
+    name,
     playlistName,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
+    description: string;
     isVisible: boolean;
+    mediaUri: string;
+    name: string;
     playlistName?: string;
     salt: Binary;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
@@ -399,11 +405,17 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   assetUpdateDetails: ({
     channelId,
+    description,
     isVisible,
+    mediaUri,
+    name,
     publishId
   }: {
     channelId: string;
-    isVisible: boolean;
+    description?: string;
+    isVisible?: boolean;
+    mediaUri?: string;
+    name?: string;
     publishId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   assetFlag: ({
@@ -631,13 +643,19 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   assetPublish = async ({
     assetSource,
     channelId,
+    description,
     isVisible,
+    mediaUri,
+    name,
     playlistName,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
+    description: string;
     isVisible: boolean;
+    mediaUri: string;
+    name: string;
     playlistName?: string;
     salt: Binary;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
@@ -645,7 +663,10 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
       asset_publish: {
         asset_source: assetSource,
         channel_id: channelId,
+        description,
         is_visible: isVisible,
+        media_uri: mediaUri,
+        name,
         playlist_name: playlistName,
         salt
       }
@@ -667,17 +688,26 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   };
   assetUpdateDetails = async ({
     channelId,
+    description,
     isVisible,
+    mediaUri,
+    name,
     publishId
   }: {
     channelId: string;
-    isVisible: boolean;
+    description?: string;
+    isVisible?: boolean;
+    mediaUri?: string;
+    name?: string;
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       asset_update_details: {
         channel_id: channelId,
+        description,
         is_visible: isVisible,
+        media_uri: mediaUri,
+        name,
         publish_id: publishId
       }
     }, fee, memo, _funds);
