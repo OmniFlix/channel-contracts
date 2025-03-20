@@ -3,8 +3,6 @@ use cosmwasm_std::{Addr, Coin};
 
 #[cw_serde]
 pub struct ChannelConractConfig {
-    pub channels_collection_name: String,
-    pub channels_collection_symbol: String,
     pub channels_collection_id: String,
     pub channel_creation_fee: Vec<Coin>,
     pub accepted_tip_denoms: Vec<String>,

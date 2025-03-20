@@ -80,8 +80,6 @@ fn instantiate_channel_contract() {
         .unwrap();
     assert_eq!(config.auth_details.protocol_admin, admin);
     assert_eq!(config.channels_collection_id, "Channels");
-    assert_eq!(config.channels_collection_name, "Channels");
-    assert_eq!(config.channels_collection_symbol, "CH");
     assert_eq!(config.channel_creation_fee, vec![]);
 }
 

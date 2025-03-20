@@ -2,12 +2,13 @@ use crate::access_control::validate_permissions;
 use crate::bank_helpers::{bank_msg_wrapper, check_payment, distribute_funds_with_shares};
 use crate::error::ContractError;
 use crate::helpers::{
-    filter_assets_to_remove, generate_mint_onft_msg, get_collection_creation_fee,
-    validate_asset_source, validate_channel_details, validate_channel_metadata,
+    filter_assets_to_remove, generate_create_denom_msg, generate_mint_onft_msg,
+    get_collection_creation_fee, validate_asset_source, validate_channel_collection_details,
+    validate_channel_details, validate_channel_metadata, validate_channel_token_details,
     validate_reserved_usernames,
 };
 use crate::random::generate_random_id_with_prefix;
-use crate::state::CONFIG;
+use crate::state::{CHANNEL_TOKEN_DETAILS, CONFIG};
 use crate::string_validation::{validate_string, StringValidationType};
 use asset_manager::assets::AssetsManager;
 use asset_manager::playlists::PlaylistsManager;
@@ -53,6 +54,15 @@ pub fn instantiate(
         .api
         .addr_validate(&msg.fee_collector.clone().into_string())?;
 
+    // Validate the channel token details
+    validate_channel_token_details(msg.channel_token_details.clone())?;
+
+    // Save the channel token details
+    CHANNEL_TOKEN_DETAILS.save(deps.storage, &msg.channel_token_details)?;
+
+    // Validate the channel collection details
+    validate_channel_collection_details(msg.channels_collection_details.clone())?;
+
     // Save channel CONFIG
     let channel_contract_config = ChannelConractConfig {
         auth_details: AuthDetails {
@@ -60,9 +70,7 @@ pub fn instantiate(
             fee_collector: fee_collector.clone(),
         },
         accepted_tip_denoms: msg.accepted_tip_denoms.clone(),
-        channels_collection_id: msg.channels_collection_id.clone(),
-        channels_collection_name: msg.channels_collection_name.clone(),
-        channels_collection_symbol: msg.channels_collection_symbol.clone(),
+        channels_collection_id: msg.channels_collection_details.collection_id.clone(),
         channel_creation_fee: msg.channel_creation_fee.clone(),
     };
     // Save the channel CONFIG to the contract state
@@ -82,28 +90,26 @@ pub fn instantiate(
     channels_manager.add_reserved_usernames(deps.storage, msg.reserved_usernames.clone())?;
 
     // Prepare the message to create a new ONFT denom (collection)
-    let onft_creation_message: CosmosMsg =
-        omniflix_std::types::omniflix::onft::v1beta1::MsgCreateDenom {
-            id: msg.channels_collection_id.clone(),
-            name: msg.channels_collection_name.clone(),
-            symbol: msg.channels_collection_symbol.clone(),
-            creation_fee: Some(collection_creation_fee.into()),
-            sender: env.contract.address.clone().to_string(),
-            ..Default::default()
-        }
-        .into();
+    let onft_creation_message: CosmosMsg = generate_create_denom_msg(
+        msg.channels_collection_details.clone(),
+        env.contract.address.clone().to_string(),
+        collection_creation_fee,
+    );
 
     let response = Response::new()
         .add_message(onft_creation_message)
         .add_attribute("action", "instantiate")
-        .add_attribute("channels_collection_id", msg.channels_collection_id.clone())
+        .add_attribute(
+            "channels_collection_id",
+            msg.channels_collection_details.collection_id.clone(),
+        )
         .add_attribute(
             "channels_collection_name",
-            msg.channels_collection_name.clone(),
+            msg.channels_collection_details.collection_name.clone(),
         )
         .add_attribute(
             "channels_collection_symbol",
-            msg.channels_collection_symbol.clone(),
+            msg.channels_collection_details.collection_symbol.clone(),
         );
 
     Ok(response)
@@ -367,6 +373,7 @@ fn create_channel(
         info.sender.clone().to_string(),
         string_onft_data,
         user_name.clone(),
+        CHANNEL_TOKEN_DETAILS.load(deps.storage)?,
     );
 
     // Pay the channel creation fee to the fee collector
@@ -379,7 +386,9 @@ fn create_channel(
         .add_message(mint_onft_msg)
         .add_messages(bank_channel_fee_msg)
         .add_attribute("action", "register_channel")
-        .add_attributes(nft_attributes);
+        .add_attributes(nft_attributes)
+        .add_attribute("channel_id", channel_id.clone());
+
     Ok(response)
 }
 

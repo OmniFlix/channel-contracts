@@ -11,12 +11,36 @@ use crate::{
 pub struct InstantiateMsg {
     pub protocol_admin: Addr,
     pub fee_collector: Addr,
-    pub channels_collection_id: String,
-    pub channels_collection_name: String,
-    pub channels_collection_symbol: String,
+    pub channels_collection_details: ChannelsCollectionDetails,
+    pub channel_token_details: ChannelTokenDetails,
     pub channel_creation_fee: Vec<Coin>,
     pub accepted_tip_denoms: Vec<String>,
     pub reserved_usernames: Vec<ReservedUsername>,
+}
+
+#[cw_serde]
+pub struct ChannelsCollectionDetails {
+    pub collection_id: String,
+    pub collection_name: String,
+    pub collection_symbol: String,
+    pub description: String,
+    pub preview_uri: String,
+    pub schema: String,
+    pub uri: String,
+    pub uri_hash: String,
+    pub data: String,
+}
+
+#[cw_serde]
+pub struct ChannelTokenDetails {
+    pub description: String,
+    pub media_uri: String,
+    pub preview_uri: String,
+    pub uri_hash: String,
+    pub transferable: bool,
+    pub extensible: bool,
+    pub nsfw: bool,
+    pub royalty_share: String,
 }
 
 #[cw_serde]

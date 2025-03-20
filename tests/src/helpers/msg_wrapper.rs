@@ -1,7 +1,10 @@
 use cosmwasm_std::{Addr, Binary};
 use omniflix_channel_types::{
     asset::AssetSource,
-    msg::{ExecuteMsg, InstantiateMsg, ReservedUsername},
+    msg::{
+        ChannelTokenDetails, ChannelsCollectionDetails, ExecuteMsg, InstantiateMsg,
+        ReservedUsername,
+    },
 };
 
 pub fn get_channel_instantiate_msg(admin: Addr) -> InstantiateMsg {
@@ -10,9 +13,27 @@ pub fn get_channel_instantiate_msg(admin: Addr) -> InstantiateMsg {
         fee_collector: admin.clone(),
         protocol_admin: admin.clone(),
         accepted_tip_denoms: vec!["uflix".to_string()],
-        channels_collection_id: "Channels".to_string(),
-        channels_collection_name: "Channels".to_string(),
-        channels_collection_symbol: "CH".to_string(),
+        channel_token_details: ChannelTokenDetails {
+            media_uri: "https://example.com/media.png".to_string(),
+            preview_uri: "https://example.com/preview.png".to_string(),
+            description: "Channel token details".to_string(),
+            uri_hash: "".to_string(),
+            transferable: true,
+            extensible: true,
+            nsfw: false,
+            royalty_share: "0".to_string(),
+        },
+        channels_collection_details: ChannelsCollectionDetails {
+            collection_id: "Channels".to_string(),
+            collection_name: "Channels".to_string(),
+            collection_symbol: "CH".to_string(),
+            description: "Channels collection".to_string(),
+            preview_uri: "https://example.com/preview.png".to_string(),
+            uri: "https://example.com/uri".to_string(),
+            schema: "https://example.com/schema".to_string(),
+            uri_hash: "".to_string(),
+            data: "".to_string(),
+        },
         reserved_usernames: vec![ReservedUsername {
             username: "reserved".to_string(),
             address: None,

@@ -6,7 +6,9 @@ use cosmwasm_std::{Addr, Api, Coin, Deps, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
 use omniflix_channel_types::asset::{AssetKey, AssetSource};
 use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
-use omniflix_channel_types::msg::ReservedUsername;
+use omniflix_channel_types::msg::{
+    ChannelTokenDetails, ChannelsCollectionDetails, ReservedUsername,
+};
 use omniflix_std::types::omniflix::onft::v1beta1::{Metadata, OnftQuerier};
 use std::str::FromStr;
 
@@ -107,6 +109,33 @@ pub fn validate_asset_source(
     }
 }
 
+pub fn validate_channel_token_details(
+    channel_token_details: ChannelTokenDetails,
+) -> Result<(), ContractError> {
+    validate_string(&channel_token_details.media_uri, StringValidationType::Link)?;
+    validate_string(
+        &channel_token_details.preview_uri,
+        StringValidationType::Link,
+    )?;
+    validate_string(
+        &channel_token_details.description,
+        StringValidationType::Description,
+    )?;
+    Ok(())
+}
+
+pub fn validate_channel_collection_details(
+    collection_details: ChannelsCollectionDetails,
+) -> Result<(), ContractError> {
+    validate_string(
+        &collection_details.description,
+        StringValidationType::Description,
+    )?;
+    validate_string(&collection_details.preview_uri, StringValidationType::Link)?;
+    validate_string(&collection_details.uri, StringValidationType::Link)?;
+    Ok(())
+}
+
 pub fn generate_mint_onft_msg(
     onft_id: String,
     denom_id: String,
@@ -114,6 +143,7 @@ pub fn generate_mint_onft_msg(
     recipient: String,
     onft_data: String,
     user_name: String,
+    channel_token_details: ChannelTokenDetails,
 ) -> (CosmosMsg, Vec<(String, String)>) {
     // Create the mint message
     let mint_onft_msg: CosmosMsg = omniflix_std::types::omniflix::onft::v1beta1::MsgMintOnft {
@@ -123,16 +153,16 @@ pub fn generate_mint_onft_msg(
         recipient: recipient.clone(),
         data: onft_data.clone(),
         metadata: Some(Metadata {
-            media_uri: " ".to_string(),
+            media_uri: channel_token_details.media_uri,
             name: user_name.clone(),
-            description: " ".to_string(),
-            preview_uri: " ".to_string(),
-            uri_hash: " ".to_string(),
+            description: channel_token_details.description,
+            preview_uri: channel_token_details.preview_uri,
+            uri_hash: channel_token_details.uri_hash,
         }),
-        nsfw: false,
-        extensible: false,
-        royalty_share: "0".to_string(),
-        transferable: true,
+        nsfw: channel_token_details.nsfw,
+        extensible: channel_token_details.extensible,
+        royalty_share: channel_token_details.royalty_share,
+        transferable: channel_token_details.transferable,
     }
     .into();
 
@@ -158,4 +188,26 @@ pub fn generate_mint_onft_msg(
     ];
 
     (mint_onft_msg, attributes)
+}
+
+pub fn generate_create_denom_msg(
+    collection_details: ChannelsCollectionDetails,
+    contract_address: String,
+    creation_fee: Coin,
+) -> CosmosMsg {
+    omniflix_std::types::omniflix::onft::v1beta1::MsgCreateDenom {
+        id: collection_details.collection_id,
+        name: collection_details.collection_name,
+        symbol: collection_details.collection_symbol,
+        description: collection_details.description,
+        preview_uri: collection_details.preview_uri,
+        schema: collection_details.schema,
+        sender: contract_address,
+        creation_fee: Some(creation_fee.into()),
+        uri: collection_details.uri,
+        uri_hash: "".to_string(),
+        data: "".to_string(),
+        royalty_receivers: vec![],
+    }
+    .into()
 }

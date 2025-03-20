@@ -69,6 +69,7 @@ pub enum StringValidationType {
     Link,
     AssetName,
 }
+
 // Get configuration based on validation type
 impl StringValidationType {
     fn get_config(&self) -> StringValidationConfig {
@@ -113,7 +114,7 @@ impl StringValidationType {
                     "https://".to_string(),
                     "ipfs://".to_string(),
                 ],
-                must_contain: vec![".".to_string()], // Ensure there's a dot in the link
+                must_contain: vec![],
                 ..Default::default()
             },
             StringValidationType::AssetName => StringValidationConfig {
@@ -192,6 +193,20 @@ pub fn validate_string(
                     required: config.must_contain.clone(),
                 },
             ));
+        }
+    }
+
+    // Special case: check for dots in http/https links but not in ipfs links
+    if let StringValidationType::Link = validation_type {
+        if input.starts_with("http://") || input.starts_with("https://") {
+            if !input.contains('.') {
+                return Err(ContractError::StringValidationError(
+                    StringValidationError::InvalidMustContain {
+                        sent: input.to_string(),
+                        required: vec![".".to_string()],
+                    },
+                ));
+            }
         }
     }
 
@@ -307,5 +322,10 @@ mod tests {
         assert!(validate_string("ftp://invalid.com", StringValidationType::Link).is_err());
         assert!(validate_string("https://", StringValidationType::Link).is_err());
         assert!(validate_string("https://nodot", StringValidationType::Link).is_err());
+        assert!(validate_string(
+            "ipfs://QmNqaukWqEJg8rE7T1nKDxJomvGcJF39S6HQJqm9F9PoiH",
+            StringValidationType::Link
+        )
+        .is_ok());
     }
 }
