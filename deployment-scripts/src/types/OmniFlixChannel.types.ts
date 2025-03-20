@@ -72,10 +72,8 @@ export type ExecuteMsg = {
   asset_publish: {
     asset_source: AssetSource;
     channel_id: string;
-    description: string;
     is_visible: boolean;
-    media_uri: string;
-    name: string;
+    metadata: AssetMetadata;
     playlist_name?: string | null;
     salt: Binary;
   };
@@ -153,6 +151,7 @@ export type ExecuteMsg = {
 } | {
   channel_tip: {
     amount: Coin;
+    asset_id?: string | null;
     channel_id: string;
   };
 } | {
@@ -189,6 +188,11 @@ export type Flag = ("n_s_f_w" | "explicit" | "spam" | "hateful") | {
 };
 export type Role = "admin" | "publisher" | "moderator";
 export type Decimal = string;
+export interface AssetMetadata {
+  description: string;
+  media_uri: string;
+  name: string;
+}
 export interface ChannelCollaborator {
   role: Role;
   share: Decimal;
@@ -272,14 +276,12 @@ export type QueryMsg = {
 export interface AssetResponse {
   asset: Asset;
   flags: FlagInfo[];
+  metadata: AssetMetadata;
 }
 export interface Asset {
   asset_source: AssetSource;
   channel_id: string;
-  description: string;
   is_visible: boolean;
-  media_uri: string;
-  name: string;
   publish_id: string;
 }
 export interface FlagInfo {
