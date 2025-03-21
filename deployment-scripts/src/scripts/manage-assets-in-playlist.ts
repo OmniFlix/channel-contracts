@@ -36,10 +36,20 @@ const manageAssetsInPlaylist = async () => {
     await channelHelper.CreatePlaylist(context, "creator", channelId, playlistName);
 
     // Publish the asset
-    let publishId = await channelHelper.PublishAsset(context, "creator", channelId, collectionId, assetId, true);
+    let publishId = await channelHelper.PublishAsset(context, "creator", channelId, {
+        nft: {
+            collection_id: collectionId,
+            onft_id: assetId
+        }
+    }, true);
 
     // Publish the asset
-    let publishId2 = await channelHelper.PublishAsset(context, "creator", channelId, collectionId, assetId2, true);
+    let publishId2 = await channelHelper.PublishAsset(context, "creator", channelId, {
+        nft: {
+            collection_id: collectionId,
+            onft_id: assetId2
+        }
+    }, true);
 
     // Add the asset to the playlist
     await channelHelper.AddAssetToPlaylist(context, "creator", channelId, channelId, playlistName, publishId);

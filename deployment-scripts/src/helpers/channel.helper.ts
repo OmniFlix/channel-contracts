@@ -163,9 +163,11 @@ export default class ChannelHelper {
             isVisible: is_visible,
             salt: context.generateRandomSalt(5),
             playlistName: playlist_name,
-            description: "test".toString(),
-            mediaUri: "https://www.omniflix.network",
-            name: "test".toString(),
+            metadata: {
+                description: "test".toString(),
+                media_uri: "https://www.omniflix.network",
+                name: "test".toString(),
+            },
         });
         let publishId = context.getEventAttribute(res, undefined, 'publish_id');
         logger.log(1, `Asset published with id: ${publishId}`)
