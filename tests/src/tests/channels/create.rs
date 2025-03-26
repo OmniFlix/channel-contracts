@@ -1,7 +1,8 @@
 use crate::helpers::msg_wrapper::{get_channel_instantiate_msg, CreateChannelMsgBuilder};
 use crate::helpers::setup::setup;
 use crate::helpers::utils::get_event_attribute;
-use cosmwasm_std::coin;
+use channel_manager::error::ChannelError;
+use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
@@ -178,6 +179,63 @@ fn failed_validations() {
             min_length: 3,
             max_length: 256,
         })
+    );
+}
+#[test]
+fn username_already_exists() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+
+    let mut instantiate_msg = get_channel_instantiate_msg(admin.clone());
+    instantiate_msg.channel_creation_fee = vec![coin(1000000, "uflix")];
+
+    // Instantiate the contract
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
+    // Happy path
+    let _res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &channel_create_msg.clone(),
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap();
+
+    let channel_create_msg = CreateChannelMsgBuilder::new("creator", creator.clone())
+        .salt(Binary::from("salt2".as_bytes()))
+        .build();
+
+    // Try to create a channel with the same username
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &channel_create_msg.clone(),
+            &[coin(1000000, "uflix")],
+        )
+        .unwrap_err();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(
+        typed_err,
+        &ContractError::Channel(ChannelError::UserNameAlreadyTaken {})
     );
 }
 

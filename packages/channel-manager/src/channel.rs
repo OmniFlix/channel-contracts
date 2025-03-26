@@ -33,12 +33,6 @@ pub struct ChannelsManager {
     pub followers_count: Map<ChannelId, u64>,
 }
 
-impl Default for ChannelsManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ChannelsManager {
     pub const fn new() -> Self {
         ChannelsManager {
@@ -253,26 +247,6 @@ impl ChannelsManager {
             .map_err(|_| ChannelError::UserNameNotFound {})
     }
 
-    pub fn get_channel_id_from_username(
-        &self,
-        store: &mut dyn Storage,
-        user_name: UserName,
-    ) -> Result<ChannelId, ChannelError> {
-        self.username_to_channel_id
-            .load(store, user_name)
-            .map_err(|_| ChannelError::UserNameNotFound {})
-    }
-
-    pub fn get_username_from_channel_id(
-        &self,
-        store: &mut dyn Storage,
-        channel_id: ChannelId,
-    ) -> Result<UserName, ChannelError> {
-        self.channel_id_to_username
-            .load(store, channel_id)
-            .map_err(|_| ChannelError::ChannelIdNotFound {})
-    }
-
     pub fn add_collaborator(
         &self,
         store: &mut dyn Storage,
@@ -379,23 +353,6 @@ impl ChannelsManager {
             .map(|(addr, collaborator)| (addr, collaborator.share))
             .collect();
         Ok(shares)
-    }
-
-    pub fn is_collaborator(
-        &self,
-        store: &dyn Storage,
-        channel_id: ChannelId,
-        sender: Addr,
-    ) -> Result<bool, ChannelError> {
-        // Check if channel exists
-        if !self.channel_details.has(store, channel_id.clone()) {
-            return Err(ChannelError::ChannelIdNotFound {});
-        }
-
-        let collaborator = self
-            .channel_collaborators
-            .has(store, (channel_id.clone(), sender.clone()));
-        Ok(collaborator)
     }
     pub fn get_collaborator(
         &self,

@@ -40,21 +40,6 @@ pub enum Role {
 }
 use std::fmt::{Display, Formatter, Result};
 
-impl Role {
-    // Alternative implementation using numeric values
-    pub fn privilege_level(&self) -> u8 {
-        match self {
-            Role::Admin => 3,
-            Role::Moderator => 2,
-            Role::Publisher => 1,
-        }
-    }
-
-    pub fn has_sufficient_privileges(&self, required_role: &Role) -> bool {
-        self.privilege_level() >= required_role.privilege_level()
-    }
-}
-
 impl Display for Role {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {

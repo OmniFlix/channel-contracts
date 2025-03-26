@@ -1159,7 +1159,7 @@ fn flag_asset(
     )?;
 
     Ok(Response::new()
-        .add_attribute("action", "add_flag")
+        .add_attribute("action", "asset_flag")
         .add_attribute("channel_id", channel_id)
         .add_attribute("publish_id", publish_id)
         .add_attribute("flag", flag.to_string()))

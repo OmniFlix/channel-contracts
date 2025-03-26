@@ -273,3 +273,149 @@ fn happy_path() {
     assert_eq!(collaborator.role, Role::Moderator.to_string());
     assert_eq!(collaborator.share, Decimal::percent(30));
 }
+
+#[test]
+fn remove_collaborator_unauthorized() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+    let creator_2 = setup_response.test_accounts.creator2.clone();
+    let collector = setup_response.test_accounts.collector.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+
+    let channel_id = get_event_attribute(res, "wasm", "channel_id");
+
+    // Add collaborator successfully
+    let msg = ExecuteMsg::ChannelAddCollaborator {
+        channel_id: channel_id.clone(),
+        collaborator_address: creator_2.clone().into_string(),
+        collaborator_details: ChannelCollaborator {
+            role: Role::Moderator,
+            share: Decimal::percent(30),
+        },
+    };
+
+    let _res = app
+        .execute_contract(creator.clone(), channel_contract_addr.clone(), &msg, &[])
+        .unwrap();
+
+    // Try to remove collaborator as unauthorized user
+    let msg = ExecuteMsg::ChannelRemoveCollaborator {
+        channel_id: channel_id.clone(),
+        collaborator_address: creator_2.clone().into_string(),
+    };
+
+    let res = app
+        .execute_contract(collector.clone(), channel_contract_addr.clone(), &msg, &[])
+        .unwrap_err();
+
+    let typed_err = res.downcast_ref::<ContractError>().unwrap();
+    assert_eq!(typed_err, &ContractError::Unauthorized {});
+}
+
+#[test]
+fn remove_collaborator_happy_path() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+    let collector = setup_response.test_accounts.collector.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+
+    let channel_id = get_event_attribute(res, "wasm", "channel_id");
+
+    // Add collaborator successfully
+    let msg = ExecuteMsg::ChannelAddCollaborator {
+        channel_id: channel_id.clone(),
+        collaborator_address: collector.clone().into_string(),
+        collaborator_details: ChannelCollaborator {
+            role: Role::Moderator,
+            share: Decimal::percent(30),
+        },
+    };
+
+    let _res = app
+        .execute_contract(creator.clone(), channel_contract_addr.clone(), &msg, &[])
+        .unwrap();
+
+    // Remove collaborator successfully
+    let msg = ExecuteMsg::ChannelRemoveCollaborator {
+        channel_id: channel_id.clone(),
+        collaborator_address: collector.clone().into_string(),
+    };
+
+    let _res = app
+        .execute_contract(creator.clone(), channel_contract_addr.clone(), &msg, &[])
+        .unwrap();
+
+    // Verify collaborator was removed
+    let query_msg = QueryMsg::GetChannelCollaborators {
+        channel_id: channel_id.clone(),
+        start_after: None,
+        limit: None,
+    };
+
+    let collaborators: Vec<CollaboratorInfo> = app
+        .wrap()
+        .query_wasm_smart(channel_contract_addr.clone(), &query_msg)
+        .unwrap();
+
+    assert_eq!(collaborators.len(), 0);
+}

@@ -6,7 +6,7 @@ use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::{
     channel::ChannelDetails,
-    msg::{ChannelResponse, ExecuteMsg, QueryMsg},
+    msg::{ExecuteMsg, QueryMsg},
 };
 
 #[test]
@@ -84,7 +84,7 @@ fn delete_channel_happy_path() {
     );
 
     // Verify that the channel no longer exists
-    let query_result = app.wrap().query_wasm_smart::<ChannelResponse>(
+    let query_result = app.wrap().query_wasm_smart::<ChannelDetails>(
         channel_contract_addr.clone(),
         &QueryMsg::ChannelDetails {
             channel_id: channel_id.clone(),

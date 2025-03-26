@@ -239,11 +239,23 @@ fn happy_path() {
                 banner_picture: None,
                 profile_picture: None,
                 channel_name: None,
-                payment_address: None,
+                payment_address: Some(admin.clone().to_string()),
             },
             &[coin(1000000, "uflix")],
         )
         .unwrap();
+
+    // Query Channel Details
+    let channel: ChannelDetails = app
+        .wrap()
+        .query_wasm_smart(
+            channel_contract_addr.clone(),
+            &QueryMsg::ChannelDetails {
+                channel_id: channel_id.clone(),
+            },
+        )
+        .unwrap();
+    assert_eq!(channel.payment_address, admin.clone());
 }
 
 #[test]
