@@ -15,7 +15,7 @@ pub struct AssetsManager {
 }
 
 const PAGINATION_LIMIT: u32 = 50;
-
+#[allow(clippy::new_without_default)]
 impl AssetsManager {
     /// Create a new `Assets` instance.
     pub const fn new() -> Self {

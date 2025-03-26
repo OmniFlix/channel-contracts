@@ -16,6 +16,7 @@ pub struct PlaylistsManager {
     pub playlists: Map<(ChannelId, PlaylistName), Playlist>,
 }
 
+#[allow(clippy::new_without_default)]
 impl PlaylistsManager {
     pub const fn new() -> Self {
         PlaylistsManager {

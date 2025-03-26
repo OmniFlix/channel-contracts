@@ -32,7 +32,7 @@ pub struct ChannelsManager {
     pub followers: Map<(ChannelId, Addr), bool>,
     pub followers_count: Map<ChannelId, u64>,
 }
-
+#[allow(clippy::new_without_default)]
 impl ChannelsManager {
     pub const fn new() -> Self {
         ChannelsManager {
