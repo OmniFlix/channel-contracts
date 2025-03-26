@@ -52,7 +52,6 @@ pub struct AssetMetadata {
     pub media_uri: String,
 }
 
-
 #[cw_serde]
 pub enum Flag {
     NSFW,
