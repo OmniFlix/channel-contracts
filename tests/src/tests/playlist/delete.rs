@@ -201,7 +201,7 @@ fn happy_path() {
         "asset_id".to_string(),
         creator.clone().to_string(),
     );
-    let cosmos_msg: CosmosMsg = mint_onft_msg.into();
+    let cosmos_msg: CosmosMsg = mint_onft_msg;
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())

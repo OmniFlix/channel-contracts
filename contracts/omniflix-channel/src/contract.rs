@@ -281,6 +281,7 @@ pub fn execute(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_channel(
     deps: DepsMut,
     env: Env,
@@ -449,6 +450,7 @@ fn delete_channel(
     Ok(response)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn publish(
     deps: DepsMut,
     env: Env,
@@ -484,7 +486,7 @@ fn publish(
         channel_id: channel_id.clone(),
         publish_id: publish_id.clone(),
         asset_source: asset_source.clone(),
-        is_visible: is_visible,
+        is_visible,
     };
 
     // Add asset to the channel's asset list
@@ -738,6 +740,7 @@ fn remove_collaborator(
     Ok(response)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn update_channel_details(
     deps: DepsMut,
     info: MessageInfo,
@@ -863,7 +866,7 @@ fn add_asset_to_playlist(
     let asset = assets_manager.get_asset(deps.storage, asset_key.clone())?;
 
     // Verify that the asset is visible
-    if asset.is_visible == false {
+    if !asset.is_visible {
         return Err(ContractError::AssetNotVisible {});
     }
 
@@ -921,7 +924,7 @@ fn remove_asset_from_playlist(
 
     Ok(response)
 }
-
+#[allow(clippy::too_many_arguments)]
 fn update_asset_details(
     deps: DepsMut,
     info: MessageInfo,

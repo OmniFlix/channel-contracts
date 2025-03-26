@@ -91,8 +91,8 @@ pub fn get_onft_with_owner(
 
     if onft.owner != owner {
         return Err(ContractError::OnftNotOwned {
-            collection_id: collection_id,
-            onft_id: onft_id,
+            collection_id,
+            onft_id,
         });
     }
 

@@ -131,7 +131,7 @@ fn channel_not_owned() {
         asset_id.clone(),
         collector.clone().to_string(),
     );
-    let cosmos_msg: CosmosMsg = mint_onft_msg.into();
+    let cosmos_msg: CosmosMsg = mint_onft_msg;
     let _res = app.execute(collector.clone(), cosmos_msg);
 
     // Publish the asset
@@ -210,7 +210,7 @@ fn playlist_does_not_exist() {
         asset_id.clone(),
         creator.clone().to_string(),
     );
-    let cosmos_msg: CosmosMsg = mint_onft_msg.into();
+    let cosmos_msg: CosmosMsg = mint_onft_msg;
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset with wrong playlist name
@@ -294,7 +294,7 @@ fn with_playlist() {
         asset_id.clone(),
         creator.clone().to_string(),
     );
-    let cosmos_msg: CosmosMsg = mint_onft_msg.into();
+    let cosmos_msg: CosmosMsg = mint_onft_msg;
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Create a playlist
@@ -559,7 +559,7 @@ fn happy_path() {
         asset_id.clone(),
         creator.clone().to_string(),
     );
-    let cosmos_msg: CosmosMsg = mint_onft_msg.into();
+    let cosmos_msg: CosmosMsg = mint_onft_msg;
     let _res = app.execute(creator.clone(), cosmos_msg);
 
     // Publish the asset

@@ -45,21 +45,13 @@ pub struct Asset {
 }
 
 #[cw_serde]
+#[derive(Default)]
 pub struct AssetMetadata {
     pub name: String,
     pub description: String,
     pub media_uri: String,
 }
 
-impl Default for AssetMetadata {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            description: String::new(),
-            media_uri: String::new(),
-        }
-    }
-}
 
 #[cw_serde]
 pub enum Flag {

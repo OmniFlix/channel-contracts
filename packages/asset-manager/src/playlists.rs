@@ -16,6 +16,12 @@ pub struct PlaylistsManager {
     pub playlists: Map<(ChannelId, PlaylistName), Playlist>,
 }
 
+impl Default for PlaylistsManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PlaylistsManager {
     pub const fn new() -> Self {
         PlaylistsManager {

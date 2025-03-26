@@ -33,6 +33,12 @@ pub struct ChannelsManager {
     pub followers_count: Map<ChannelId, u64>,
 }
 
+impl Default for ChannelsManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ChannelsManager {
     pub const fn new() -> Self {
         ChannelsManager {

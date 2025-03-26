@@ -198,15 +198,13 @@ pub fn validate_string(
 
     // Special case: check for dots in http/https links but not in ipfs links
     if let StringValidationType::Link = validation_type {
-        if input.starts_with("http://") || input.starts_with("https://") {
-            if !input.contains('.') {
-                return Err(ContractError::StringValidationError(
-                    StringValidationError::InvalidMustContain {
-                        sent: input.to_string(),
-                        required: vec![".".to_string()],
-                    },
-                ));
-            }
+        if (input.starts_with("http://") || input.starts_with("https://")) && !input.contains('.') {
+            return Err(ContractError::StringValidationError(
+                StringValidationError::InvalidMustContain {
+                    sent: input.to_string(),
+                    required: vec![".".to_string()],
+                },
+            ));
         }
     }
 

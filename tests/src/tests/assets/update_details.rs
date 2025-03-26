@@ -250,7 +250,7 @@ fn partial_update() {
     assert_eq!(asset_response.metadata.name, new_name);
     assert_eq!(asset_response.metadata.description, original_description);
     assert_eq!(asset_response.metadata.media_uri, original_media_uri);
-    assert_eq!(asset_response.asset.is_visible, true);
+    assert!(asset_response.asset.is_visible);
 }
 
 #[test]
@@ -352,7 +352,7 @@ fn full_update() {
     assert_eq!(asset_response.metadata.name, new_name);
     assert_eq!(asset_response.metadata.description, new_description);
     assert_eq!(asset_response.metadata.media_uri, new_media_uri);
-    assert_eq!(asset_response.asset.is_visible, false);
+    assert!(!asset_response.asset.is_visible);
 }
 
 #[test]
@@ -471,5 +471,5 @@ fn collaborator_update() {
     assert_eq!(asset_response.metadata.name, new_name);
     assert_eq!(asset_response.metadata.description, original_description);
     assert_eq!(asset_response.metadata.media_uri, original_media_uri);
-    assert_eq!(asset_response.asset.is_visible, false);
+    assert!(!asset_response.asset.is_visible);
 }

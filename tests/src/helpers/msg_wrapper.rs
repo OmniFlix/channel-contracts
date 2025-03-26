@@ -118,7 +118,7 @@ impl AssetPublishMsgBuilder {
         Self {
             asset_source: AssetSource::OffChain {},
             salt: Binary::from("salt".as_bytes()),
-            channel_id: channel_id,
+            channel_id,
             playlist_name: None,
             is_visible: true,
             name: "validassetname".to_string(),
@@ -137,7 +137,7 @@ impl AssetPublishMsgBuilder {
         self
     }
 
-    pub fn is_visible(mut self, is_visible: bool) -> Self {
+    pub fn set_visible(mut self, is_visible: bool) -> Self {
         self.is_visible = is_visible;
         self
     }

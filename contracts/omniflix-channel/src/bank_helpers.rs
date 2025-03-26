@@ -78,7 +78,7 @@ pub fn distribute_funds_with_shares(
             collaborator.clone(),
             vec![share_amount_coin.clone()],
         ));
-        remaining_amount = remaining_amount - uint_share_amount;
+        remaining_amount -= uint_share_amount;
         attributes.push(Attribute::new(
             collaborator.to_string(),
             share_amount_coin.to_string(),

@@ -16,6 +16,12 @@ pub struct AssetsManager {
 
 const PAGINATION_LIMIT: u32 = 50;
 
+impl Default for AssetsManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AssetsManager {
     /// Create a new `Assets` instance.
     pub const fn new() -> Self {

@@ -48,8 +48,7 @@ fn add_reserved_usernames() {
         add_usernames: Some(vec![ReservedUsername {
             username: "admin".to_string(),
             address: None,
-        }])
-        .into(),
+        }]),
         remove_usernames: None,
     };
 

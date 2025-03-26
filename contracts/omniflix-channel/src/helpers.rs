@@ -79,7 +79,7 @@ pub fn validate_reserved_usernames(
                 StringValidationType::Username,
             )?;
             if let Some(address) = &reserved_username.address {
-                api.addr_validate(&address.to_string())?;
+                api.addr_validate(address.as_ref())?;
             }
             Ok(reserved_username)
         })
