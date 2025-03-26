@@ -5,3 +5,5 @@ pub mod tipping;
 pub mod update_channel_details;
 
 pub mod follow;
+
+pub mod delete;

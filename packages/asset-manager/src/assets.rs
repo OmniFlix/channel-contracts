@@ -16,12 +16,6 @@ pub struct AssetsManager {
 
 const PAGINATION_LIMIT: u32 = 50;
 
-impl Default for AssetsManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl AssetsManager {
     /// Create a new `Assets` instance.
     pub const fn new() -> Self {
@@ -126,11 +120,6 @@ impl AssetsManager {
             .unwrap_or_default();
 
         Ok(assets)
-    }
-
-    /// Check if an asset exists by its key.
-    pub fn asset_exists(&self, store: &dyn Storage, key: AssetKey) -> bool {
-        self.assets.has(store, key)
     }
 
     /// Update an existing asset by its key.
