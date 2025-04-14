@@ -50,6 +50,7 @@ pub struct AssetMetadata {
     pub name: String,
     pub description: String,
     pub media_uri: String,
+    pub thumbnail_uri: Option<String>,
 }
 
 #[cw_serde]

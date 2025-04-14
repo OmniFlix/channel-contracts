@@ -119,7 +119,7 @@ impl StringValidationType {
             },
             StringValidationType::AssetName => StringValidationConfig {
                 min_length: 3,
-                max_length: 64,
+                max_length: 128,
                 allow_numbers: true,
                 allow_uppercase: true,
                 allow_spaces: true,

@@ -59,6 +59,7 @@ fn asset_does_not_exist() {
         name: Some("Updated Name".to_string()),
         description: Some("Updated Description".to_string()),
         media_uri: Some("https://updated-media-uri.com".to_string()),
+        thumbnail_uri: None,
     };
 
     let res = app
@@ -139,6 +140,7 @@ fn channel_not_owned() {
         name: Some("Updated Name".to_string()),
         description: Some("Updated Description".to_string()),
         media_uri: Some("https://updated-media-uri.com".to_string()),
+        thumbnail_uri: None,
     };
 
     let err = app
@@ -225,6 +227,7 @@ fn partial_update() {
         name: Some(new_name.to_string()),
         description: None,
         media_uri: None,
+        thumbnail_uri: None,
     };
 
     app.execute_contract(
@@ -296,11 +299,13 @@ fn full_update() {
     let original_name = "Original Asset Name";
     let original_description = "Original Asset Description";
     let original_media_uri = "https://original-media-uri.com";
+    let original_thumbnail_uri = "https://original-thumbnail-uri.com";
 
     let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
         .name(original_name.to_string())
         .description(original_description.to_string())
         .media_uri(original_media_uri.to_string())
+        .thumbnail_uri(original_thumbnail_uri.to_string())
         .build();
 
     let res = app
@@ -319,7 +324,7 @@ fn full_update() {
     let new_name = "Completely Updated Name";
     let new_description = "Completely Updated Description";
     let new_media_uri = "https://completely-updated-media-uri.com";
-
+    let new_thumbnail_uri = "https://completely-updated-thumbnail-uri.com";
     let update_details_msg = ExecuteMsg::AssetUpdateDetails {
         publish_id: publish_id.clone(),
         channel_id: channel_id.clone(),
@@ -327,6 +332,7 @@ fn full_update() {
         name: Some(new_name.to_string()),
         description: Some(new_description.to_string()),
         media_uri: Some(new_media_uri.to_string()),
+        thumbnail_uri: Some(new_thumbnail_uri.to_string()),
     };
 
     app.execute_contract(
@@ -352,6 +358,10 @@ fn full_update() {
     assert_eq!(asset_response.metadata.name, new_name);
     assert_eq!(asset_response.metadata.description, new_description);
     assert_eq!(asset_response.metadata.media_uri, new_media_uri);
+    assert_eq!(
+        asset_response.metadata.thumbnail_uri,
+        Some(new_thumbnail_uri.to_string())
+    );
     assert!(!asset_response.asset.is_visible);
 }
 
@@ -445,6 +455,7 @@ fn collaborator_update() {
         name: Some(new_name.to_string()),
         description: None,
         media_uri: None,
+        thumbnail_uri: None,
     };
 
     // This should succeed since collaborators should be able to update assets

@@ -133,6 +133,8 @@ pub enum ExecuteMsg {
         description: Option<String>,
         /// The new media URI of the asset.
         media_uri: Option<String>,
+        /// The new thumbnail URI of the asset.
+        thumbnail_uri: Option<String>,
     },
     AssetFlag {
         /// The ID of the channel where the asset is published.
