@@ -111,6 +111,7 @@ pub struct AssetPublishMsgBuilder {
     name: String,
     description: String,
     media_uri: String,
+    thumbnail_uri: Option<String>,
 }
 
 impl AssetPublishMsgBuilder {
@@ -124,6 +125,7 @@ impl AssetPublishMsgBuilder {
             name: "validassetname".to_string(),
             description: "validassetdescription".to_string(),
             media_uri: "https://example.com/media.png".to_string(),
+            thumbnail_uri: None,
         }
     }
 
@@ -157,6 +159,11 @@ impl AssetPublishMsgBuilder {
         self
     }
 
+    pub fn thumbnail_uri(mut self, thumbnail_uri: String) -> Self {
+        self.thumbnail_uri = Some(thumbnail_uri);
+        self
+    }
+
     pub fn build(self) -> ExecuteMsg {
         ExecuteMsg::AssetPublish {
             asset_source: self.asset_source,
@@ -168,6 +175,7 @@ impl AssetPublishMsgBuilder {
                 name: self.name,
                 description: self.description,
                 media_uri: self.media_uri,
+                thumbnail_uri: None,
             },
         }
     }

@@ -243,6 +243,7 @@ pub fn execute(
             name,
             description,
             media_uri,
+            thumbnail_uri,
         } => update_asset_details(
             deps,
             info,
@@ -252,6 +253,7 @@ pub fn execute(
             name,
             description,
             media_uri,
+            thumbnail_uri,
         ),
         ExecuteMsg::ChannelDelete { channel_id } => delete_channel(deps, info, channel_id),
         ExecuteMsg::AdminManageReservedUsernames {
@@ -934,6 +936,7 @@ fn update_asset_details(
     name: Option<String>,
     description: Option<String>,
     media_uri: Option<String>,
+    thumbnail_uri: Option<String>,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -969,6 +972,10 @@ fn update_asset_details(
     }
     if let Some(is_visible) = is_visible {
         asset.is_visible = is_visible;
+    }
+    if let Some(thumbnail_uri) = thumbnail_uri {
+        validate_string(&thumbnail_uri, StringValidationType::Link)?;
+        metadata.thumbnail_uri = Some(thumbnail_uri);
     }
 
     assets_manager.update_asset(deps.storage, asset_key.clone(), asset.clone())?;
