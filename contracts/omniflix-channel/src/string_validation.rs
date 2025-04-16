@@ -85,7 +85,7 @@ impl StringValidationType {
             },
             StringValidationType::ChannelName => StringValidationConfig {
                 min_length: 3,
-                max_length: 32,
+                max_length: 64,
                 allow_numbers: true,
                 allow_uppercase: true,
                 allow_spaces: false,
@@ -282,7 +282,7 @@ mod tests {
         // Test invalid cases
         assert!(validate_string("ch", StringValidationType::ChannelName).is_err()); // too short
         assert!(
-            validate_string("a".repeat(33).as_str(), StringValidationType::ChannelName).is_err()
+            validate_string("a".repeat(65).as_str(), StringValidationType::ChannelName).is_err()
         ); // too long
         assert!(validate_string("channel!", StringValidationType::ChannelName).is_err()); // special chars not allowed
         assert!(validate_string("channel name", StringValidationType::ChannelName).is_err());
