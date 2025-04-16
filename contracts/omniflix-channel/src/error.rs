@@ -1,7 +1,7 @@
 use asset_manager::error::AssetError;
 use asset_manager::error::PlaylistError;
 use channel_manager::error::ChannelError;
-use cosmwasm_std::{Coin, StdError};
+use cosmwasm_std::{Coin, OverflowError, StdError};
 use cw_utils::PaymentError;
 use pauser::PauseError;
 use thiserror::Error;
@@ -30,6 +30,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     StringValidationError(#[from] StringValidationError),
+
+    #[error(transparent)]
+    Overflow(#[from] OverflowError),
 
     #[error("Unauthorized")]
     Unauthorized {},
