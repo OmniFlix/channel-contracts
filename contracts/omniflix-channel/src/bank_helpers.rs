@@ -62,13 +62,16 @@ pub fn distribute_funds_with_shares(
     amount: Coin,
     channel_payment_address: Addr,
 ) -> Result<(Vec<CosmosMsg>, Vec<Attribute>), ContractError> {
+    if amount.amount == Uint128::from(0u128) {
+        return Ok((vec![], vec![]));
+    }
     let mut bank_msgs: Vec<CosmosMsg> = vec![];
     let mut remaining_amount = amount.clone().amount;
     let mut attributes: Vec<Attribute> = vec![];
 
     for (collaborator, share) in collaborators.clone() {
-        // Create a decimal from the share
-        let share_amount = Decimal::from_ratio(remaining_amount, Uint128::one()) * share;
+        // Calculate share based on original amount
+        let share_amount = Decimal::from_ratio(amount.amount, Uint128::one()) * share;
         let uint_share_amount = share_amount.to_uint_floor();
         let share_amount_coin = Coin {
             denom: amount.denom.clone(),
@@ -78,7 +81,7 @@ pub fn distribute_funds_with_shares(
             collaborator.clone(),
             vec![share_amount_coin.clone()],
         ));
-        remaining_amount -= uint_share_amount;
+        remaining_amount = remaining_amount.checked_sub(uint_share_amount)?;
         attributes.push(Attribute::new(
             collaborator.to_string(),
             share_amount_coin.to_string(),
@@ -101,4 +104,117 @@ pub fn distribute_funds_with_shares(
     }
 
     Ok((bank_msgs, attributes))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::{coin, Decimal};
+
+    #[test]
+    fn test_distribute_funds_with_shares_success() {
+        let collaborators = vec![
+            (Addr::unchecked("addr1"), Decimal::percent(30)),
+            (Addr::unchecked("addr2"), Decimal::percent(70)),
+        ];
+        let amount = coin(1000, "uflix");
+        let channel_payment_address = Addr::unchecked("channel");
+
+        let (msgs, attrs) =
+            distribute_funds_with_shares(collaborators, amount, channel_payment_address).unwrap();
+
+        // Check messages
+        assert_eq!(msgs.len(), 2);
+        if let CosmosMsg::Bank(bank_msg) = &msgs[0] {
+            if let cosmwasm_std::BankMsg::Send { to_address, amount } = bank_msg {
+                assert_eq!(to_address, "addr1");
+                assert_eq!(amount[0], coin(300, "uflix"));
+            }
+        }
+        if let CosmosMsg::Bank(bank_msg) = &msgs[1] {
+            if let cosmwasm_std::BankMsg::Send { to_address, amount } = bank_msg {
+                assert_eq!(to_address, "addr2");
+                assert_eq!(amount[0], coin(700, "uflix"));
+            }
+        }
+
+        // Check attributes
+        assert_eq!(attrs.len(), 2);
+        assert_eq!(attrs[0].key, "addr1");
+        assert_eq!(attrs[0].value, "300uflix");
+        assert_eq!(attrs[1].key, "addr2");
+        assert_eq!(attrs[1].value, "700uflix");
+    }
+
+    #[test]
+    fn test_distribute_funds_with_shares_with_remainder() {
+        let collaborators = vec![
+            (Addr::unchecked("addr1"), Decimal::percent(33)),
+            (Addr::unchecked("addr2"), Decimal::percent(33)),
+        ];
+        let amount = coin(100, "uflix");
+        let channel_payment_address = Addr::unchecked("channel");
+
+        let (msgs, attrs) =
+            distribute_funds_with_shares(collaborators, amount, channel_payment_address).unwrap();
+
+        // Check messages
+        assert_eq!(msgs.len(), 3);
+        if let CosmosMsg::Bank(bank_msg) = &msgs[0] {
+            if let cosmwasm_std::BankMsg::Send { to_address, amount } = bank_msg {
+                assert_eq!(to_address, "addr1");
+                assert_eq!(amount[0], coin(33, "uflix"));
+            }
+        }
+        if let CosmosMsg::Bank(bank_msg) = &msgs[1] {
+            if let cosmwasm_std::BankMsg::Send { to_address, amount } = bank_msg {
+                assert_eq!(to_address, "addr2");
+                assert_eq!(amount[0], coin(33, "uflix"));
+            }
+        }
+        if let CosmosMsg::Bank(bank_msg) = &msgs[2] {
+            if let cosmwasm_std::BankMsg::Send { to_address, amount } = bank_msg {
+                assert_eq!(to_address, "channel");
+                assert_eq!(amount[0], coin(34, "uflix"));
+            }
+        }
+
+        // Check attributes
+        assert_eq!(attrs.len(), 3);
+        assert_eq!(attrs[0].key, "addr1");
+        assert_eq!(attrs[0].value, "33uflix");
+        assert_eq!(attrs[1].key, "addr2");
+        assert_eq!(attrs[1].value, "33uflix");
+        assert_eq!(attrs[2].key, "channel");
+        assert_eq!(attrs[2].value, "34uflix");
+    }
+
+    #[test]
+    fn test_distribute_funds_with_shares_overflow() {
+        let collaborators = vec![
+            (Addr::unchecked("addr1"), Decimal::percent(50)),
+            (Addr::unchecked("addr2"), Decimal::percent(60)),
+        ];
+        let amount = coin(100, "uflix");
+        let channel_payment_address = Addr::unchecked("channel");
+
+        let result = distribute_funds_with_shares(collaborators, amount, channel_payment_address);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ContractError::Overflow(_)));
+    }
+
+    #[test]
+    fn test_distribute_funds_with_shares_zero_amount() {
+        let collaborators = vec![
+            (Addr::unchecked("addr1"), Decimal::percent(50)),
+            (Addr::unchecked("addr2"), Decimal::percent(50)),
+        ];
+        let amount = coin(0, "uflix");
+        let channel_payment_address = Addr::unchecked("channel");
+
+        let (msgs, attrs) =
+            distribute_funds_with_shares(collaborators, amount, channel_payment_address).unwrap();
+        assert!(msgs.is_empty());
+        assert!(attrs.is_empty());
+    }
 }
