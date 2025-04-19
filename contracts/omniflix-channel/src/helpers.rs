@@ -18,9 +18,9 @@ pub fn get_collection_creation_fee(deps: Deps) -> Result<Coin, ContractError> {
         .params()
         .map_err(|_| ContractError::CollectionCreationFeeError {})?
         .params
-        .ok_or_else(|| ContractError::CollectionCreationFeeError {})?
+        .ok_or(ContractError::CollectionCreationFeeError {})?
         .denom_creation_fee
-        .ok_or_else(|| ContractError::CollectionCreationFeeError {})?;
+        .ok_or(ContractError::CollectionCreationFeeError {})?;
     // Convert omniflix std Coin to cosmwasm Coin
     let collection_creation_fee = Coin {
         denom: collection_creation_fee.denom,
