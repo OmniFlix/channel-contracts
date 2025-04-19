@@ -69,7 +69,8 @@ export interface OmniFlixChannelMsg {
     isVisible,
     mediaUri,
     name,
-    publishId
+    publishId,
+    thumbnailUri
   }: {
     channelId: string;
     description?: string;
@@ -77,6 +78,7 @@ export interface OmniFlixChannelMsg {
     mediaUri?: string;
     name?: string;
     publishId: string;
+    thumbnailUri?: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   assetFlag: ({
     channelId,
@@ -409,7 +411,8 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     isVisible,
     mediaUri,
     name,
-    publishId
+    publishId,
+    thumbnailUri
   }: {
     channelId: string;
     description?: string;
@@ -417,6 +420,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     mediaUri?: string;
     name?: string;
     publishId: string;
+    thumbnailUri?: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -430,7 +434,8 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
             is_visible: isVisible,
             media_uri: mediaUri,
             name,
-            publish_id: publishId
+            publish_id: publishId,
+            thumbnail_uri: thumbnailUri
           }
         })),
         funds: _funds

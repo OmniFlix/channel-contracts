@@ -90,6 +90,7 @@ export type ExecuteMsg = {
     media_uri?: string | null;
     name?: string | null;
     publish_id: string;
+    thumbnail_uri?: string | null;
   };
 } | {
   asset_flag: {
@@ -192,6 +193,7 @@ export interface AssetMetadata {
   description: string;
   media_uri: string;
   name: string;
+  thumbnail_uri?: string | null;
 }
 export interface ChannelCollaborator {
   role: Role;

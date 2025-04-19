@@ -405,7 +405,8 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     isVisible,
     mediaUri,
     name,
-    publishId
+    publishId,
+    thumbnailUri
   }: {
     channelId: string;
     description?: string;
@@ -413,6 +414,7 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     mediaUri?: string;
     name?: string;
     publishId: string;
+    thumbnailUri?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   assetFlag: ({
     channelId,
@@ -684,7 +686,8 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     isVisible,
     mediaUri,
     name,
-    publishId
+    publishId,
+    thumbnailUri
   }: {
     channelId: string;
     description?: string;
@@ -692,6 +695,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     mediaUri?: string;
     name?: string;
     publishId: string;
+    thumbnailUri?: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       asset_update_details: {
@@ -700,7 +704,8 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
         is_visible: isVisible,
         media_uri: mediaUri,
         name,
-        publish_id: publishId
+        publish_id: publishId,
+        thumbnail_uri: thumbnailUri
       }
     }, fee, memo, _funds);
   };
