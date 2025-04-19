@@ -128,7 +128,9 @@ omniflixhubd tx wasm execute <contract-address> '{
     "is_visible": true,
     "name": "My Video",
     "description": "An awesome video",
-    "media_uri": "ipfs://Qm..."
+    "media_uri": "ipfs://Qm...",
+    "thumbnail_uri": "ipfs://Qm...",
+
   }
 }' --from <your-key>
 ```
@@ -143,7 +145,8 @@ omniflixhubd tx wasm execute <contract-address> '{
     "is_visible": true,
     "name": "Updated Title",
     "description": "Updated description",
-    "media_uri": "ipfs://Qm..."
+    "media_uri": "ipfs://Qm...",
+    "thumbnail_uri": "ipfs://Qm..."
   }
 }' --from <your-key>
 ```
