@@ -96,6 +96,14 @@ Initialize the contract with the following parameters:
 }
 ```
 
+### Contract Deployment Details
+
+The contract is currently deployed on the OmniFlix Hub testnet (flixnet-4) with the following address:
+
+```
+omniflix1zwngtwpmqtu45cj9sfdnnd4v5s39qte28eam49pffhleqtx30gsqt6fafl
+```
+
 ## Usage
 
 ### Creating a Channel
@@ -128,7 +136,9 @@ omniflixhubd tx wasm execute <contract-address> '{
     "is_visible": true,
     "name": "My Video",
     "description": "An awesome video",
-    "media_uri": "ipfs://Qm..."
+    "media_uri": "ipfs://Qm...",
+    "thumbnail_uri": "ipfs://Qm...",
+
   }
 }' --from <your-key>
 ```
@@ -143,7 +153,8 @@ omniflixhubd tx wasm execute <contract-address> '{
     "is_visible": true,
     "name": "Updated Title",
     "description": "Updated description",
-    "media_uri": "ipfs://Qm..."
+    "media_uri": "ipfs://Qm...",
+    "thumbnail_uri": "ipfs://Qm..."
   }
 }' --from <your-key>
 ```
