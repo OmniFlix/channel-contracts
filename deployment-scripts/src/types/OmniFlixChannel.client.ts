@@ -419,10 +419,12 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   assetFlag: ({
     channelId,
     flag,
+    interactiveVideoId,
     publishId
   }: {
     channelId: string;
     flag: Flag;
+    interactiveVideoId?: string;
     publishId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistCreate: ({
@@ -712,16 +714,19 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   assetFlag = async ({
     channelId,
     flag,
+    interactiveVideoId,
     publishId
   }: {
     channelId: string;
     flag: Flag;
+    interactiveVideoId?: string;
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       asset_flag: {
         channel_id: channelId,
         flag,
+        interactive_video_id: interactiveVideoId,
         publish_id: publishId
       }
     }, fee, memo, _funds);

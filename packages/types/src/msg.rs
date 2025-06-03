@@ -143,6 +143,8 @@ pub enum ExecuteMsg {
         publish_id: String,
         /// The flag value.
         flag: Flag,
+        /// Interactive video id. Only for indexing purposes. Not used for anything else.
+        interactive_video_id: Option<String>,
     },
     /// Creates a new playlist in the specified channel. The playlist name must be unique
     /// within the channel. Only callable by the channel owner or a collaborator.

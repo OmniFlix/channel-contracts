@@ -131,6 +131,7 @@ pub fn execute(
             channel_id,
             publish_id,
             flag,
+            interactive_video_id: _,
         } => flag_asset(deps, info, channel_id, publish_id, flag),
         ExecuteMsg::Pause {} => pause(deps, info),
         ExecuteMsg::Unpause {} => unpause(deps, info),

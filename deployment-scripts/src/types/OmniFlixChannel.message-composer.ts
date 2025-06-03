@@ -83,10 +83,12 @@ export interface OmniFlixChannelMsg {
   assetFlag: ({
     channelId,
     flag,
+    interactiveVideoId,
     publishId
   }: {
     channelId: string;
     flag: Flag;
+    interactiveVideoId?: string;
     publishId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistCreate: ({
@@ -445,10 +447,12 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   assetFlag = ({
     channelId,
     flag,
+    interactiveVideoId,
     publishId
   }: {
     channelId: string;
     flag: Flag;
+    interactiveVideoId?: string;
     publishId: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -460,6 +464,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
           asset_flag: {
             channel_id: channelId,
             flag,
+            interactive_video_id: interactiveVideoId,
             publish_id: publishId
           }
         })),

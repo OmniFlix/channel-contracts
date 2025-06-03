@@ -96,6 +96,7 @@ export type ExecuteMsg = {
   asset_flag: {
     channel_id: string;
     flag: Flag;
+    interactive_video_id?: string | null;
     publish_id: string;
   };
 } | {
