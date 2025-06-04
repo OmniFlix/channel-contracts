@@ -154,7 +154,7 @@ export default class ChannelHelper {
     }
 
 
-    PublishAsset = async (context: Context, account_name: string, channel_id: string, asset_source: AssetSource, is_visible: boolean, playlist_name?: string) => {
+    PublishAsset = async (context: Context, account_name: string, channel_id: string, asset_source: AssetSource, is_visible: boolean, playlist_id?: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.assetPublish({
@@ -162,7 +162,7 @@ export default class ChannelHelper {
             channelId: channel_id,
             isVisible: is_visible,
             salt: context.generateRandomSalt(5),
-            playlistName: playlist_name,
+            playlistId: playlist_id,
             metadata: {
                 description: "test".toString(),
                 media_uri: "https://www.omniflix.network",
@@ -187,53 +187,53 @@ export default class ChannelHelper {
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
-    AddAssetToPlaylist = async (context: Context, account_name: string, channel_id: string, asset_channel_id: string, playlist_name: string, publish_id: string) => {
+    AddAssetToPlaylist = async (context: Context, account_name: string, channel_id: string, asset_channel_id: string, playlist_id: string, publish_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.playlistAddAsset({
             assetChannelId: asset_channel_id,
             channelId: channel_id,
-            playlistName: playlist_name,
+            playlistId: playlist_id,
             publishId: publish_id,
         });
-        logger.log(1, `Asset added to playlist: ${playlist_name} with id: ${publish_id}`)
+        logger.log(1, `Asset added to playlist: ${playlist_id} with id: ${publish_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
-    RefreshPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
+    RefreshPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.playlistRefresh({
             channelId: channel_id,
-            playlistName: playlist_name,
+            playlistId: playlist_id,
         });
-        logger.log(1, `Playlist refreshed with name ${playlist_name} under channel id: ${channel_id}`)
+        logger.log(1, `Playlist refreshed with id ${playlist_id} under channel id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
-    DeletePlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
+    DeletePlaylist = async (context: Context, account_name: string, channel_id: string, playlist_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.playlistDelete({
             channelId: channel_id,
-            playlistName: playlist_name,
+            playlistId: playlist_id,
         });
-        logger.log(1, `Playlist deleted with name ${playlist_name} under channel id: ${channel_id}`)
+        logger.log(1, `Playlist deleted with id ${playlist_id} under channel id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
 
-    RemoveAssetFromPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string, publish_id: string) => {
+    RemoveAssetFromPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_id: string, publish_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.playlistRemoveAsset({
             channelId: channel_id,
-            playlistName: playlist_name,
+            playlistId: playlist_id,
             publishId: publish_id,
         });
-        logger.log(1, `Asset removed from playlist: ${playlist_name} with id: ${publish_id}`)
+        logger.log(1, `Asset removed from playlist: ${playlist_id} with id: ${publish_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
         logger.log(1, `Gas used: ${res.gasUsed}`)
     }
@@ -362,14 +362,14 @@ export default class ChannelHelper {
         logger.log(1, `Asset: ${JSON.stringify(res)}`)
         return res;
     }
-    QueryPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_name: string) => {
+    QueryPlaylist = async (context: Context, account_name: string, channel_id: string, playlist_id: string) => {
         let { client, address: senderAddress } = context.getTestUser(account_name);
         let channel_client: OmniFlixChannelClient = new OmniFlixChannelClient(client, senderAddress, context.getContractAddress(CONTRACT_MAP.OMNIFLIX_CHANNEL));
         let res = await channel_client.playlist({
             channelId: channel_id,
-            playlistName: playlist_name,
+            playlistId: playlist_id,
         });
-        logger.log(1, `Playlists for channel_id: ${channel_id}: ${JSON.stringify(res)}`)
+        logger.log(1, `Playlist for channel_id: ${channel_id}: ${JSON.stringify(res)}`)
         return res;
     }
     QueryChannelConfig = async (context: Context, account_name: string) => {
