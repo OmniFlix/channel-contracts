@@ -68,6 +68,7 @@ pub enum StringValidationType {
     Description,
     Link,
     AssetName,
+    PlaylistName,
 }
 
 // Get configuration based on validation type
@@ -118,6 +119,15 @@ impl StringValidationType {
                 ..Default::default()
             },
             StringValidationType::AssetName => StringValidationConfig {
+                min_length: 3,
+                max_length: 128,
+                allow_numbers: true,
+                allow_uppercase: true,
+                allow_spaces: true,
+                allow_special_chars: false,
+                ..Default::default()
+            },
+            StringValidationType::PlaylistName => StringValidationConfig {
                 min_length: 3,
                 max_length: 128,
                 allow_numbers: true,

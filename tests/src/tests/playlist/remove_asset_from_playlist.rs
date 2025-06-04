@@ -56,7 +56,7 @@ fn asset_not_in_playlist() {
         channel_id: channel_id.clone(),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -65,6 +65,7 @@ fn asset_not_in_playlist() {
         )
         .unwrap();
     // Validate the creator have added a playlist
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     let query_msg = QueryMsg::Playlists {
         channel_id: channel_id.clone(),
@@ -83,7 +84,7 @@ fn asset_not_in_playlist() {
     let remove_asset_msg = ExecuteMsg::PlaylistRemoveAsset {
         publish_id: "publish_id".to_string(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let res = app
@@ -145,7 +146,7 @@ fn playlist_does_not_exist() {
     let remove_asset_msg = ExecuteMsg::PlaylistRemoveAsset {
         publish_id: "publish_id".to_string(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: "playlist_id".to_string(),
     };
 
     let res = app
@@ -169,7 +170,7 @@ fn playlist_does_not_exist() {
         channel_id: channel_id.clone(),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -177,6 +178,8 @@ fn playlist_does_not_exist() {
             &[],
         )
         .unwrap();
+
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Validate the creator have added a playlist
     let query_msg = QueryMsg::Playlists {
@@ -200,7 +203,7 @@ fn playlist_does_not_exist() {
     let remove_asset_msg = ExecuteMsg::PlaylistRemoveAsset {
         publish_id: "publish_id".to_string(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let res = app
@@ -265,7 +268,7 @@ fn not_owned() {
         channel_id: channel_id.clone(),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -273,6 +276,9 @@ fn not_owned() {
             &[],
         )
         .unwrap();
+
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Validate the creator have added a playlist
     let query_msg = QueryMsg::Playlists {
         channel_id: channel_id.clone(),
@@ -326,7 +332,7 @@ fn not_owned() {
         publish_id: publish_id.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -341,7 +347,7 @@ fn not_owned() {
     // Validate the asset was added to the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -355,7 +361,7 @@ fn not_owned() {
     let remove_asset_msg = ExecuteMsg::PlaylistRemoveAsset {
         publish_id: publish_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let res = app

@@ -106,12 +106,12 @@ pub struct AssetPublishMsgBuilder {
     asset_source: AssetSource,
     salt: Binary,
     channel_id: String,
-    playlist_name: Option<String>,
     is_visible: bool,
     name: String,
     description: String,
     media_uri: String,
     thumbnail_uri: Option<String>,
+    playlist_id: Option<String>,
 }
 
 impl AssetPublishMsgBuilder {
@@ -120,12 +120,12 @@ impl AssetPublishMsgBuilder {
             asset_source: AssetSource::OffChain {},
             salt: Binary::from("salt".as_bytes()),
             channel_id,
-            playlist_name: None,
             is_visible: true,
             name: "validassetname".to_string(),
             description: "validassetdescription".to_string(),
             media_uri: "https://example.com/media.png".to_string(),
             thumbnail_uri: None,
+            playlist_id: None,
         }
     }
 
@@ -134,8 +134,8 @@ impl AssetPublishMsgBuilder {
         self
     }
 
-    pub fn playlist_name(mut self, playlist_name: String) -> Self {
-        self.playlist_name = Some(playlist_name);
+    pub fn playlist_id(mut self, playlist_id: String) -> Self {
+        self.playlist_id = Some(playlist_id);
         self
     }
 
@@ -169,7 +169,7 @@ impl AssetPublishMsgBuilder {
             asset_source: self.asset_source,
             salt: self.salt,
             channel_id: self.channel_id,
-            playlist_name: self.playlist_name,
+            playlist_id: self.playlist_id,
             is_visible: self.is_visible,
             metadata: AssetMetadata {
                 name: self.name,

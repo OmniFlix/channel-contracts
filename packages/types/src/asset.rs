@@ -10,8 +10,9 @@ pub type FlagKey = (String, AssetKey);
 
 #[cw_serde]
 pub struct Playlist {
-    pub playlist_name: String,
     pub assets: Vec<AssetKey>,
+    pub playlist_id: String,
+    pub playlist_name: String,
 }
 
 #[cw_serde]

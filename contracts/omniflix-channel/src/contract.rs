@@ -140,7 +140,7 @@ pub fn execute(
             asset_source,
             salt,
             channel_id,
-            playlist_name,
+            playlist_id,
             is_visible,
             metadata,
         } => publish(
@@ -150,7 +150,7 @@ pub fn execute(
             asset_source,
             salt,
             channel_id,
-            playlist_name,
+            playlist_id,
             is_visible,
             metadata,
         ),
@@ -160,8 +160,8 @@ pub fn execute(
         } => unpublish(deps, info, publish_id, channel_id),
         ExecuteMsg::PlaylistRefresh {
             channel_id,
-            playlist_name,
-        } => refresh_playlist(deps, info, channel_id, playlist_name),
+            playlist_id,
+        } => refresh_playlist(deps, info, channel_id, playlist_id),
         ExecuteMsg::PlaylistCreate {
             playlist_name,
             channel_id,
@@ -205,14 +205,14 @@ pub fn execute(
         ),
 
         ExecuteMsg::PlaylistDelete {
-            playlist_name,
+            playlist_id,
             channel_id,
-        } => delete_playlist(deps, info, channel_id, playlist_name),
+        } => delete_playlist(deps, info, channel_id, playlist_id),
         ExecuteMsg::PlaylistRemoveAsset {
             publish_id,
             channel_id,
-            playlist_name,
-        } => remove_asset_from_playlist(deps, info, publish_id, channel_id, playlist_name),
+            playlist_id,
+        } => remove_asset_from_playlist(deps, info, publish_id, channel_id, playlist_id),
         ExecuteMsg::AdminSetConfig {
             channel_creation_fee,
             protocol_admin,
@@ -228,14 +228,14 @@ pub fn execute(
             publish_id,
             asset_channel_id,
             channel_id,
-            playlist_name,
+            playlist_id,
         } => add_asset_to_playlist(
             deps,
             info,
             asset_channel_id,
             publish_id,
             channel_id,
-            playlist_name,
+            playlist_id,
         ),
         ExecuteMsg::AssetUpdateDetails {
             publish_id,
@@ -306,10 +306,10 @@ fn create_channel(
     check_payment(config.channel_creation_fee.clone(), info.funds.clone())?;
 
     // Generate a random channel onft ID
-    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
+    let onft_id = generate_random_id_with_prefix("onft", None, Some(&env), Some(&salt));
 
     // Generate a random channel ID
-    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
+    let channel_id = generate_random_id_with_prefix("channel", None, Some(&env), Some(&salt));
 
     let channels_manager = ChannelsManager::new();
 
@@ -461,7 +461,7 @@ fn publish(
     asset_source: AssetSource,
     salt: Binary,
     channel_id: String,
-    playlist_name: Option<String>,
+    playlist_id: Option<String>,
     is_visible: bool,
     metadata: AssetMetadata,
 ) -> Result<Response, ContractError> {
@@ -478,7 +478,7 @@ fn publish(
         Role::Publisher,
     )?;
 
-    let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
+    let publish_id = generate_random_id_with_prefix("publish", None, Some(&env), Some(&salt));
 
     validate_asset_source(deps.as_ref(), asset_source.clone(), info.sender.clone())?;
 
@@ -497,13 +497,13 @@ fn publish(
     let asset_key = (channel_id.clone(), publish_id.clone());
     assets_manager.add_asset(deps.storage, asset_key.clone(), asset.clone(), metadata)?;
 
-    if let Some(playlist_name) = playlist_name.clone() {
+    if let Some(playlist_id) = playlist_id.clone() {
         if is_visible {
             let playlists_manager = PlaylistsManager::new();
             playlists_manager.add_asset_to_playlist(
                 deps.storage,
                 channel_id.clone(),
-                playlist_name.clone(),
+                playlist_id.clone(),
                 asset_key,
             )?;
         }
@@ -515,8 +515,8 @@ fn publish(
         .add_attribute("channel_id", channel_id)
         .add_attribute("asset_source", asset_source.to_string());
 
-    if let Some(playlist_name) = playlist_name {
-        response = response.add_attribute("playlist_name", playlist_name);
+    if let Some(playlist_id) = playlist_id {
+        response = response.add_attribute("playlist_id", playlist_id);
     }
     Ok(response)
 }
@@ -556,7 +556,7 @@ fn refresh_playlist(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
-    playlist_name: String,
+    playlist_id: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -573,14 +573,14 @@ fn refresh_playlist(
 
     let playlists_manager = PlaylistsManager::new();
     let playlist_asset_keys = playlists_manager
-        .get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?
+        .get_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?
         .assets;
     let asset_keys_to_remove = filter_assets_to_remove(deps.storage, playlist_asset_keys.clone());
 
     playlists_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
-        playlist_name.clone(),
+        playlist_id.clone(),
         asset_keys_to_remove.clone(),
     )?;
     let removed_publish_ids: Vec<String> = asset_keys_to_remove
@@ -591,7 +591,7 @@ fn refresh_playlist(
     let response = Response::new()
         .add_attribute("action", "refresh_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_name", playlist_name)
+        .add_attribute("playlist_id", playlist_id)
         .add_attribute("removed_publish_ids", removed_publish_ids.join(", "));
 
     Ok(response)
@@ -615,14 +615,26 @@ fn create_playlist(
         config.channels_collection_id.clone(),
         Role::Publisher,
     )?;
+    // Validate the playlist name
+    validate_string(&playlist_name, StringValidationType::PlaylistName)?;
+
+    let playlist_id_entropy = format!("{}:{}", channel_id.clone(), playlist_name.clone());
+    let playlist_id =
+        generate_random_id_with_prefix("playlist", Some(&playlist_id_entropy), None, None);
 
     let playlists_manager = PlaylistsManager::new();
-    playlists_manager.add_new_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+    playlists_manager.add_new_playlist(
+        deps.storage,
+        channel_id.clone(),
+        playlist_id.clone(),
+        playlist_name.clone(),
+    )?;
 
     let response = Response::new()
         .add_attribute("action", "create_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_name", playlist_name);
+        .add_attribute("playlist_name", playlist_name)
+        .add_attribute("playlist_id", playlist_id);
 
     Ok(response)
 }
@@ -815,7 +827,7 @@ fn delete_playlist(
     deps: DepsMut,
     info: MessageInfo,
     channel_id: String,
-    playlist_name: String,
+    playlist_id: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -831,12 +843,12 @@ fn delete_playlist(
     )?;
 
     let playlist_manager = PlaylistsManager::new();
-    playlist_manager.delete_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+    playlist_manager.delete_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
 
     let response = Response::new()
         .add_attribute("action", "delete_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_name", playlist_name);
+        .add_attribute("playlist_id", playlist_id);
 
     Ok(response)
 }
@@ -846,7 +858,7 @@ fn add_asset_to_playlist(
     asset_channel_id: String,
     publish_id: String,
     channel_id: String,
-    playlist_name: String,
+    playlist_id: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -877,14 +889,14 @@ fn add_asset_to_playlist(
     playlist_manager.add_asset_to_playlist(
         deps.storage,
         channel_id.clone(),
-        playlist_name.clone(),
+        playlist_id.clone(),
         asset_key.clone(),
     )?;
 
     let response = Response::new()
         .add_attribute("action", "add_asset_to_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_name", playlist_name)
+        .add_attribute("playlist_id", playlist_id)
         .add_attribute("publish_id", publish_id);
 
     Ok(response)
@@ -894,7 +906,7 @@ fn remove_asset_from_playlist(
     info: MessageInfo,
     publish_id: String,
     channel_id: String,
-    playlist_name: String,
+    playlist_id: String,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -915,14 +927,14 @@ fn remove_asset_from_playlist(
     playlists_manager.remove_assets_from_playlist(
         deps.storage,
         channel_id.clone(),
-        playlist_name.clone(),
+        playlist_id.clone(),
         [asset_key.clone()].to_vec(),
     )?;
 
     let response = Response::new()
         .add_attribute("action", "remove_asset_from_playlist")
         .add_attribute("channel_id", channel_id)
-        .add_attribute("playlist_name", playlist_name)
+        .add_attribute("playlist_id", playlist_id)
         .add_attribute("publish_id", publish_id);
 
     Ok(response)
@@ -1186,8 +1198,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::Playlist {
             channel_id,
-            playlist_name,
-        } => to_json_binary(&query_playlist(deps, channel_id, playlist_name)?),
+            playlist_id,
+        } => to_json_binary(&query_playlist(deps, channel_id, playlist_id)?),
         QueryMsg::Channels { start_after, limit } => {
             to_json_binary(&query_channels(deps, start_after, limit)?)
         }
@@ -1295,11 +1307,11 @@ fn query_channels(
 fn query_playlist(
     deps: Deps,
     channel_id: String,
-    playlist_name: String,
+    playlist_id: String,
 ) -> Result<Playlist, ContractError> {
     let playlists_manager = PlaylistsManager::new();
     let playlist =
-        playlists_manager.get_playlist(deps.storage, channel_id.clone(), playlist_name.clone())?;
+        playlists_manager.get_playlist(deps.storage, channel_id.clone(), playlist_id.clone())?;
     Ok(playlist)
 }
 

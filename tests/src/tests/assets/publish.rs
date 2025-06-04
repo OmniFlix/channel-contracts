@@ -219,7 +219,7 @@ fn playlist_does_not_exist() {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         })
-        .playlist_name("Wrong playlist".to_string())
+        .playlist_id("Wrong playlist".to_string())
         .build();
 
     let res = app
@@ -303,7 +303,7 @@ fn with_playlist() {
         channel_id: channel_id.clone(),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -312,13 +312,15 @@ fn with_playlist() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Publish the asset under the new playlist
     let publish_msg = AssetPublishMsgBuilder::new(channel_id.clone())
         .asset_source(AssetSource::Nft {
             collection_id: asset_collection_id.clone(),
             onft_id: asset_id.clone(),
         })
-        .playlist_name("My Videos".to_string())
+        .playlist_id(playlist_id.clone())
         .build();
 
     let res = app
@@ -335,7 +337,7 @@ fn with_playlist() {
     // Query the new playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Videos".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
