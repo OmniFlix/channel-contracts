@@ -40,10 +40,10 @@ export interface OmniFlixChannelReadOnlyInterface {
   }) => Promise<String>;
   playlist: ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }) => Promise<Playlist>;
   playlists: ({
     channelId,
@@ -205,15 +205,15 @@ export class OmniFlixChannelQueryClient implements OmniFlixChannelReadOnlyInterf
   };
   playlist = async ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }): Promise<Playlist> => {
     return this.client.queryContractSmart(this.contractAddress, {
       playlist: {
         channel_id: channelId,
-        playlist_name: playlistName
+        playlist_id: playlistId
       }
     });
   };
@@ -382,14 +382,14 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
     channelId,
     isVisible,
     metadata,
-    playlistName,
+    playlistId,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     metadata: AssetMetadata;
-    playlistName?: string;
+    playlistId?: string;
     salt: Binary;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   assetUnpublish: ({
@@ -436,37 +436,37 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistDelete: ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistAddAsset: ({
     assetChannelId,
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     assetChannelId: string;
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistRemoveAsset: ({
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistRefresh: ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   channelCreate: ({
     bannerPicture,
@@ -647,14 +647,14 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
     channelId,
     isVisible,
     metadata,
-    playlistName,
+    playlistId,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     metadata: AssetMetadata;
-    playlistName?: string;
+    playlistId?: string;
     salt: Binary;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
@@ -663,7 +663,7 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
         channel_id: channelId,
         is_visible: isVisible,
         metadata,
-        playlist_name: playlistName,
+        playlist_id: playlistId,
         salt
       }
     }, fee, memo, _funds);
@@ -747,66 +747,66 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   };
   playlistDelete = async ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       playlist_delete: {
         channel_id: channelId,
-        playlist_name: playlistName
+        playlist_id: playlistId
       }
     }, fee, memo, _funds);
   };
   playlistAddAsset = async ({
     assetChannelId,
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     assetChannelId: string;
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       playlist_add_asset: {
         asset_channel_id: assetChannelId,
         channel_id: channelId,
-        playlist_name: playlistName,
+        playlist_id: playlistId,
         publish_id: publishId
       }
     }, fee, memo, _funds);
   };
   playlistRemoveAsset = async ({
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       playlist_remove_asset: {
         channel_id: channelId,
-        playlist_name: playlistName,
+        playlist_id: playlistId,
         publish_id: publishId
       }
     }, fee, memo, _funds);
   };
   playlistRefresh = async ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       playlist_refresh: {
         channel_id: channelId,
-        playlist_name: playlistName
+        playlist_id: playlistId
       }
     }, fee, memo, _funds);
   };

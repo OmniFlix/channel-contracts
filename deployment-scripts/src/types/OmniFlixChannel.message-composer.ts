@@ -46,14 +46,14 @@ export interface OmniFlixChannelMsg {
     channelId,
     isVisible,
     metadata,
-    playlistName,
+    playlistId,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     metadata: AssetMetadata;
-    playlistName?: string;
+    playlistId?: string;
     salt: Binary;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   assetUnpublish: ({
@@ -100,37 +100,37 @@ export interface OmniFlixChannelMsg {
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistDelete: ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistAddAsset: ({
     assetChannelId,
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     assetChannelId: string;
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistRemoveAsset: ({
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistRefresh: ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   channelCreate: ({
     bannerPicture,
@@ -356,14 +356,14 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
     channelId,
     isVisible,
     metadata,
-    playlistName,
+    playlistId,
     salt
   }: {
     assetSource: AssetSource;
     channelId: string;
     isVisible: boolean;
     metadata: AssetMetadata;
-    playlistName?: string;
+    playlistId?: string;
     salt: Binary;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -377,7 +377,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
             channel_id: channelId,
             is_visible: isVisible,
             metadata,
-            playlist_name: playlistName,
+            playlist_id: playlistId,
             salt
           }
         })),
@@ -496,10 +496,10 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   };
   playlistDelete = ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -509,7 +509,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         msg: toUtf8(JSON.stringify({
           playlist_delete: {
             channel_id: channelId,
-            playlist_name: playlistName
+            playlist_id: playlistId
           }
         })),
         funds: _funds
@@ -519,12 +519,12 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   playlistAddAsset = ({
     assetChannelId,
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     assetChannelId: string;
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -536,7 +536,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
           playlist_add_asset: {
             asset_channel_id: assetChannelId,
             channel_id: channelId,
-            playlist_name: playlistName,
+            playlist_id: playlistId,
             publish_id: publishId
           }
         })),
@@ -546,11 +546,11 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   };
   playlistRemoveAsset = ({
     channelId,
-    playlistName,
+    playlistId,
     publishId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
     publishId: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -561,7 +561,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         msg: toUtf8(JSON.stringify({
           playlist_remove_asset: {
             channel_id: channelId,
-            playlist_name: playlistName,
+            playlist_id: playlistId,
             publish_id: publishId
           }
         })),
@@ -571,10 +571,10 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   };
   playlistRefresh = ({
     channelId,
-    playlistName
+    playlistId
   }: {
     channelId: string;
-    playlistName: string;
+    playlistId: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -584,7 +584,7 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         msg: toUtf8(JSON.stringify({
           playlist_refresh: {
             channel_id: channelId,
-            playlist_name: playlistName
+            playlist_id: playlistId
           }
         })),
         funds: _funds
