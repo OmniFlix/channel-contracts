@@ -142,7 +142,7 @@ fn invalid_playlist_name() {
 
     // Create a playlist with an invalid name
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
-        playlist_name: "My_Videos".to_string(),
+        playlist_name: "My".to_string(),
         channel_id: channel_id.clone(),
     };
 
@@ -158,8 +158,10 @@ fn invalid_playlist_name() {
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
-        &ContractError::StringValidationError(StringValidationError::SpecialCharsNotAllowed {
-            sent: "My_Videos".to_string(),
+        &ContractError::StringValidationError(StringValidationError::InvalidLength {
+            sent: "My".to_string(),
+            min_length: 3,
+            max_length: 128,
         })
     );
 }

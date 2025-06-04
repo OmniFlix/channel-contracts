@@ -70,7 +70,7 @@ fn add_reserved_usernames() {
     // Add invalid reserved username
     let msg = ExecuteMsg::AdminManageReservedUsernames {
         add_usernames: Some(vec![ReservedUsername {
-            username: "Admin".to_string(),
+            username: "Ad".to_string(),
             address: None,
         }]),
         remove_usernames: None,
@@ -83,8 +83,10 @@ fn add_reserved_usernames() {
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
-        &ContractError::StringValidationError(StringValidationError::UppercaseNotAllowed {
-            sent: "Admin".to_string()
+        &ContractError::StringValidationError(StringValidationError::InvalidLength {
+            sent: "Ad".to_string(),
+            min_length: 3,
+            max_length: 32,
         })
     );
     // Add valid reserved username with invalid address
