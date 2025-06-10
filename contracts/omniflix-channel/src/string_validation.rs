@@ -124,7 +124,7 @@ impl StringValidationType {
                 allow_numbers: true,
                 allow_uppercase: true,
                 allow_spaces: true,
-                allow_special_chars: false,
+                allow_special_chars: true,
                 ..Default::default()
             },
             StringValidationType::PlaylistName => StringValidationConfig {
@@ -334,5 +334,17 @@ mod tests {
             StringValidationType::Link
         )
         .is_ok());
+    }
+
+    #[test]
+    fn test_validate_asset_name() {
+        // Test valid asset names
+        assert!(validate_string("Valid Asset Name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset-name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset_name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123!", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123!", StringValidationType::AssetName).is_ok());
     }
 }
