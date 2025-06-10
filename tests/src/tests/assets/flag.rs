@@ -89,6 +89,7 @@ fn flag_asset_happy_path() {
         channel_id: channel_id.clone(),
         publish_id: publish_id.clone(),
         flag: Flag::NSFW,
+        interactive_video_id: None,
     };
 
     let res = app

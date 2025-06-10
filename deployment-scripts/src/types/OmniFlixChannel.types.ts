@@ -74,7 +74,7 @@ export type ExecuteMsg = {
     channel_id: string;
     is_visible: boolean;
     metadata: AssetMetadata;
-    playlist_name?: string | null;
+    playlist_id?: string | null;
     salt: Binary;
   };
 } | {
@@ -96,35 +96,37 @@ export type ExecuteMsg = {
   asset_flag: {
     channel_id: string;
     flag: Flag;
+    interactive_video_id?: string | null;
     publish_id: string;
   };
 } | {
   playlist_create: {
     channel_id: string;
     playlist_name: string;
+    salt: Binary;
   };
 } | {
   playlist_delete: {
     channel_id: string;
-    playlist_name: string;
+    playlist_id: string;
   };
 } | {
   playlist_add_asset: {
     asset_channel_id: string;
     channel_id: string;
-    playlist_name: string;
+    playlist_id: string;
     publish_id: string;
   };
 } | {
   playlist_remove_asset: {
     channel_id: string;
-    playlist_name: string;
+    playlist_id: string;
     publish_id: string;
   };
 } | {
   playlist_refresh: {
     channel_id: string;
-    playlist_name: string;
+    playlist_id: string;
   };
 } | {
   channel_create: {
@@ -227,7 +229,7 @@ export type QueryMsg = {
 } | {
   playlist: {
     channel_id: string;
-    playlist_name: string;
+    playlist_id: string;
   };
 } | {
   playlists: {
@@ -338,6 +340,7 @@ export type ArrayOfCollaboratorInfo = CollaboratorInfo[];
 export type Boolean = boolean;
 export interface Playlist {
   assets: [string, string][];
+  playlist_id: string;
   playlist_name: string;
 }
 export type ArrayOfPlaylist = Playlist[];

@@ -4,7 +4,7 @@ use crate::helpers::msg_wrapper::{
 use crate::helpers::setup::setup;
 use crate::helpers::utils::{create_denom_msg, get_event_attribute, mint_onft_msg};
 use asset_manager::error::PlaylistError;
-use cosmwasm_std::{coin, CosmosMsg};
+use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
@@ -51,7 +51,7 @@ fn does_not_exist() {
 
     // Remove a playlist that does not exist
     let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
     };
 
@@ -112,9 +112,27 @@ fn not_owned() {
     // Get the channel_id from the event
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
 
+    // Create a playlist
+    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
+        playlist_name: "My Playlist".to_string(),
+        channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_playlist_msg,
+            &[],
+        )
+        .unwrap();
+
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Remove a playlist without owning the channel
     let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
         channel_id: channel_id.clone(),
     };
 
@@ -175,9 +193,10 @@ fn happy_path() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -185,6 +204,8 @@ fn happy_path() {
             &[],
         )
         .unwrap();
+
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Add an asset to the playlist
     let asset_collection_id = "id".to_string();
@@ -226,7 +247,7 @@ fn happy_path() {
         publish_id: publish_id.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -241,7 +262,7 @@ fn happy_path() {
     // Validate the asset was added to the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -254,7 +275,7 @@ fn happy_path() {
 
     // Delete the playlist
     let delete_playlist_msg = ExecuteMsg::PlaylistDelete {
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
         channel_id: channel_id.clone(),
     };
 
