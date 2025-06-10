@@ -275,7 +275,6 @@ fn with_playlist() {
         .unwrap();
     // Get the channel_id from the event
     let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
-    println!("channel_id: {}", channel_id);
 
     // Creator owns the channel
     // Lets create a asset for creator and try to publish it
