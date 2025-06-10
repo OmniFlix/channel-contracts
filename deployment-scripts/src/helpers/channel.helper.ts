@@ -181,6 +181,7 @@ export default class ChannelHelper {
         let res = await channel_client.playlistCreate({
             channelId: channel_id,
             playlistName: playlist_name,
+            salt: context.generateRandomSalt(5),
         });
         logger.log(1, `Playlist created with name ${playlist_name} under channel id: ${channel_id}`)
         logger.log(1, `Tx_Hash: ${res.transactionHash}`)
