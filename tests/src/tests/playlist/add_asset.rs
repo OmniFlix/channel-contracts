@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, BlockInfo, Timestamp};
+use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
@@ -87,6 +87,7 @@ fn asset_not_visible() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -226,6 +227,7 @@ fn asset_from_diffirent_channel() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "Creator2 Playlist".to_string(),
         channel_id: creator2_channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -349,6 +351,7 @@ fn asset_already_exists_in_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -442,6 +445,7 @@ fn playlist_asset_limit_reached() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app

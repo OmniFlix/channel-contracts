@@ -165,7 +165,8 @@ pub fn execute(
         ExecuteMsg::PlaylistCreate {
             playlist_name,
             channel_id,
-        } => create_playlist(deps, info, channel_id, playlist_name),
+            salt,
+        } => create_playlist(deps, env, info, channel_id, playlist_name, salt),
         ExecuteMsg::ChannelCreate {
             user_name,
             channel_name,
@@ -306,10 +307,10 @@ fn create_channel(
     check_payment(config.channel_creation_fee.clone(), info.funds.clone())?;
 
     // Generate a random channel onft ID
-    let onft_id = generate_random_id_with_prefix("onft", None, Some(&env), Some(&salt));
+    let onft_id = generate_random_id_with_prefix(&salt, &env, "onft");
 
     // Generate a random channel ID
-    let channel_id = generate_random_id_with_prefix("channel", None, Some(&env), Some(&salt));
+    let channel_id = generate_random_id_with_prefix(&salt, &env, "channel");
 
     let channels_manager = ChannelsManager::new();
 
@@ -478,7 +479,7 @@ fn publish(
         Role::Publisher,
     )?;
 
-    let publish_id = generate_random_id_with_prefix("publish", None, Some(&env), Some(&salt));
+    let publish_id = generate_random_id_with_prefix(&salt, &env, "publish");
 
     validate_asset_source(deps.as_ref(), asset_source.clone(), info.sender.clone())?;
 
@@ -599,9 +600,11 @@ fn refresh_playlist(
 
 fn create_playlist(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     channel_id: String,
     playlist_name: String,
+    salt: Binary,
 ) -> Result<Response, ContractError> {
     let pause_state = PauseState::new()?;
     pause_state.error_if_paused(deps.storage)?;
@@ -617,10 +620,7 @@ fn create_playlist(
     )?;
     // Validate the playlist name
     validate_string(&playlist_name, StringValidationType::PlaylistName)?;
-
-    let playlist_id_entropy = format!("{}:{}", channel_id.clone(), playlist_name.clone());
-    let playlist_id =
-        generate_random_id_with_prefix("playlist", Some(&playlist_id_entropy), None, None);
+    let playlist_id = generate_random_id_with_prefix(&salt, &env, "playlist");
 
     let playlists_manager = PlaylistsManager::new();
     playlists_manager.add_new_playlist(

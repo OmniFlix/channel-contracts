@@ -1,5 +1,5 @@
 use asset_manager::error::PlaylistError;
-use cosmwasm_std::{coin, CosmosMsg};
+use cosmwasm_std::{coin, Binary, CosmosMsg};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
@@ -301,6 +301,7 @@ fn with_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app

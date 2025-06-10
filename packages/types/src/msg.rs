@@ -153,6 +153,8 @@ pub enum ExecuteMsg {
         playlist_name: String,
         /// The ID of the channel where the playlist is created.
         channel_id: String,
+        /// The salt value used for unique identification.
+        salt: Binary,
     },
 
     /// Deletes an existing playlist from the channel.

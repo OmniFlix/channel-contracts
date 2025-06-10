@@ -1,5 +1,4 @@
-use asset_manager::error::PlaylistError;
-use cosmwasm_std::coin;
+use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
@@ -53,9 +52,10 @@ fn already_exists() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -63,6 +63,8 @@ fn already_exists() {
             &[],
         )
         .unwrap();
+
+    let playlist_id1 = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Verify that the playlist exists under the channel
     let query_msg = QueryMsg::Playlists {
@@ -79,10 +81,11 @@ fn already_exists() {
     assert_eq!(playlists.len(), 1);
     assert_eq!(playlists[0].playlist_name, "My Videos");
 
-    // Create a playlist that already exists
+    // Create a playlist that already exists this should work and playlist id should not be the same
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt2"),
     };
 
     let res = app
@@ -92,15 +95,14 @@ fn already_exists() {
             &create_playlist_msg,
             &[],
         )
-        .unwrap_err();
+        .unwrap();
 
-    let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
-    );
+    let playlist_id2 = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
+    assert_ne!(playlist_id1, playlist_id2);
 }
 
+// Create a playlist with an invalid name
 #[test]
 fn invalid_playlist_name() {
     // Setup testing environment
@@ -144,6 +146,7 @@ fn invalid_playlist_name() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -210,6 +213,7 @@ fn not_owned() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -268,6 +272,7 @@ fn happy_path() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let _res = app
@@ -337,9 +342,10 @@ fn try_creating_same_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -347,6 +353,8 @@ fn try_creating_same_playlist() {
             &[],
         )
         .unwrap();
+
+    let playlist_id1 = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Verify that the playlist exists under the channel
     let query_msg = QueryMsg::Playlists {
@@ -367,6 +375,7 @@ fn try_creating_same_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt2"),
     };
 
     let res = app
@@ -376,11 +385,9 @@ fn try_creating_same_playlist() {
             &create_playlist_msg,
             &[],
         )
-        .unwrap_err();
+        .unwrap();
 
-    let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
-    );
+    let playlist_id2 = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
+    assert_ne!(playlist_id1, playlist_id2);
 }
