@@ -103,6 +103,7 @@ export type ExecuteMsg = {
   playlist_create: {
     channel_id: string;
     playlist_name: string;
+    salt: Binary;
   };
 } | {
   playlist_delete: {

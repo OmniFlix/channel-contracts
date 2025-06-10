@@ -429,10 +429,12 @@ export interface OmniFlixChannelInterface extends OmniFlixChannelReadOnlyInterfa
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistCreate: ({
     channelId,
-    playlistName
+    playlistName,
+    salt
   }: {
     channelId: string;
     playlistName: string;
+    salt: Binary;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   playlistDelete: ({
     channelId,
@@ -733,15 +735,18 @@ export class OmniFlixChannelClient extends OmniFlixChannelQueryClient implements
   };
   playlistCreate = async ({
     channelId,
-    playlistName
+    playlistName,
+    salt
   }: {
     channelId: string;
     playlistName: string;
+    salt: Binary;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       playlist_create: {
         channel_id: channelId,
-        playlist_name: playlistName
+        playlist_name: playlistName,
+        salt
       }
     }, fee, memo, _funds);
   };

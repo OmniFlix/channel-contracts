@@ -93,10 +93,12 @@ export interface OmniFlixChannelMsg {
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistCreate: ({
     channelId,
-    playlistName
+    playlistName,
+    salt
   }: {
     channelId: string;
     playlistName: string;
+    salt: Binary;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   playlistDelete: ({
     channelId,
@@ -474,10 +476,12 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
   };
   playlistCreate = ({
     channelId,
-    playlistName
+    playlistName,
+    salt
   }: {
     channelId: string;
     playlistName: string;
+    salt: Binary;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -487,7 +491,8 @@ export class OmniFlixChannelMsgComposer implements OmniFlixChannelMsg {
         msg: toUtf8(JSON.stringify({
           playlist_create: {
             channel_id: channelId,
-            playlist_name: playlistName
+            playlist_name: playlistName,
+            salt
           }
         })),
         funds: _funds
