@@ -146,10 +146,10 @@ pub enum ExecuteMsg {
         /// Interactive video id. Only for indexing purposes. Not used for anything else.
         interactive_video_id: Option<String>,
     },
-    /// Creates a new playlist in the specified channel. The playlist name must be unique
-    /// within the channel. Only callable by the channel owner or a collaborator.
+    /// Creates a new playlist in the specified channel.
+    /// Only callable by the channel owner or a collaborator.
     PlaylistCreate {
-        /// The unique name of the playlist.
+        /// The name of the playlist.
         playlist_name: String,
         /// The ID of the channel where the playlist is created.
         channel_id: String,
