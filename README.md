@@ -132,13 +132,14 @@ omniflixhubd tx wasm execute <contract-address> '{
     },
     "salt": "<random-binary>",
     "channel_id": "<channel-id>",
-    "playlist_name": "My Playlist",
+    "playlist_id": "<playlist-id>",
     "is_visible": true,
-    "name": "My Video",
-    "description": "An awesome video",
-    "media_uri": "ipfs://Qm...",
-    "thumbnail_uri": "ipfs://Qm...",
-
+    "metadata": {
+      "name": "My Video",
+      "description": "An awesome video",
+      "media_uri": "ipfs://Qm...",
+      "thumbnail_uri": "ipfs://Qm..."
+    }
   }
 }' --from <your-key>
 ```
@@ -165,7 +166,8 @@ omniflixhubd tx wasm execute <contract-address> '{
 omniflixhubd tx wasm execute <contract-address> '{
   "playlist_create": {
     "playlist_name": "My Playlist",
-    "channel_id": "<channel-id>"
+    "channel_id": "<channel-id>",
+    "salt": "<random-binary>"
   }
 }' --from <your-key>
 ```
@@ -183,6 +185,66 @@ omniflixhubd tx wasm execute <contract-address> '{
     }
   }
 }' --from <your-key>
+```
+
+### Following/Unfollowing Channels
+
+```bash
+# Follow a channel
+omniflixhubd tx wasm execute <contract-address> '{
+  "channel_follow": {
+    "channel_id": "<channel-id>"
+  }
+}' --from <your-key>
+
+# Unfollow a channel
+omniflixhubd tx wasm execute <contract-address> '{
+  "channel_unfollow": {
+    "channel_id": "<channel-id>"
+  }
+}' --from <your-key>
+```
+
+### Admin Operations
+
+```bash
+# Set contract configuration
+omniflixhubd tx wasm execute <contract-address> '{
+  "admin_set_config": {
+    "channel_creation_fee": [{"denom": "uflix", "amount": "1000000"}],
+    "protocol_admin": "<new-admin-address>",
+    "fee_collector": "<new-fee-collector-address>"
+  }
+}' --from <admin-key>
+
+# Manage reserved usernames
+omniflixhubd tx wasm execute <contract-address> '{
+  "admin_manage_reserved_usernames": {
+    "add_usernames": [
+      {
+        "username": "reserved1",
+        "address": "<reserved-address>"
+      }
+    ],
+    "remove_usernames": ["reserved2"]
+  }
+}' --from <admin-key>
+
+# Pause/Unpause contract
+omniflixhubd tx wasm execute <contract-address> '{
+  "pause": {}
+}' --from <pauser-key>
+
+omniflixhubd tx wasm execute <contract-address> '{
+  "unpause": {}
+}' --from <pauser-key>
+
+# Set pausers
+omniflixhubd tx wasm execute <contract-address> '{
+  "set_pausers": {
+    "pausers": ["<pauser-address-1>", "<pauser-address-2>"]
+  }
+}' --from <admin-key>
 ```
 
 ## Query Operations
