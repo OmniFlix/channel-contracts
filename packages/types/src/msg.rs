@@ -102,7 +102,7 @@ pub enum ExecuteMsg {
         /// The ID of the channel where the asset is published.
         channel_id: String,
         /// (Optional) The name of the playlist where the asset is added.
-        playlist_name: Option<String>,
+        playlist_id: Option<String>,
         /// A flag indicating if the asset is visible to the public.
         is_visible: bool,
         /// The metadata of the asset.
@@ -143,21 +143,25 @@ pub enum ExecuteMsg {
         publish_id: String,
         /// The flag value.
         flag: Flag,
+        /// Interactive video id. Only for indexing purposes. Not used for anything else.
+        interactive_video_id: Option<String>,
     },
-    /// Creates a new playlist in the specified channel. The playlist name must be unique
-    /// within the channel. Only callable by the channel owner or a collaborator.
+    /// Creates a new playlist in the specified channel.
+    /// Only callable by the channel owner or a collaborator.
     PlaylistCreate {
-        /// The unique name of the playlist.
+        /// The name of the playlist.
         playlist_name: String,
         /// The ID of the channel where the playlist is created.
         channel_id: String,
+        /// The salt value used for unique identification.
+        salt: Binary,
     },
 
     /// Deletes an existing playlist from the channel.
     /// Only callable by the channel owner or a collaborator.
     PlaylistDelete {
-        /// The name of the playlist to be deleted.
-        playlist_name: String,
+        /// The ID of the playlist to be deleted.
+        playlist_id: String,
         /// The ID of the channel where the playlist exists.
         channel_id: String,
     },
@@ -171,8 +175,8 @@ pub enum ExecuteMsg {
         asset_channel_id: String,
         /// The ID of the channel where the playlist exists.
         channel_id: String,
-        /// The name of the playlist where the asset will be added.
-        playlist_name: String,
+        /// The ID of the playlist where the asset will be added.
+        playlist_id: String,
     },
 
     /// Removes an asset from a playlist.
@@ -182,17 +186,17 @@ pub enum ExecuteMsg {
         publish_id: String,
         /// The ID of the channel where the playlist exists.
         channel_id: String,
-        /// The name of the playlist where the asset is being removed.
-        playlist_name: String,
+        /// The ID of the playlist where the asset will be removed.
+        playlist_id: String,
     },
 
-    /// Refreshes a playlist by removing all assets that are either unpublished
-    /// or no longer visible. Only callable by the channel owner or a collaborator.
+    /// Refreshes a playlist by removing any assets that are no longer visible.
+    /// Only callable by the channel owner or a collaborator.
     PlaylistRefresh {
         /// The ID of the channel where the playlist exists.
         channel_id: String,
-        /// The name of the playlist to be refreshed.
-        playlist_name: String,
+        /// The ID of the playlist to be refreshed.
+        playlist_id: String,
     },
 
     /// Creates a new channel. The contract will generate a channel ID and mint an NFT
@@ -305,16 +309,23 @@ pub enum QueryMsg {
     #[returns(String)]
     ChannelId { user_name: String },
 
+    /// Query a specific playlist by its ID.
     #[returns(Playlist)]
     Playlist {
+        /// The ID of the channel where the playlist exists.
         channel_id: String,
-        playlist_name: String,
+        /// The ID of the playlist to query.
+        playlist_id: String,
     },
 
+    /// Query all playlists in a channel.
     #[returns(Vec<Playlist>)]
     Playlists {
+        /// The ID of the channel to query playlists from.
         channel_id: String,
+        /// Optional ID to start pagination after.
         start_after: Option<String>,
+        /// Optional limit for pagination.
         limit: Option<u32>,
     },
 

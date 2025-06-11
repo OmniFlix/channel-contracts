@@ -1,6 +1,6 @@
-use asset_manager::error::PlaylistError;
-use cosmwasm_std::coin;
+use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
+use omniflix_channel::string_validation::StringValidationError;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::Playlist;
 use omniflix_channel_types::msg::{ExecuteMsg, QueryMsg};
@@ -52,9 +52,10 @@ fn already_exists() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -62,6 +63,8 @@ fn already_exists() {
             &[],
         )
         .unwrap();
+
+    let playlist_id1 = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Verify that the playlist exists under the channel
     let query_msg = QueryMsg::Playlists {
@@ -78,10 +81,72 @@ fn already_exists() {
     assert_eq!(playlists.len(), 1);
     assert_eq!(playlists[0].playlist_name, "My Videos");
 
-    // Create a playlist that already exists
+    // Create a playlist that already exists this should work and playlist id should not be the same
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt2"),
+    };
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_playlist_msg,
+            &[],
+        )
+        .unwrap();
+
+    let playlist_id2 = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
+    assert_ne!(playlist_id1, playlist_id2);
+}
+
+// Create a playlist with an invalid name
+#[test]
+fn invalid_playlist_name() {
+    // Setup testing environment
+    let setup_response = setup();
+    let mut app = setup_response.app;
+
+    // Actors
+    let admin = setup_response.test_accounts.admin.clone();
+    let creator = setup_response.test_accounts.creator.clone();
+
+    // Instantiate Channel Contract
+    let instantiate_msg = get_channel_instantiate_msg(admin.clone());
+
+    let channel_contract_addr = app
+        .instantiate_contract(
+            setup_response.channel_contract_code_id,
+            admin.clone(),
+            &instantiate_msg,
+            &[coin(1000000, "uflix")],
+            "Instantiate Channel Contract",
+            None,
+        )
+        .unwrap();
+
+    // Create a channel
+    let create_channel_msg = CreateChannelMsgBuilder::new("creator", creator.clone()).build();
+
+    let res = app
+        .execute_contract(
+            creator.clone(),
+            channel_contract_addr.clone(),
+            &create_channel_msg,
+            &[],
+        )
+        .unwrap();
+
+    // Get the channel_id from the event
+    let channel_id = get_event_attribute(res.clone(), "wasm", "channel_id");
+
+    // Create a playlist with an invalid name
+    let create_playlist_msg = ExecuteMsg::PlaylistCreate {
+        playlist_name: "My".to_string(),
+        channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -96,7 +161,11 @@ fn already_exists() {
     let typed_err = res.downcast_ref::<ContractError>().unwrap();
     assert_eq!(
         typed_err,
-        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
+        &ContractError::StringValidationError(StringValidationError::InvalidLength {
+            sent: "My".to_string(),
+            min_length: 3,
+            max_length: 128,
+        })
     );
 }
 
@@ -144,6 +213,7 @@ fn not_owned() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let res = app
@@ -202,6 +272,7 @@ fn happy_path() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
     let _res = app
@@ -271,9 +342,10 @@ fn try_creating_same_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -281,6 +353,8 @@ fn try_creating_same_playlist() {
             &[],
         )
         .unwrap();
+
+    let playlist_id1 = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Verify that the playlist exists under the channel
     let query_msg = QueryMsg::Playlists {
@@ -301,6 +375,7 @@ fn try_creating_same_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Videos".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt2"),
     };
 
     let res = app
@@ -310,11 +385,9 @@ fn try_creating_same_playlist() {
             &create_playlist_msg,
             &[],
         )
-        .unwrap_err();
+        .unwrap();
 
-    let typed_err = res.downcast_ref::<ContractError>().unwrap();
-    assert_eq!(
-        typed_err,
-        &ContractError::Playlist(PlaylistError::PlaylistAlreadyExists {})
-    );
+    let playlist_id2 = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
+    assert_ne!(playlist_id1, playlist_id2);
 }

@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, BlockInfo, Timestamp};
+use cosmwasm_std::{coin, Binary, BlockInfo, Timestamp};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::{AssetSource, Playlist};
@@ -87,9 +87,10 @@ fn asset_not_visible() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -98,12 +99,14 @@ fn asset_not_visible() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Add an asset to the playlist
     let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
         publish_id: asset_id.clone(),
         asset_channel_id: asset_collection_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let res = app
@@ -224,9 +227,10 @@ fn asset_from_diffirent_channel() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "Creator2 Playlist".to_string(),
         channel_id: creator2_channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator2.clone(),
             channel_contract_addr.clone(),
@@ -235,12 +239,14 @@ fn asset_from_diffirent_channel() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Add an asset to the playlist
     let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
         publish_id: publish_id.clone(),
         asset_channel_id: creator1_channel_id.clone(),
         channel_id: creator2_channel_id.clone(),
-        playlist_name: "Creator2 Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -255,7 +261,7 @@ fn asset_from_diffirent_channel() {
     // Query the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: creator2_channel_id.clone(),
-        playlist_name: "Creator2 Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -345,9 +351,10 @@ fn asset_already_exists_in_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -356,12 +363,14 @@ fn asset_already_exists_in_playlist() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Add an asset to the playlist
     let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
         publish_id: publish_id.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -436,9 +445,10 @@ fn playlist_asset_limit_reached() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -446,6 +456,8 @@ fn playlist_asset_limit_reached() {
             &[],
         )
         .unwrap();
+
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
     // Create and publish 101 assets (1 more than the limit)
     // The constant PLAYLISTS_ASSET_LIMIT is typically set to 100
@@ -472,7 +484,7 @@ fn playlist_asset_limit_reached() {
             publish_id: publish_id.clone(),
             asset_channel_id: channel_id.clone(),
             channel_id: channel_id.clone(),
-            playlist_name: "My Playlist".to_string(),
+            playlist_id: playlist_id.clone(),
         };
 
         // The first 100 adds should succeed, the 101st should fail

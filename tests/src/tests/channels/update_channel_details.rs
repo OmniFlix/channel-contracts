@@ -351,8 +351,8 @@ fn invalid() {
                 description: None,
                 banner_picture: None,
                 profile_picture: None,
-                // No special characters
-                channel_name: Some("creator_1".to_string()),
+                // too short
+                channel_name: Some("c".to_string()),
                 payment_address: None,
             },
             &[coin(1000000, "uflix")],

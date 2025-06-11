@@ -68,6 +68,7 @@ pub enum StringValidationType {
     Description,
     Link,
     AssetName,
+    PlaylistName,
 }
 
 // Get configuration based on validation type
@@ -77,10 +78,10 @@ impl StringValidationType {
             StringValidationType::Username => StringValidationConfig {
                 min_length: 3,
                 max_length: 32,
-                allow_numbers: false,
-                allow_uppercase: false,
+                allow_numbers: true,
+                allow_uppercase: true,
                 allow_spaces: false,
-                allow_special_chars: false,
+                allow_special_chars: true,
                 ..Default::default()
             },
             StringValidationType::ChannelName => StringValidationConfig {
@@ -88,8 +89,8 @@ impl StringValidationType {
                 max_length: 64,
                 allow_numbers: true,
                 allow_uppercase: true,
-                allow_spaces: false,
-                allow_special_chars: false,
+                allow_spaces: true,
+                allow_special_chars: true,
                 ..Default::default()
             },
             StringValidationType::Description => StringValidationConfig {
@@ -123,7 +124,16 @@ impl StringValidationType {
                 allow_numbers: true,
                 allow_uppercase: true,
                 allow_spaces: true,
-                allow_special_chars: false,
+                allow_special_chars: true,
+                ..Default::default()
+            },
+            StringValidationType::PlaylistName => StringValidationConfig {
+                min_length: 3,
+                max_length: 128,
+                allow_numbers: true,
+                allow_uppercase: true,
+                allow_spaces: true,
+                allow_special_chars: true,
                 ..Default::default()
             },
         }
@@ -263,12 +273,12 @@ mod tests {
     fn test_validate_username() {
         // Test valid username
         assert!(validate_string("validname", StringValidationType::Username).is_ok());
+        assert!(validate_string("Valid123", StringValidationType::Username).is_ok());
+        assert!(validate_string("valid-name", StringValidationType::Username).is_ok());
 
         // Test invalid cases
         assert!(validate_string("ab", StringValidationType::Username).is_err()); // too short
         assert!(validate_string("a".repeat(33).as_str(), StringValidationType::Username).is_err()); // too long
-        assert!(validate_string("Invalid123", StringValidationType::Username).is_err()); // numbers not allowed
-        assert!(validate_string("Invalid!", StringValidationType::Username).is_err()); // special chars not allowed
         assert!(validate_string("invalid name", StringValidationType::Username).is_err());
         // spaces not allowed
     }
@@ -278,15 +288,14 @@ mod tests {
         // Test valid channel names
         assert!(validate_string("Channel123", StringValidationType::ChannelName).is_ok());
         assert!(validate_string("channelname", StringValidationType::ChannelName).is_ok());
+        assert!(validate_string("Channel Name!", StringValidationType::ChannelName).is_ok());
+        assert!(validate_string("channel-name", StringValidationType::ChannelName).is_ok());
 
         // Test invalid cases
         assert!(validate_string("ch", StringValidationType::ChannelName).is_err()); // too short
         assert!(
             validate_string("a".repeat(65).as_str(), StringValidationType::ChannelName).is_err()
         ); // too long
-        assert!(validate_string("channel!", StringValidationType::ChannelName).is_err()); // special chars not allowed
-        assert!(validate_string("channel name", StringValidationType::ChannelName).is_err());
-        // spaces not allowed
     }
 
     #[test]
@@ -325,5 +334,17 @@ mod tests {
             StringValidationType::Link
         )
         .is_ok());
+    }
+
+    #[test]
+    fn test_validate_asset_name() {
+        // Test valid asset names
+        assert!(validate_string("Valid Asset Name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset-name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset_name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123!", StringValidationType::AssetName).is_ok());
+        assert!(validate_string("asset name 123!", StringValidationType::AssetName).is_ok());
     }
 }

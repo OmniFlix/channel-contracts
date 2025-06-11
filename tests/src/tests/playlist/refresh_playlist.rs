@@ -1,4 +1,4 @@
-use cosmwasm_std::coin;
+use cosmwasm_std::{coin, Binary};
 use cw_multi_test::Executor;
 use omniflix_channel::ContractError;
 use omniflix_channel_types::asset::Playlist;
@@ -54,9 +54,10 @@ fn empty_playlist() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -65,10 +66,12 @@ fn empty_playlist() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Query the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -81,7 +84,7 @@ fn empty_playlist() {
     // Refresh the playlist
     let refresh_playlist_msg = ExecuteMsg::PlaylistRefresh {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -173,9 +176,10 @@ fn playlist_with_assets() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -184,12 +188,14 @@ fn playlist_with_assets() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Add an asset to the playlist
     let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
         publish_id: publish_id.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -205,7 +211,7 @@ fn playlist_with_assets() {
         publish_id: publish_id2.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -220,7 +226,7 @@ fn playlist_with_assets() {
     // Query the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -238,7 +244,7 @@ fn playlist_with_assets() {
     // Refresh the playlist
     let refresh_playlist_msg = ExecuteMsg::PlaylistRefresh {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -338,9 +344,10 @@ fn playlist_with_assets_and_removed_assets() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -349,13 +356,14 @@ fn playlist_with_assets_and_removed_assets() {
         )
         .unwrap();
 
-    // Add an asset to the playlist
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
 
+    // Add an asset to the playlist
     let add_asset_msg = ExecuteMsg::PlaylistAddAsset {
         publish_id: publish_id.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -371,7 +379,7 @@ fn playlist_with_assets_and_removed_assets() {
         publish_id: publish_id2.clone(),
         asset_channel_id: channel_id.clone(),
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -386,7 +394,7 @@ fn playlist_with_assets_and_removed_assets() {
     // Query the playlist
     let query_msg = QueryMsg::Playlist {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let playlist: Playlist = app
@@ -414,7 +422,7 @@ fn playlist_with_assets_and_removed_assets() {
     // Refresh the playlist
     let refresh_playlist_msg = ExecuteMsg::PlaylistRefresh {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let _res = app
@@ -484,9 +492,10 @@ fn not_owned() {
     let create_playlist_msg = ExecuteMsg::PlaylistCreate {
         playlist_name: "My Playlist".to_string(),
         channel_id: channel_id.clone(),
+        salt: Binary::from(b"salt1"),
     };
 
-    let _res = app
+    let res = app
         .execute_contract(
             creator.clone(),
             channel_contract_addr.clone(),
@@ -495,10 +504,12 @@ fn not_owned() {
         )
         .unwrap();
 
+    let playlist_id = get_event_attribute(res.clone(), "wasm", "playlist_id");
+
     // Try refreshing the playlist with a different user
     let refresh_playlist_msg = ExecuteMsg::PlaylistRefresh {
         channel_id: channel_id.clone(),
-        playlist_name: "My Playlist".to_string(),
+        playlist_id: playlist_id.clone(),
     };
 
     let res = app
