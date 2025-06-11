@@ -94,6 +94,7 @@ pub fn instantiate(
         msg.channels_collection_details.clone(),
         env.contract.address.clone().to_string(),
         collection_creation_fee,
+        fee_collector,
     );
 
     let response = Response::new()
