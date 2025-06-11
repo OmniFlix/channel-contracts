@@ -2,7 +2,7 @@ use crate::access_control::get_onft_with_owner;
 use crate::string_validation::{validate_string, StringValidationType};
 use crate::ContractError;
 use asset_manager::assets::AssetsManager;
-use cosmwasm_std::{Addr, Api, Coin, Deps, Uint128};
+use cosmwasm_std::{Addr, Api, Coin, Decimal, Deps, Uint128};
 use cosmwasm_std::{CosmosMsg, Storage};
 use omniflix_channel_types::asset::{AssetKey, AssetMetadata, AssetSource};
 use omniflix_channel_types::channel::{ChannelDetails, ChannelMetadata};
@@ -155,7 +155,7 @@ pub fn generate_mint_onft_msg(
         data: onft_data.clone(),
         metadata: Some(Metadata {
             media_uri: channel_token_details.media_uri,
-            name: user_name.clone(),
+            name: format!("{} - OmniFlix Channel NFT (v2)", user_name),
             description: channel_token_details.description,
             preview_uri: channel_token_details.preview_uri,
             uri_hash: channel_token_details.uri_hash,
@@ -195,6 +195,7 @@ pub fn generate_create_denom_msg(
     collection_details: ChannelsCollectionDetails,
     contract_address: String,
     creation_fee: Coin,
+    royalty_receiver: Addr,
 ) -> CosmosMsg {
     omniflix_std::types::omniflix::onft::v1beta1::MsgCreateDenom {
         id: collection_details.collection_id,
@@ -208,7 +209,12 @@ pub fn generate_create_denom_msg(
         uri: collection_details.uri,
         uri_hash: "".to_string(),
         data: "".to_string(),
-        royalty_receivers: vec![],
+        royalty_receivers: vec![
+            omniflix_std::types::omniflix::onft::v1beta1::WeightedAddress {
+                address: royalty_receiver.to_string(),
+                weight: Decimal::one().atomics().to_string(),
+            },
+        ],
     }
     .into()
 }
