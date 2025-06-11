@@ -155,7 +155,7 @@ pub fn generate_mint_onft_msg(
         data: onft_data.clone(),
         metadata: Some(Metadata {
             media_uri: channel_token_details.media_uri,
-            name: user_name.clone(),
+            name: format!("{} - OmniFlix Channel NFT (v2)", user_name),
             description: channel_token_details.description,
             preview_uri: channel_token_details.preview_uri,
             uri_hash: channel_token_details.uri_hash,

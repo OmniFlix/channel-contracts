@@ -70,6 +70,7 @@ impl Stargate for StargateKeeper {
                     metadata: msg.metadata,
                     royalty_share: msg.royalty_share,
                 };
+                println!("onft: {:?}", onft);
                 collection.onfts.push(onft);
                 let serialized_collection =
                     to_json_binary(&collection).expect("Failed to serialize Collection");
